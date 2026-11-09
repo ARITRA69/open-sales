@@ -74,7 +74,12 @@ const sessionBodySchema = z.object({ user: sessionUserSchema }).nullable()
 
 /** Calls the Sales API. The main process uses it; the renderer never does. */
 export const createServerApi = (fetchFn: TFetch = fetch) => {
-  const request = async (
+  /**
+   * The one way the app calls the server: built-in fetch, the session token as
+   * a Bearer header, a timeout, and network failures turned into plain words.
+   * Callers check the response body against the shared Zod schemas.
+   */
+  const apiRequest = async (
     serverUrl: string,
     path: string,
     init: RequestInit & { token?: string } = {}
@@ -90,7 +95,12 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
         headers,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       })
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ServerProblem(
+          'The server didn’t answer in time. Try again in a moment.'
+        )
+      }
       throw new ServerProblem(
         `Couldn’t reach ${new URL(serverUrl).host}. Check the address, and that the server is running.`
       )
@@ -99,7 +109,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
 
   /** Checks this is one of our servers, and that it can reach its database. */
   const checkServer = async (serverUrl: string): Promise<TSetupStatus> => {
-    const health = await request(serverUrl, '/health')
+    const health = await apiRequest(serverUrl, '/health')
     const parsed = healthResponseSchema.safeParse(
       await health.json().catch(() => null)
     )
@@ -117,7 +127,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
   }
 
   const getSetupStatus = async (serverUrl: string): Promise<TSetupStatus> => {
-    const response = await request(serverUrl, '/setup')
+    const response = await apiRequest(serverUrl, '/setup')
     if (!response.ok) {
       throw new ServerProblem(
         await readErrorMessage(
@@ -130,7 +140,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
   }
 
   const createAdmin = async (serverUrl: string, input: TSetupRequest) => {
-    const response = await request(serverUrl, '/setup', {
+    const response = await apiRequest(serverUrl, '/setup', {
       method: 'POST',
       body: JSON.stringify(input)
     })
@@ -143,7 +153,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
   }
 
   const signIn = async (serverUrl: string, input: TSignInRequest) => {
-    const response = await request(serverUrl, '/auth/sign-in/email', {
+    const response = await apiRequest(serverUrl, '/auth/sign-in/email', {
       method: 'POST',
       body: JSON.stringify(input)
     })
@@ -170,7 +180,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     serverUrl: string,
     token: string
   ): Promise<TSessionUser | null> => {
-    const response = await request(serverUrl, '/auth/get-session', { token })
+    const response = await apiRequest(serverUrl, '/auth/get-session', { token })
     if (!response.ok) return null
     const body = sessionBodySchema.safeParse(
       await response.json().catch(() => null)
@@ -179,7 +189,7 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
   }
 
   const signOut = async (serverUrl: string, token: string) => {
-    await request(serverUrl, '/auth/sign-out', {
+    await apiRequest(serverUrl, '/auth/sign-out', {
       method: 'POST',
       body: '{}',
       token

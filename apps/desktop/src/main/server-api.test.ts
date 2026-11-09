@@ -80,6 +80,16 @@ describe('checkServer', () => {
     )
   })
 
+  it('says when the server is too slow to answer', async () => {
+    const timingOut = vi.fn(async () => {
+      throw new DOMException('The operation timed out.', 'TimeoutError')
+    }) as unknown as typeof fetch
+
+    await expect(
+      createServerApi(timingOut).checkServer(SERVER)
+    ).rejects.toThrow('The server didn’t answer in time.')
+  })
+
   it('says when the server cannot reach its database', async () => {
     const api = createServerApi(
       fakeFetch({
