@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:db": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgres://open_sales:open-sales@localhost:5433/open_sales_test} vitest run src/records",
     "db:generate": "drizzle-kit generate --name"
   },
   "devDependencies": {

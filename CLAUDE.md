@@ -36,7 +36,8 @@ a person's approval.
 
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
 - **Two parts.** A desktop app (built) and a server (started: health check,
-  first-run setup and sign-in; no sales data yet).
+  first-run setup, sign-in, the join link, and the API for companies, people,
+  deals and the pipeline; the app doesn't show sales data yet).
   - Server: Sales API + Postgres, started with one Docker Compose command. The
     first person to connect from the desktop app creates the admin account
     there. Its only web page is `/join/<token>`: what the team's join link
@@ -126,9 +127,21 @@ A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
   Hono app (routes under `/api/v1`, dependencies passed in so tests need no
   database); `src/index.ts` reads settings, runs migrations, then serves.
   `src/db/schema.ts` is the Drizzle schema (workspace, Better Auth's tables,
-  instance settings); `drizzle/` holds the generated SQL migrations.
-  `src/auth.ts` sets up Better Auth, `src/setup.ts` is first-run setup and
-  `src/secret.ts` the signing secret. Its Dockerfile builds from the repo root.
+  instance settings, the join link, and the sales records); `drizzle/` holds
+  the generated SQL migrations. `src/db/ids.ts` makes the UUIDv7 ids (not
+  `Bun.randomUUIDv7()`: tests run under Node). `src/auth.ts` sets up Better
+  Auth, `src/setup.ts` is first-run setup, `src/team.ts` the join link and
+  `src/secret.ts` the signing secret. `src/http.ts` has the request helpers
+  every route uses. Its Dockerfile builds from the repo root.
+  - `src/records/`: companies, people, deals and the pipeline. Each service
+    checks roles with the rules in `packages/shared/src/roles.ts`, refuses
+    changes made against an old `version` (409 `changed_since`), and writes
+    every change to `change_log` in the same transaction. Archiving a company
+    archives its people and open deals with one timestamp, and restoring it
+    brings back exactly those. Giving a company a new owner moves the old
+    owner's open deals with it. `routes.ts` mounts them under `/api/v1`
+    (`/companies`, `/people`, `/deals`: list, get, create, `PATCH`,
+    `/:id/archive`, `/:id/restore`; `/pipeline` and `/pipeline/board`).
 - `packages/shared` (`@open-sales/shared`): types and rules both sides use, such
   as roles and `canEditCompany`. It ships TypeScript source, no build step;
   Vite and Bun read it directly. The desktop config bundles it into the main
@@ -179,10 +192,15 @@ bun run dev          # the desktop app
 bun run dev:server   # the server with hot reload (starts Docker and Postgres)
 docker compose up -d # the server and Postgres, as self-hosters run them
 bun run typecheck    # also: lint, test, build; each runs in every package
+bun run --cwd apps/server test:db  # server tests against Postgres
 bun run format
 ```
 
-The server answers at `http://localhost:8787/api/v1/health`. Postgres listens
+`test:db` runs the tests that need a real database
+(`src/records/records.db.test.ts`) against `open_sales_test` in the dev
+Postgres, which it creates and empties; the normal `test` skips them, so the
+pre-push hook stays quick. The server answers at
+`http://localhost:8787/api/v1/health`. Postgres listens
 on `localhost:5433` (not 5432, which another project may use). Settings come
 from `.env` beside `docker-compose.yml`; see `.env.example`.
 
@@ -217,9 +235,10 @@ package that uses it (`cd apps/desktop && bun add x`).
 
 1. Design the main screens (Today, Pipeline, Leads, Accounts, People, Reports,
    Playbooks, Settings) before building them.
-2. Accounts, people and deals: schema with server-side role checks, the real
-   app shell with Accounts, People and Pipeline, and CSV import. (Sign-in is
-   done: first-run setup, server address screen, sign-in, sign out.)
+2. Accounts, people and deals: the real app shell with Accounts, People and
+   Pipeline, then CSV import. (Done: sign-in, the join link, and the schema
+   and API for companies, people, deals and the pipeline, with server-side
+   role checks.)
 3. Proposals and the MCP bridge, so Claude Code or Codex read records and
    propose changes as the signed-in person; then Today. Invites and user
    management come with Settings.

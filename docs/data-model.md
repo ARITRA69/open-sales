@@ -1,9 +1,9 @@
 # Open Sales: data model
 
 The Postgres schema for the features in [features.md](features.md), with the
-indexes each screen needs. **Status: proposal for review.** Only `workspace`,
-`instance_setting` and Better Auth's tables exist so far
-(`apps/server/src/db/schema.ts`). Migrations only ever add, so a table or
+indexes each screen needs. **Status: reviewed; being built.** `workspace`, `instance_setting`, Better
+Auth's tables and the join link exist (`apps/server/src/db/schema.ts`); the
+[Rollout](#rollout) says what comes next. Migrations only ever add, so a table or
 column here is hard to take back once it ships: review this before it becomes
 Drizzle code.
 
@@ -17,7 +17,7 @@ These apply to every table below.
    `user`. The companies we sell to are the `company` table, shown as
    "Accounts" in the app: Better Auth already owns a table called `account`
    (sign-in accounts). Contacts are `person`.
-3. **IDs.** UUIDv7, made by the server (`Bun.randomUUIDv7()`). They sort by
+3. **IDs.** UUIDv7, made by the server (`newId()` in `apps/server/src/db/ids.ts`). They sort by
    creation time, so new rows land at the end of an index instead of at random
    pages, and an id alone is a stable tiebreaker for paging. Better Auth's
    `user.id` stays text. Append-only logs use `bigint generated always as
@@ -28,7 +28,8 @@ identity`.
 5. **Archive, don't delete.** Records people work with get `archived_at`.
    Proposals, history and AI citations keep pointing at archived rows. Hot
    indexes are partial (`where archived_at is null`), so archived rows cost
-   nothing in daily lists. Hard delete is a later admin purge.
+   nothing in daily lists. Removing data for good is an admin's job: see
+   [Deleting and erasing](#deleting-and-erasing).
 6. **Versions.** Editable records (`company`, `person`, `deal`, `task`) carry
    `version integer not null default 1`, bumped on every write. A proposal
    stores the version it was made against; if it changed, the card shows
@@ -222,22 +223,24 @@ Indexes:
 
 **`person`**: contacts.
 
-| Column                                                              | Type           | Notes                                                        |
-| ------------------------------------------------------------------- | -------------- | ------------------------------------------------------------ |
-| `id`                                                                | uuid           |                                                              |
-| `company_id`                                                        | uuid → company | Null allowed: a contact can exist before their company does. |
-| `name`                                                              | text           | One field; people's names don't split cleanly.               |
-| `title`                                                             | text           |                                                              |
-| `email`                                                             | text           | Stored lower case.                                           |
-| `phone`                                                             | text           |                                                              |
-| `linkedin_url`                                                      | text           |                                                              |
-| `created_by_id`                                                     | text → user    | Edits people with no company, with managers.                 |
-| `custom_fields`                                                     | jsonb          |                                                              |
-| `source`, `import_id`, `last_activity_at`, `version`, `archived_at` |                | As on company.                                               |
+| Column                                                              | Type           | Notes                                          |
+| ------------------------------------------------------------------- | -------------- | ---------------------------------------------- |
+| `id`                                                                | uuid           |                                                |
+| `company_id`                                                        | uuid → company | Not null: everyone works somewhere (decided).  |
+| `name`                                                              | text           | One field; people's names don't split cleanly. |
+| `title`                                                             | text           |                                                |
+| `email`                                                             | text           | Stored lower case.                             |
+| `phone`                                                             | text           |                                                |
+| `linkedin_url`                                                      | text           |                                                |
+| `custom_fields`                                                     | jsonb          |                                                |
+| `source`, `import_id`, `last_activity_at`, `version`, `archived_at` |                | As on company.                                 |
 
 Who can change a person: the owner of their company, or managers and admins.
-With no company, whoever created them. So there's no `owner_id` to keep in
-sync when a company changes hands.
+So there's no `owner_id` to keep in sync when a company changes hands. Where
+a person arrives without a company (an import row, an email sender, a lead),
+the app finds or makes the company first, from the company name or the
+email's domain. Free-mail addresses (gmail.com and the like) never make a
+company from their domain; the person asks which company instead.
 
 Indexes:
 
@@ -344,20 +347,20 @@ import_id is not null`.
 
 **`activity`**: notes, calls, meetings and emails, in one stream.
 
-| Column        | Type           | Notes                                                              |
-| ------------- | -------------- | ------------------------------------------------------------------ |
-| `id`          | uuid           |                                                                    |
-| `type`        | enum           | `note`, `call`, `meeting`, `email`                                 |
-| `occurred_at` | timestamptz    | When it happened, or starts. Future values are "upcoming".         |
-| `ends_at`     | timestamptz    | Meetings.                                                          |
-| `company_id`  | uuid → company | The timeline it belongs to. Null only for emails not yet matched.  |
-| `deal_id`     | uuid → deal    | Also shown on this deal.                                           |
-| `author_id`   | text → user    | Who wrote or logged it; null for synced emails.                    |
-| `source`      | enum           | `manual`, `ai`, `email_sync`, `calendar_sync`, `import`            |
-| `title`       | text           | Subject, meeting name, call summary.                               |
-| `body`        | text           | Note text, call notes, email body (if the sharing setting allows). |
-| `data`        | jsonb          | Per type: call outcome and duration, meeting link …                |
-| `archived_at` | timestamptz    |                                                                    |
+| Column        | Type           | Notes                                                               |
+| ------------- | -------------- | ------------------------------------------------------------------- |
+| `id`          | uuid           |                                                                     |
+| `type`        | enum           | `note`, `call`, `meeting`, `email`                                  |
+| `occurred_at` | timestamptz    | When it happened, or starts. Future values are "upcoming".          |
+| `ends_at`     | timestamptz    | Meetings.                                                           |
+| `company_id`  | uuid → company | The timeline it belongs to. Null only for emails not yet matched.   |
+| `deal_id`     | uuid → deal    | Also shown on this deal.                                            |
+| `author_id`   | text → user    | Who wrote or logged it; null for synced emails.                     |
+| `source`      | enum           | `manual`, `ai`, `email_sync`, `calendar_sync`, `import`             |
+| `title`       | text           | Subject, meeting name, call summary.                                |
+| `body`        | text           | Note text, call notes; for emails, the plain-text body (see below). |
+| `data`        | jsonb          | Per type: call outcome and duration, meeting link …                 |
+| `archived_at` | timestamptz    |                                                                     |
 
 Indexes:
 
@@ -382,9 +385,18 @@ timeline and "last contacted".
 | `direction`                                    | enum            | `inbound`, `outbound`    |
 | `from_address`, `to_addresses`, `cc_addresses` | text, text[]    |                          |
 | `sent_at`                                      | timestamptz     |                          |
+| `raw_file_id`                                  | uuid → file     | The whole message.       |
 
 Indexes: unique `(message_id)`: sync never imports a message twice;
-`(thread_id, sent_at)`.
+`(thread_id, sent_at)`; `(raw_file_id)`.
+
+Email bodies (decided): the whole message, as received (`.eml`, with its
+attachments and HTML), is a file in storage. Postgres keeps only the
+plain-text body in `activity.body`, with quoted replies and signatures cut
+and capped at about 20 KB: that's what search, the timeline and the AI read.
+So the database stays small and the original is never lost. Who may read an
+email follows the sharing setting, checked by the API; it decides who sees
+the body, not whether it's stored.
 
 **`task`**
 
@@ -408,9 +420,50 @@ completed_at is null`; `(deal_id) where completed_at is null`.
 
 **`attachment`** (P1): files on deal status notes and activities.
 
-`id`, `name`, `mime_type`, `size_bytes bigint`, `storage_key` (where the bytes
-are), `company_id`, `deal_id`, `activity_id`, `uploaded_by_id`,
-`archived_at`. Indexes: `(deal_id)`, `(activity_id)`, `(company_id)`.
+`id`, `file_id` → file, `name` (as shown; the file keeps the original),
+`company_id`, `deal_id`, `activity_id`, `uploaded_by_id`, `archived_at`.
+Indexes: `(file_id)`, `(deal_id)`, `(activity_id)`, `(company_id)`.
+
+### Files
+
+**`file`** (P1): every stored file, wherever its bytes live: attachments,
+raw emails, import error files, logos. Other tables point here, never at a
+storage path, so moving storage or purging a record has one place to look.
+
+| Column          | Type        | Notes                                                     |
+| --------------- | ----------- | --------------------------------------------------------- |
+| `id`            | uuid        |                                                           |
+| `storage`       | enum        | `local`, `s3`: where the bytes went when it was saved.    |
+| `key`           | text        | The path inside that storage. Made by the server, opaque. |
+| `name`          | text        | The original file name.                                   |
+| `mime_type`     | text        |                                                           |
+| `size_bytes`    | bigint      |                                                           |
+| `sha256`        | text        | Checks downloads; finds the same file saved twice.        |
+| `created_by_id` | text → user | Null for sync and the system.                             |
+| `deleted_at`    | timestamptz | Set when purged; the bytes are deleted by a job.          |
+
+Indexes: unique `(storage, key)`; `(sha256)`; `(deleted_at) where deleted_at
+is not null` (the clean-up job's queue).
+
+Where the bytes live (decided): behind one storage interface with two
+drivers, picked with environment variables, so secrets stay out of the
+database.
+
+- `local` (the default and the fallback): a folder on a Docker volume
+  (`STORAGE_DIR`, `/data/files` in the container). Nothing to set up.
+- `s3`: any S3-compatible service, through Bun's built-in S3 client
+  (`Bun.S3Client`, no extra package). That one driver covers AWS S3,
+  Cloudflare R2, Google Cloud Storage (its XML API with HMAC keys), Backblaze
+  B2, DigitalOcean Spaces, Wasabi and a self-run MinIO. Settings:
+  `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`,
+  `S3_SECRET_ACCESS_KEY`. Azure Blob Storage isn't S3-compatible and would
+  need its own driver later.
+
+Each row keeps the storage it was saved to, so switching drivers only
+changes where new files go; old ones keep working, and a command can copy
+them across. Files are never public: the app downloads through the
+role-checked API, which streams from local storage or answers with a
+presigned S3 link that expires in a few minutes.
 
 ### AI
 
@@ -464,7 +517,7 @@ largest table after `activity`.
 | `proposal_id` | uuid → proposal | Set when an approved proposal made the change: "AI, approved by Asha". |
 | `record_type` | enum            | Same set as `proposal.target_type`, plus `stage`, `user` …             |
 | `record_id`   | text            | Text, since `user` ids aren't uuids.                                   |
-| `action`      | enum            | `create`, `update`, `archive`, `restore`                               |
+| `action`      | enum            | `create`, `update`, `archive`, `restore`, `purge`                      |
 | `changes`     | jsonb           | `[{ field, from, to }]`                                                |
 
 Indexes: `(record_type, record_id, id desc)`: field changes on a record's
@@ -520,40 +573,83 @@ null`.
 | Leads inbox                           | new leads, newest first                                            | `lead (status, created_at desc, id)`                        |
 | Proposal goes out of date             | pending proposals on the record just changed                       | `proposal (target_type, target_id) where pending`           |
 
+## Deleting and erasing
+
+Three levels, from everyday to rare. Every one is written to `change_log`.
+
+1. **Archive** (P0). What "Delete" does in the app, for anyone who can edit
+   the record. It sets `archived_at`: the record leaves lists, search and
+   what the AI reads, and comes back from the Archive with Restore.
+   Archiving a company archives its people and open deals with the same
+   timestamp, and restoring it brings back exactly those rows.
+2. **Delete forever** (P1). Admins only, and only for archived records, so it
+   always takes two steps. A background job:
+   - deletes the record and what belongs only to it (a company takes its
+     people, deals, activities, tasks and attachments), children first, so
+     `on delete restrict` still guards against accidents;
+   - marks their files `deleted_at`; a clean-up job removes the bytes from
+     storage;
+   - deletes proposals about them, and empties the `changes` values in their
+     `change_log` rows, so no personal data stays in history. Who did what,
+     and when, stays. One `purge` entry records who deleted how many of what,
+     without names.
+
+   An optional setting empties the archive after a number of days. It's off
+   by default: sales teams usually want history kept.
+
+3. **Erase a person** (P1). The GDPR "right to erasure", for admins, by email
+   address. It finds the person everywhere: `person` and `lead` rows, the
+   emails they sent (deleted, with their raw files), the emails they only
+   received (their address removed), meeting invites, and values in
+   `change_log` and proposals. Then it keeps a SHA-256 of the address in
+   `erased_email`, so imports and email sync never bring them back; an
+   admin can remove it.
+
+Backups are the self-hoster's: purging reaches the database and the file
+storage, not old database backups or a bucket's version history. The admin
+screen says so.
+
 ## Rollout
 
-Migrations, in order. Each is additive.
+Migrations, in order. Each is additive, and each table ships with the
+feature that first uses it, so its design gets used before it's locked in.
 
 1. **`add-core-records`** (P0): extension `pg_trgm`; `workspace.currency`,
-   `workspace.time_zone`; `pipeline`, `stage`, `lost_reason` (with
-   the default pipeline and stages as seed rows); `company`, `person`, `deal`,
-   `deal_person`, `deal_stage_change`; `activity`, `activity_person`, `task`;
-   `lead`; `proposal`; `change_log`; `import_job`. All the indexes above for
-   these tables.
-2. **`add-custom-fields`** (P1): `custom_field`. The jsonb columns are already
-   there.
-3. **`add-email-and-files`** (P1): `email_message`, `attachment`, the
+   `workspace.time_zone`; `pipeline`, `stage`, `lost_reason` (with the
+   default pipeline and stages as seed rows); `company`, `person`, `deal`,
+   `deal_person`, `deal_stage_change`; `change_log`. All their indexes.
+2. **`add-timeline-and-tasks`** (P0): `activity`, `activity_person`, `task`.
+3. **`add-proposals`** (P0): `proposal`.
+4. **`add-imports-and-leads`** (P0): `import_job`, `lead`, and `import_id` on
+   `company`, `person` and `deal`.
+5. **`add-files-and-email`** (P1): `file`, `attachment`, `email_message`, the
    full-text index on `activity`.
-4. **`add-renewals`** (P1): `contract`, `deal.contract_id`.
-5. **`add-playbooks`** (P1): `playbook`, `playbook_version`, `playbook_run`,
+6. **`add-custom-fields`** (P1): `custom_field`. The jsonb columns are already
+   there.
+7. **`add-renewals`** (P1): `contract`, `deal.contract_id`.
+8. **`add-playbooks`** (P1): `playbook`, `playbook_version`, `playbook_run`,
    `proposal.playbook_run_id`.
-6. **`add-views-and-notifications`** (P1): `saved_view`, `notification`.
+9. **`add-views-and-notifications`** (P1): `saved_view`, `notification`.
+10. **`add-erasure`** (P1): `erased_email`.
 
 Sizes to design for: a small team, up to about 100,000 companies and people,
 50,000 deals and a few million activities once email sync is on. Every list
 above is an index scan at that size; nothing needs a cache or a search
 service.
 
+## Decided
+
+1. **People without a company:** not allowed. `person.company_id` is not
+   null; the app finds or makes the company first.
+2. **Where files live:** a local folder on a Docker volume by default, or any
+   S3-compatible storage (S3, R2, GCS, B2, MinIO …). See [Files](#files).
+3. **Email bodies:** stored, as files; Postgres keeps a plain-text copy for
+   search and the AI. See `email_message`.
+4. **Purging:** archive, then admin-only delete forever, plus erase a person.
+   See [Deleting and erasing](#deleting-and-erasing).
+
 ## Open questions
 
-1. **People without a company.** Above, their creator and managers can edit
-   them. Or should every person need a company?
-2. **Where files live.** A Docker volume on the server (simplest), S3-style
-   storage (scales, one more thing to set up), or Postgres `bytea` (one
-   backup, but bloats the database). Suggested: a volume first, behind a
-   storage interface.
-3. **Email bodies.** With "metadata only" sharing, should the server store the
-   body at all? Not storing it is safest, but the AI then can't read it for
-   anyone, including the owner.
-4. **Purging.** Archived records stay forever until an admin purges them. Do
-   we need a GDPR-style "erase this person everywhere" in the first release?
+1. **Azure Blob Storage.** Worth its own driver, or wait until someone asks?
+2. **Emptying the archive automatically.** Off by default; is that right for
+   teams under GDPR, who may need a retention limit?

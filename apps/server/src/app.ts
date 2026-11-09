@@ -1,5 +1,4 @@
 import type {
-  TApiError,
   THealthResponse,
   TJoinLink,
   TSessionUser
@@ -11,10 +10,12 @@ import {
 } from '@open-sales/shared'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
-import type { z } from 'zod'
 
+import type { TEnv } from './http'
+import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
+import type { TRecordsService } from './records/routes'
+import { addRecordRoutes } from './records/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -35,35 +36,13 @@ type TAppDeps = {
   getSessionUser: (headers: Headers) => Promise<TSessionUser | null>
   setup: TSetupService
   team: TTeamService
+  // Companies, people, deals and the pipeline. Optional so tests of other
+  // routes needn't build one.
+  records?: TRecordsService
   // Where people reach the server, for join links. Defaults to the request's.
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
   appScheme?: string
-}
-
-type TEnv = { Variables: { me: TSessionUser } }
-
-const sendError = (
-  c: Context,
-  status: ContentfulStatusCode,
-  code: string,
-  message: string
-) => c.json<TApiError>({ error: { code, message } }, status)
-
-/** Reads and checks a JSON body; on failure, answers 400 with the first problem. */
-const readBody = async <TSchema extends z.ZodType>(
-  c: Context,
-  schema: TSchema
-): Promise<
-  { ok: true; data: z.infer<TSchema> } | { ok: false; response: Response }
-> => {
-  const parsed = schema.safeParse(await c.req.json().catch(() => null))
-  if (parsed.success) return { ok: true, data: parsed.data }
-  const [firstIssue] = parsed.error.issues
-  return {
-    ok: false,
-    response: sendError(c, 400, 'invalid_request', firstIssue.message)
-  }
 }
 
 /** The Sales API under /api/v1, and the join page at /join/:token. */
@@ -74,6 +53,7 @@ export const createApp = ({
   getSessionUser,
   setup,
   team,
+  records,
   publicUrl,
   appScheme = 'open-sales'
 }: TAppDeps) => {
@@ -213,6 +193,8 @@ export const createApp = ({
       throw error
     }
   })
+
+  if (records) addRecordRoutes(api, records, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

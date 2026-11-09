@@ -1,14 +1,24 @@
 import { sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
+  char,
   check,
+  date,
   index,
+  integer,
+  jsonb,
+  pgEnum,
   pgTable,
+  primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
   uuid
 } from 'drizzle-orm/pg-core'
+
+import { newId } from './ids'
 
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow()
 const updatedAt = () =>
@@ -16,11 +26,23 @@ const updatedAt = () =>
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date())
+const archivedAt = () => timestamp({ withTimezone: true })
+// UUIDv7: sorts by creation time, so new rows land at the end of an index.
+const id = () => uuid().primaryKey().$defaultFn(newId)
+// Bumped on every write: stops two people (or a stale AI proposal)
+// overwriting each other. See "Versions" in docs/data-model.md.
+const version = () => integer().notNull().default(1)
+const customFields = () =>
+  jsonb().$type<Record<string, unknown>>().notNull().default({})
 
 /** The one workspace this server runs. The first-run setup creates it. */
 export const workspace = pgTable('workspace', {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
+  // The default for new deals, ISO 4217.
+  currency: char({ length: 3 }).notNull().default('USD'),
+  // IANA name, for "due today" and report weeks.
+  timeZone: text().notNull().default('UTC'),
   createdAt: createdAt()
 })
 
@@ -113,9 +135,7 @@ export const verification = pgTable('verification', {
 export const joinLink = pgTable(
   'join_link',
   {
-    id: uuid()
-      .primaryKey()
-      .$defaultFn(() => Bun.randomUUIDv7()),
+    id: uuid().primaryKey().$defaultFn(newId),
     token: text().notNull().unique(),
     // People with an email here join straight away, e.g. "acme.com".
     allowedDomain: text(),
@@ -142,9 +162,7 @@ export const joinLink = pgTable(
 export const joinRequest = pgTable(
   'join_request',
   {
-    id: uuid()
-      .primaryKey()
-      .$defaultFn(() => Bun.randomUUIDv7()),
+    id: uuid().primaryKey().$defaultFn(newId),
     userId: text()
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -161,5 +179,366 @@ export const joinRequest = pgTable(
     uniqueIndex('join_request_ticket_idx').on(table.ticketHash),
     index('join_request_link_idx').on(table.joinLinkId),
     index('join_request_decided_by_idx').on(table.decidedById)
+  ]
+)
+
+/*
+ * Sales records. The design, and the query each index serves, is in
+ * docs/data-model.md. Lists page by keyset, so list indexes end with `id`.
+ * References to `user` aren't indexed unless a list needs them: people are
+ * deactivated, never deleted.
+ */
+
+export const stageKind = pgEnum('stage_kind', ['open', 'won', 'lost'])
+export const dealStatus = pgEnum('deal_status', ['open', 'won', 'lost'])
+export const dealKind = pgEnum('deal_kind', ['new', 'renewal'])
+export const dealPersonRole = pgEnum('deal_person_role', [
+  'champion',
+  'decision_maker',
+  'evaluator',
+  'blocker'
+])
+
+/** One row ("Sales") for now; several pipelines come later. */
+export const pipeline = pgTable(
+  'pipeline',
+  {
+    id: id(),
+    name: text().notNull(),
+    position: integer().notNull().default(0),
+    isDefault: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    // Exactly one default pipeline.
+    uniqueIndex('pipeline_default_idx')
+      .on(table.isDefault)
+      .where(sql`${table.isDefault}`)
+  ]
+)
+
+export const stage = pgTable(
+  'stage',
+  {
+    id: id(),
+    pipelineId: uuid()
+      .notNull()
+      .references(() => pipeline.id),
+    name: text().notNull(),
+    // Not unique: reordering rewrites positions in one transaction.
+    position: integer().notNull(),
+    kind: stageKind().notNull().default('open'),
+    winProbability: smallint().notNull().default(0),
+    // Null means a deal here never counts as stalled.
+    stalledAfterDays: integer(),
+    // Plain words the AI reads: what this stage is for, and what moves a
+    // deal on ("Pricing sent and budget confirmed").
+    goal: text(),
+    exitCriteria: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    check(
+      'stage_win_probability_check',
+      sql`${table.winProbability} between 0 and 100`
+    ),
+    index('stage_pipeline_position_idx').on(table.pipelineId, table.position),
+    // Won and Lost exist once per pipeline.
+    uniqueIndex('stage_pipeline_closed_kind_idx')
+      .on(table.pipelineId, table.kind)
+      .where(sql`${table.kind} in ('won', 'lost')`)
+  ]
+)
+
+/** The choices shown when a deal is closed as lost. */
+export const lostReason = pgTable('lost_reason', {
+  id: id(),
+  label: text().notNull(),
+  position: integer().notNull(),
+  createdAt: createdAt(),
+  archivedAt: archivedAt()
+})
+
+/** The companies we sell to: "Accounts" in the app. */
+export const company = pgTable(
+  'company',
+  {
+    id: id(),
+    name: text().notNull(),
+    // "halden.com": lower case, no www. Matches imports and email senders.
+    domain: text(),
+    // Exactly one owner, who (with managers and admins) may change it.
+    ownerId: text()
+      .notNull()
+      .references(() => user.id),
+    industry: text(),
+    description: text(),
+    customFields: customFields(),
+    // manual, import, lead, email …
+    source: text().notNull().default('manual'),
+    // Copied from the newest activity; sorts lists and finds quiet accounts.
+    lastActivityAt: timestamp({ withTimezone: true }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    index('company_owner_name_idx')
+      .on(table.ownerId, table.name, table.id)
+      .where(sql`${table.archivedAt} is null`),
+    index('company_name_idx')
+      .on(table.name, table.id)
+      .where(sql`${table.archivedAt} is null`),
+    index('company_last_activity_idx')
+      .on(table.lastActivityAt.desc(), table.id)
+      .where(sql`${table.archivedAt} is null`),
+    // One company per domain: the duplicate check for imports and leads.
+    uniqueIndex('company_domain_idx')
+      .on(table.domain)
+      .where(sql`${table.domain} is not null and ${table.archivedAt} is null`),
+    index('company_name_search_idx').using(
+      'gin',
+      sql`${table.name} gin_trgm_ops`
+    ),
+    index('company_custom_fields_idx').using(
+      'gin',
+      sql`${table.customFields} jsonb_path_ops`
+    )
+  ]
+)
+
+/** Contacts. Everyone works somewhere, so a person always has a company. */
+export const person = pgTable(
+  'person',
+  {
+    id: id(),
+    companyId: uuid()
+      .notNull()
+      .references(() => company.id),
+    // One field: people's names don't split cleanly.
+    name: text().notNull(),
+    title: text(),
+    // Stored lower case.
+    email: text(),
+    phone: text(),
+    linkedinUrl: text(),
+    customFields: customFields(),
+    source: text().notNull().default('manual'),
+    lastActivityAt: timestamp({ withTimezone: true }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    // A company's People tab. Not partial, so it also serves the foreign key.
+    index('person_company_name_idx').on(table.companyId, table.name, table.id),
+    // Everyone's People list, A–Z.
+    index('person_name_idx')
+      .on(table.name, table.id)
+      .where(sql`${table.archivedAt} is null`),
+    // Duplicates, and matching email senders to people.
+    uniqueIndex('person_email_idx')
+      .on(table.email)
+      .where(sql`${table.email} is not null and ${table.archivedAt} is null`),
+    index('person_name_search_idx').using(
+      'gin',
+      sql`${table.name} gin_trgm_ops`
+    ),
+    index('person_email_search_idx').using(
+      'gin',
+      sql`${table.email} gin_trgm_ops`
+    ),
+    index('person_custom_fields_idx').using(
+      'gin',
+      sql`${table.customFields} jsonb_path_ops`
+    )
+  ]
+)
+
+export const deal = pgTable(
+  'deal',
+  {
+    id: id(),
+    companyId: uuid()
+      .notNull()
+      .references(() => company.id),
+    name: text().notNull(),
+    // Starts as the company's owner.
+    ownerId: text()
+      .notNull()
+      .references(() => user.id),
+    pipelineId: uuid()
+      .notNull()
+      .references(() => pipeline.id),
+    stageId: uuid()
+      .notNull()
+      .references(() => stage.id),
+    // Copied from the stage's kind, in the same transaction as the move.
+    status: dealStatus().notNull().default('open'),
+    // Minor units (cents). Null until known.
+    valueMinor: bigint({ mode: 'number' }),
+    currency: char({ length: 3 }).notNull(),
+    // Expected while open; the actual day once closed.
+    closeDate: date({ mode: 'string' }),
+    nextStep: text(),
+    // Copied; drives "idle 12 days" and deals needing a nudge.
+    stageEnteredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp({ withTimezone: true }),
+    lostReasonId: uuid().references(() => lostReason.id),
+    lostNote: text(),
+    kind: dealKind().notNull().default('new'),
+    customFields: customFields(),
+    source: text().notNull().default('manual'),
+    lastActivityAt: timestamp({ withTimezone: true }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    check(
+      'deal_value_check',
+      sql`${table.valueMinor} is null or ${table.valueMinor} >= 0`
+    ),
+    // The board, column by column, with each column's count and value.
+    index('deal_board_idx')
+      .on(
+        table.pipelineId,
+        table.stageId,
+        table.lastActivityAt.desc(),
+        table.id
+      )
+      .where(sql`${table.status} = 'open' and ${table.archivedAt} is null`),
+    // "My deals" and the forecast.
+    index('deal_owner_status_idx')
+      .on(table.ownerId, table.status, table.closeDate)
+      .where(sql`${table.archivedAt} is null`),
+    // A company's Deals tab. Not partial, so it also serves the foreign key.
+    index('deal_company_status_idx').on(table.companyId, table.status),
+    // Forecast by month, "closing this month".
+    index('deal_close_date_idx')
+      .on(table.closeDate)
+      .where(sql`${table.status} = 'open' and ${table.archivedAt} is null`),
+    // Deals needing a nudge.
+    index('deal_stage_entered_idx')
+      .on(table.stageEnteredAt)
+      .where(sql`${table.status} = 'open' and ${table.archivedAt} is null`),
+    // Won and lost reports by period.
+    index('deal_closed_at_idx')
+      .on(table.closedAt)
+      .where(sql`${table.status} in ('won', 'lost')`),
+    index('deal_stage_idx').on(table.stageId),
+    index('deal_lost_reason_idx')
+      .on(table.lostReasonId)
+      .where(sql`${table.status} = 'lost'`),
+    index('deal_name_search_idx').using('gin', sql`${table.name} gin_trgm_ops`),
+    index('deal_custom_fields_idx').using(
+      'gin',
+      sql`${table.customFields} jsonb_path_ops`
+    )
+  ]
+)
+
+/** The buying committee: who's involved in a deal, and how. */
+export const dealPerson = pgTable(
+  'deal_person',
+  {
+    dealId: uuid()
+      .notNull()
+      .references(() => deal.id, { onDelete: 'cascade' }),
+    personId: uuid()
+      .notNull()
+      .references(() => person.id, { onDelete: 'cascade' }),
+    role: dealPersonRole(),
+    createdAt: createdAt()
+  },
+  (table) => [
+    primaryKey({ columns: [table.dealId, table.personId] }),
+    index('deal_person_person_idx').on(table.personId)
+  ]
+)
+
+/** Every stage move, for conversion between stages and time in stage. */
+export const dealStageChange = pgTable(
+  'deal_stage_change',
+  {
+    id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    dealId: uuid()
+      .notNull()
+      .references(() => deal.id, { onDelete: 'cascade' }),
+    // Null when the deal was created.
+    fromStageId: uuid().references(() => stage.id),
+    toStageId: uuid()
+      .notNull()
+      .references(() => stage.id),
+    changedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    changedById: text().references(() => user.id)
+  },
+  (table) => [
+    index('deal_stage_change_deal_idx').on(table.dealId, table.changedAt),
+    // "How many reached Proposal this quarter".
+    index('deal_stage_change_to_idx').on(table.toStageId, table.changedAt),
+    index('deal_stage_change_from_idx').on(table.fromStageId)
+  ]
+)
+
+export const changeVia = pgEnum('change_via', [
+  'app',
+  'ai_proposal',
+  'import',
+  'api',
+  'system'
+])
+export const changeRecordType = pgEnum('change_record_type', [
+  'company',
+  'person',
+  'deal',
+  'pipeline',
+  'stage',
+  'lost_reason',
+  'user',
+  'workspace'
+])
+export const changeAction = pgEnum('change_action', [
+  'create',
+  'update',
+  'archive',
+  'restore',
+  'purge'
+])
+
+/** One field's change: `{ field, from, to }`. */
+export type TFieldChange = { field: string; from: unknown; to: unknown }
+
+/** Every write, by anyone or anything. Append-only. */
+export const changeLog = pgTable(
+  'change_log',
+  {
+    id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    occurredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    // Null for the system.
+    actorId: text().references(() => user.id),
+    via: changeVia().notNull(),
+    recordType: changeRecordType().notNull(),
+    // Text, since user ids aren't uuids.
+    recordId: text().notNull(),
+    action: changeAction().notNull(),
+    changes: jsonb().$type<TFieldChange[]>().notNull().default([])
+  },
+  (table) => [
+    // Field changes on a record's timeline.
+    index('change_log_record_idx').on(
+      table.recordType,
+      table.recordId,
+      table.id.desc()
+    ),
+    index('change_log_actor_idx').on(table.actorId, table.id.desc()),
+    // The audit log by date: tiny, and fine for append-only rows.
+    index('change_log_occurred_idx').using('brin', table.occurredAt)
   ]
 )
