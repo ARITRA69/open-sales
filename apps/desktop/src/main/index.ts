@@ -7,7 +7,7 @@ import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
 import { createConnection } from './connection'
 import { createConnectionStore } from './connection-store'
-import { registerConnectionIpc } from './ipc'
+import { registerAiToolsIpc, registerConnectionIpc } from './ipc'
 import { createServerApi } from './server-api'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
@@ -74,6 +74,8 @@ void app.whenReady().then(() => {
       createConnectionStore(app.getPath('userData'), safeStorage)
     )
   )
+  // Finds the person's own Claude Code or Codex, which the AI help runs on.
+  registerAiToolsIpc()
 
   createMainWindow()
 

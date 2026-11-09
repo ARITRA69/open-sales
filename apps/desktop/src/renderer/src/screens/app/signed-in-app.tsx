@@ -6,10 +6,13 @@ import {
   type TSalesNavId,
   type TSidebarAccount
 } from '@/components/sales/sales-sidebar'
+import { useAiTools } from '@/hooks/use-ai-tools'
 import { useHashRoute } from '@/hooks/use-hash-route'
+import { summariseAiTools } from '@/lib/ai-tool-summary'
 import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
+import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { EMPTY_PAGES, EmptyPage } from './empty-page'
 import { SettingsPage } from './settings-page'
 import { TodayPage } from './today-page'
@@ -40,6 +43,8 @@ type TSignedInAppProps = {
   user: TSessionUser
   workspaceName: string | null
   serverHost: string
+  // Checks for Claude Code and Codex. Null where there's no way to check.
+  aiToolsBridge?: TOpenSalesBridge['aiTools'] | null
   onSignOut: () => void
 }
 
@@ -48,9 +53,11 @@ export const SignedInApp = ({
   user,
   workspaceName,
   serverHost,
+  aiToolsBridge = null,
   onSignOut
 }: TSignedInAppProps) => {
   const route = useHashRoute(ROUTES, 'today')
+  const aiTools = useAiTools(aiToolsBridge)
   const account: TSidebarAccount = {
     name: user.name,
     email: user.email,
@@ -79,11 +86,13 @@ export const SignedInApp = ({
           title: 'Settings',
           body: (
             <SettingsPage
+              aiTools={aiTools.status}
               email={user.email}
               name={user.name}
               roleLabel={account.roleLabel}
               serverHost={serverHost}
               workspaceName={workspaceName}
+              onCheckAiTools={aiTools.refresh}
               onSignOut={onSignOut}
             />
           )
@@ -99,7 +108,12 @@ export const SignedInApp = ({
   return (
     <AppShell
       sidebar={
-        <SalesSidebar account={account} active={route} onSignOut={onSignOut} />
+        <SalesSidebar
+          account={account}
+          active={route}
+          aiTool={aiToolsBridge ? summariseAiTools(aiTools.status) : null}
+          onSignOut={onSignOut}
+        />
       }
       title={page.title}
     >

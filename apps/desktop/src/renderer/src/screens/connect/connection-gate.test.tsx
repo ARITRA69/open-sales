@@ -128,6 +128,47 @@ describe('ConnectionGate', () => {
     ).toBeTruthy()
   })
 
+  it('shows the machine’s real AI tool state, with fixes in Settings', async () => {
+    window.location.hash = '#/settings'
+    render(
+      <ConnectionGate
+        aiToolsBridge={{
+          getStatus: vi.fn(async () => ({
+            tools: [
+              {
+                id: 'claude-code' as const,
+                name: 'Claude Code',
+                state: 'needs-sign-in' as const,
+                version: '2.1.0'
+              },
+              {
+                id: 'codex' as const,
+                name: 'Codex',
+                state: 'not-installed' as const
+              }
+            ]
+          }))
+        }}
+        bridge={makeBridge({
+          step: 'signed-in',
+          serverUrl: SERVER,
+          workspaceName: 'Halden',
+          user: ADMIN
+        })}
+      />
+    )
+
+    const sidebar = await screen.findByRole('navigation', {
+      name: brand.productName
+    })
+    expect(
+      await within(sidebar).findByText('Sign in to Claude Code')
+    ).toBeTruthy()
+    expect(screen.getByText('claude')).toBeTruthy()
+    expect(screen.getByText('npm install -g @openai/codex')).toBeTruthy()
+    window.location.hash = ''
+  })
+
   it('signs out from Settings', async () => {
     window.location.hash = '#/settings'
     const bridge = makeBridge({

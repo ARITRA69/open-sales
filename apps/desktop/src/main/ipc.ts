@@ -2,7 +2,8 @@ import { setupRequestSchema, signInRequestSchema } from '@open-sales/shared'
 import { ipcMain } from 'electron'
 import { z } from 'zod'
 
-import { CONNECTION_CHANNELS } from '../preload/bridge-types'
+import { AI_TOOLS_CHANNELS, CONNECTION_CHANNELS } from '../preload/bridge-types'
+import { detectAiTools, localMachine } from './ai-tools'
 import type { TConnection } from './connection'
 
 const INVALID = { ok: false, message: 'Check the form and try again.' } as const
@@ -37,4 +38,11 @@ export const registerConnectionIpc = (connection: TConnection) => {
   })
 
   ipcMain.handle(CONNECTION_CHANNELS.signOut, () => connection.signOut())
+}
+
+/** Answers "which AI tools does this machine have?". It takes no input. */
+export const registerAiToolsIpc = () => {
+  ipcMain.handle(AI_TOOLS_CHANNELS.getStatus, () =>
+    detectAiTools(localMachine())
+  )
 }

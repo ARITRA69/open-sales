@@ -27,8 +27,29 @@ export type TConnectionResult =
   | { ok: true; state: TConnectionState }
   | { ok: false; message: string }
 
+export type TAiToolId = 'claude-code' | 'codex'
+
+/**
+ * One AI tool on this machine. `needs-sign-in` means it's installed but no
+ * sign-in or API key was found.
+ */
+export type TAiToolStatus =
+  | { id: TAiToolId; name: string; state: 'not-installed' }
+  | {
+      id: TAiToolId
+      name: string
+      state: 'ready' | 'needs-sign-in'
+      version: string | null
+    }
+
+export type TAiToolsStatus = { tools: TAiToolStatus[] }
+
 export type TOpenSalesBridge = {
   platform: string
+  aiTools: {
+    // Looks again each time; cheap enough to call when the window gets focus.
+    getStatus: () => Promise<TAiToolsStatus>
+  }
   connection: {
     getState: () => Promise<TConnectionState>
     // Checks an address and remembers it if it's a server.
@@ -49,6 +70,10 @@ export const CONNECTION_CHANNELS = {
   signIn: 'connection:sign-in',
   signOut: 'connection:sign-out'
 } as const satisfies Record<keyof TOpenSalesBridge['connection'], string>
+
+export const AI_TOOLS_CHANNELS = {
+  getStatus: 'ai-tools:get-status'
+} as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
 
 declare global {
   interface Window {

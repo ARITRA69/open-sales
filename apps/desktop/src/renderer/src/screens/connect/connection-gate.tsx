@@ -11,13 +11,17 @@ const hostOf = (serverUrl: string) => new URL(serverUrl).host
 
 type TConnectionGateProps = {
   bridge: TOpenSalesBridge['connection']
+  aiToolsBridge?: TOpenSalesBridge['aiTools'] | null
 }
 
 /**
  * Shows the step the main process says the person is at: choosing a server,
  * creating the first admin, signing in, or the app itself.
  */
-export const ConnectionGate = ({ bridge }: TConnectionGateProps) => {
+export const ConnectionGate = ({
+  bridge,
+  aiToolsBridge = null
+}: TConnectionGateProps) => {
   const connection = useConnection(bridge)
   const { state } = connection
 
@@ -55,6 +59,7 @@ export const ConnectionGate = ({ bridge }: TConnectionGateProps) => {
     case 'signed-in':
       return (
         <SignedInApp
+          aiToolsBridge={aiToolsBridge}
           serverHost={hostOf(state.serverUrl)}
           user={state.user}
           workspaceName={state.workspaceName}

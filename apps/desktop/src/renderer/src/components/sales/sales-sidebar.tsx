@@ -16,6 +16,7 @@ import { Icon, type TIcon } from '@/components/ui/icon'
 import { Menu } from '@/components/ui/menu'
 import { Dot } from '@/components/ui/status'
 import { useBrand } from '@/hooks/use-brand'
+import type { TAiToolSummary } from '@/lib/ai-tool-summary'
 import { cn } from '@/lib/utils'
 
 export type TSalesNavId =
@@ -104,7 +105,8 @@ type TSalesSidebarProps = {
   active?: TSalesNavId
   // How many proposals are waiting for this person. It shows on Today.
   waiting?: number
-  engine?: string
+  // The AI tool line above Settings. Null hides it (no way to check).
+  aiTool?: TAiToolSummary | null
   account: TSidebarAccount
   // Turns the person's name into a menu with Sign out.
   onSignOut?: () => void
@@ -127,7 +129,7 @@ const AccountSummary = ({ account }: { account: TSidebarAccount }) => (
 export const SalesSidebar = ({
   active,
   waiting = 0,
-  engine = 'Claude Code',
+  aiTool = { label: 'Claude Code is ready', tone: 'success' },
   account,
   onSignOut
 }: TSalesSidebarProps) => {
@@ -153,14 +155,16 @@ export const SalesSidebar = ({
       </div>
 
       <div className="flex flex-col gap-0.5">
-        <Link
-          className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
-          href="#/settings"
-          title="Which AI tool is on, and how to fix it"
-        >
-          <Dot size="sm" tone="success" />
-          <span className="truncate">{engine} is ready</span>
-        </Link>
+        {aiTool ? (
+          <Link
+            className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
+            href="#/settings"
+            title="Which AI tool is on, and how to fix it"
+          >
+            <Dot size="sm" tone={aiTool.tone} />
+            <span className="truncate">{aiTool.label}</span>
+          </Link>
+        ) : null}
         <SalesNavLink
           isActive={active === 'settings'}
           item={{

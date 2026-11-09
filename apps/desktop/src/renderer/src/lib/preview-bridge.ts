@@ -1,4 +1,5 @@
 import type {
+  TAiToolsStatus,
   TConnectionState,
   TOpenSalesBridge
 } from '../../../preload/bridge-types'
@@ -61,3 +62,23 @@ export const createPreviewBridge = (
     signOut: async () => PREVIEW_STATES['sign-in']
   }
 }
+
+const PREVIEW_AI_TOOLS: TAiToolsStatus = {
+  tools: [
+    {
+      id: 'claude-code',
+      name: 'Claude Code',
+      state: 'ready',
+      version: '2.1.311 (Claude Code)'
+    },
+    { id: 'codex', name: 'Codex', state: 'not-installed' }
+  ]
+}
+
+/** Pretend AI tools for the same preview: Claude Code ready, Codex missing. */
+export const createPreviewAiTools = (
+  search: string
+): TOpenSalesBridge['aiTools'] | null =>
+  new URLSearchParams(search).has('preview')
+    ? { getStatus: async () => PREVIEW_AI_TOOLS }
+    : null

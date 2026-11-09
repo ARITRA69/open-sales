@@ -4,7 +4,7 @@ import { MotionConfig } from 'motion/react'
 
 import { useBrand } from '@/hooks/use-brand'
 import { useInputTracking } from '@/hooks/use-input-tracking'
-import { createPreviewBridge } from '@/lib/preview-bridge'
+import { createPreviewAiTools, createPreviewBridge } from '@/lib/preview-bridge'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import { ConnectionGate } from '@/screens/connect/connection-gate'
 
@@ -13,6 +13,9 @@ import { ConnectionGate } from '@/screens/connect/connection-gate'
 const CONNECTION =
   window.openSales?.connection ??
   (import.meta.env.DEV ? createPreviewBridge(window.location.search) : null)
+const AI_TOOLS =
+  window.openSales?.aiTools ??
+  (import.meta.env.DEV ? createPreviewAiTools(window.location.search) : null)
 
 export const App = () => {
   useInputTracking()
@@ -28,7 +31,7 @@ export const App = () => {
     <MotionConfig reducedMotion="user">
       {/* No bridge in a plain browser tab or a test: show the UI without a server. */}
       {CONNECTION ? (
-        <ConnectionGate bridge={CONNECTION} />
+        <ConnectionGate aiToolsBridge={AI_TOOLS} bridge={CONNECTION} />
       ) : (
         <ComponentsSheet />
       )}

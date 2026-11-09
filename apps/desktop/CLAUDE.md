@@ -28,7 +28,13 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   `connection-store.ts` keeps the server address and the encrypted session
   token in userData, `connection.ts` works out which step to show, and
   `ipc.ts` answers the renderer (checking its input with the shared schemas).
-- `src/preload`: exposes `window.openSales`: `platform` and `connection`
+- `src/main/ai-tools.ts`: finds the person's Claude Code (`claude`) and Codex
+  (`codex`) and whether they look signed in (keychain item, credentials file
+  or API key), without a paid request. It also searches Homebrew,
+  `~/.local/bin` and similar, since a Dock-launched app gets a short PATH.
+  The renderer reads it through `window.openSales.aiTools` (`useAiTools`),
+  for the sidebar footer and Settings › AI tool, and looks again on focus.
+- `src/preload`: exposes `window.openSales`: `platform`, `aiTools` and `connection`
   (getState, chooseServer, forgetServer, createAdmin, signIn, signOut). Types
   and channel names are in `bridge-types.ts`.
 - `screens/connect`: server address, create admin, sign in and can't-reach
