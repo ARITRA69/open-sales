@@ -7,6 +7,31 @@ chosen (the package names `@open-sales/*`, `productName` in
 and `apps/desktop/scripts/dev.mjs`, the preload bridge `window.openSales`, the
 sidebar label).
 
+## Positioning
+
+AI-first sales, not a CRM with AI added on. In one line: the AI-first sales
+platform you own: your server, your AI subscription, and no AI change without
+a person's approval.
+
+- AI does the work (fills in records, drafts follow-ups, prepares meetings,
+  flags stalled deals) and people approve. AI writes are proposals the server
+  checks against roles; nothing changes until someone says yes.
+- What sets it apart: no AI bill (each person's own Claude Code or Codex),
+  self-hosted with an MIT licence, and approve-first AI with an audit trail.
+- What it must overcome: getting started is harder (installing an AI tool and
+  running a server), and AI is only as good as its data, so automatic email,
+  calendar and call capture matters more than manual entry.
+
+### Competitors (researched November 2026)
+
+- AI-first, closed, cloud-only: Lightfield (AI fills in the CRM from calls and
+  email, and writes without asking), Day AI (assistant + CRM + knowledge base),
+  Attio (flexible data model, AI in a side panel), Monaco, Rox, Clarify.
+- Established CRMs adding AI: HubSpot Breeze, Salesforce Agentforce, Pipedrive,
+  Zoho Zia. Metered AI, older screens.
+- Open source: Twenty (AGPL, CRM first, AI on metered credits), DenchClaw (MIT,
+  local and single-person, no team or roles). Older: EspoCRM, SuiteCRM, Odoo.
+
 ## Decisions so far
 
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
