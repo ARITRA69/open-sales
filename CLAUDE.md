@@ -114,6 +114,23 @@ rules) goes in `packages/shared`, never copied into both.
   `use-brand.ts`, `components-sheet/`. This includes screens and pages.
   Dots only for a file's role (`brand-config.test.ts`, `brand.config.json`).
   Standard names keep their usual form: `README.md`, `CLAUDE.md`, `LICENSE`.
+- Names in code follow one style across the app, the server and
+  `packages/shared`:
+
+  | What                                     | Style                  | Example                     |
+  | ---------------------------------------- | ---------------------- | --------------------------- |
+  | Files and folders                        | kebab-case             | `deal-routes.ts`            |
+  | Functions and variables (app and server) | camelCase              | `canEditCompany`, `ownerId` |
+  | Types                                    | PascalCase, `T` prefix | `TBrand`, `TDeal`           |
+  | React components                         | PascalCase             | `SalesSidebar`              |
+  | Constants                                | SCREAMING_SNAKE        | `SIDEBAR_OPEN_KEY`          |
+  | Database tables and columns              | snake_case             | `deals.owner_id`            |
+  | API JSON fields                          | camelCase              | `{ "ownerId": "…" }`        |
+  | Environment variables                    | SCREAMING_SNAKE        | `DATABASE_URL`              |
+
+  Code stays camelCase because Hono, Drizzle, Zod and Better Auth are, and
+  shared code serves both sides. Drizzle's `casing: 'snake_case'` maps
+  `ownerId` in code to `owner_id` in Postgres, so nobody converts by hand.
 
 ## Commands
 
