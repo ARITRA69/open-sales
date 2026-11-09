@@ -14,12 +14,8 @@ import { Link } from '@/components/shared/link'
 import { Avatar } from '@/components/ui/bits'
 import { Icon, type TIcon } from '@/components/ui/icon'
 import { Menu } from '@/components/ui/menu'
-import { Dot } from '@/components/ui/status'
 import { useBrand } from '@/hooks/use-brand'
-import type { TAiToolSummary } from '@/lib/ai-tool-summary'
 import { cn } from '@/lib/utils'
-
-import { AiToolStack } from './ai-tool-logo'
 
 export type TSalesNavId =
   | 'today'
@@ -107,8 +103,6 @@ type TSalesSidebarProps = {
   active?: TSalesNavId
   // How many proposals are waiting for this person. It shows on Today.
   waiting?: number
-  // The AI tool line above Settings. Null hides it (no way to check).
-  aiTool?: TAiToolSummary | null
   account: TSidebarAccount
   // Turns the person's name into a menu with Sign out.
   onSignOut?: () => void
@@ -131,12 +125,6 @@ const AccountSummary = ({ account }: { account: TSidebarAccount }) => (
 export const SalesSidebar = ({
   active,
   waiting = 0,
-  aiTool = {
-    label: 'Claude Code ready',
-    detail: 'Claude Code is ready',
-    tone: 'success',
-    tools: [{ id: 'claude-code', muted: false }]
-  },
   account,
   onSignOut
 }: TSalesSidebarProps) => {
@@ -162,20 +150,6 @@ export const SalesSidebar = ({
       </div>
 
       <div className="flex flex-col gap-0.5">
-        {aiTool ? (
-          <Link
-            className="flex h-8 items-center gap-2 rounded-panel px-2.5 text-body-sm font-medium text-foreground-soft transition-colors hover:bg-secondary"
-            href="#/settings"
-            title={`${aiTool.detail}. Open Settings for details.`}
-          >
-            {aiTool.tools.length > 0 ? (
-              <AiToolStack tone={aiTool.tone} tools={aiTool.tools} />
-            ) : (
-              <Dot size="sm" tone={aiTool.tone} />
-            )}
-            <span className="truncate">{aiTool.label}</span>
-          </Link>
-        ) : null}
         <SalesNavLink
           isActive={active === 'settings'}
           item={{

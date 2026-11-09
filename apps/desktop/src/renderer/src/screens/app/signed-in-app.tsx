@@ -8,7 +8,6 @@ import {
 } from '@/components/sales/sales-sidebar'
 import { useAiTools } from '@/hooks/use-ai-tools'
 import { useHashRoute } from '@/hooks/use-hash-route'
-import { summariseAiTools } from '@/lib/ai-tool-summary'
 import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
@@ -108,12 +107,7 @@ export const SignedInApp = ({
   return (
     <AppShell
       sidebar={
-        <SalesSidebar
-          account={account}
-          active={route}
-          aiTool={aiToolsBridge ? summariseAiTools(aiTools.status) : null}
-          onSignOut={onSignOut}
-        />
+        <SalesSidebar account={account} active={route} onSignOut={onSignOut} />
       }
       title={page.title}
     >

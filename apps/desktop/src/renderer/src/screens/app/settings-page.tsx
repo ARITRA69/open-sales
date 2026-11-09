@@ -7,7 +7,7 @@ import { PageBody } from '@/components/sales/app-shell'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { Dot } from '@/components/ui/status'
-import { describeAiTool } from '@/lib/ai-tool-summary'
+import { describeAiTool } from '@/lib/ai-tool-help'
 
 import type {
   TAiToolsStatus,

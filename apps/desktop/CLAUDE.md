@@ -33,10 +33,11 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   or API key), without a paid request. It also searches Homebrew,
   `~/.local/bin` and similar, since a Dock-launched app gets a short PATH.
   The renderer reads it through `window.openSales.aiTools` (`useAiTools`),
-  for the sidebar footer and Settings › AI tool, and looks again on focus.
-  The footer shows the installed tools' logos (`components/sales/ai-tool-logo.tsx`,
-  images in `assets/ai-tools/`) on white discs with one status dot. The
-  logos are images, the one exception to "colours only from tokens.css".
+  for Settings › AI tool, and looks again on focus. The sidebar has no AI
+  status line (removed on purpose). Settings shows each tool's logo
+  (`components/sales/ai-tool-logo.tsx`, images in `assets/ai-tools/`) and
+  how to fix it (`lib/ai-tool-help.ts`). The logos are images, the one
+  exception to "colours only from tokens.css".
 - `src/preload`: exposes `window.openSales`: `platform`, `aiTools` and `connection`
   (getState, chooseServer, forgetServer, createAdmin, signIn, signOut). Types
   and channel names are in `bridge-types.ts`.

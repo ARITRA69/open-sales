@@ -128,7 +128,7 @@ describe('ConnectionGate', () => {
     ).toBeTruthy()
   })
 
-  it('shows the machine’s real AI tool state, with fixes in Settings', async () => {
+  it('shows the machine’s AI tools in Settings, with fixes', async () => {
     window.location.hash = '#/settings'
     render(
       <ConnectionGate
@@ -158,12 +158,7 @@ describe('ConnectionGate', () => {
       />
     )
 
-    const sidebar = await screen.findByRole('navigation', {
-      name: brand.productName
-    })
-    expect(
-      await within(sidebar).findByText('Sign in to Claude Code')
-    ).toBeTruthy()
+    expect(await screen.findByText('Installed, not signed in')).toBeTruthy()
     expect(screen.getByText('claude')).toBeTruthy()
     expect(screen.getByText('npm install -g @openai/codex')).toBeTruthy()
     window.location.hash = ''
