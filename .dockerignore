@@ -1,0 +1,13 @@
+# Keep the build context small: the server image needs the workspace
+# manifests, the lockfile, packages/shared and apps/server.
+.git
+**/node_modules
+**/out
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+apps/desktop/*
+!apps/desktop/package.json
+docs
+.claude

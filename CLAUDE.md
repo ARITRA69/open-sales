@@ -35,7 +35,8 @@ a person's approval.
 ## Decisions so far
 
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
-- **Two parts.** A desktop app (built) and a server (not built yet).
+- **Two parts.** A desktop app (built) and a server (started: health check,
+  database and migrations in Docker Compose; no sign-in or data yet).
   - Server: Sales API + Postgres, started with one Docker Compose command. The
     first person to open it creates the admin account.
   - Desktop app: asks for the company's server address on first launch. It must
@@ -64,12 +65,14 @@ a person's approval.
     config file. The `TBrand` shape is in `packages/shared`, ready for the
     server's branding settings.
 - **Sign-in:** built-in email and password, plus optional SSO (OIDC).
-- **Server stack** (decided, not built yet):
+- **Server stack** (decided; Hono, Drizzle and Docker Compose are in place):
   - Hono on Bun for the API, mounted under `/api/v1`.
   - Zod schemas in `packages/shared` describe every request and response; the
     API publishes them as OpenAPI (`@hono/zod-openapi`).
   - Drizzle for Postgres. Migrations are committed SQL files that run on server
     start, and only ever add: self-hosters upgrade by pulling a new image.
+    The driver is `postgres` 3.4: version 4 crashes under Bun when the database
+    drops a connection, so don't upgrade it without testing that.
   - Better Auth for email and password, OIDC SSO and sessions. The app keeps its
     session token in the OS keychain (Electron `safeStorage`).
   - pg-boss for background jobs (imports, email and CRM sync), so Postgres is
@@ -95,7 +98,11 @@ a person's approval.
 A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
 
 - `apps/desktop`: the Electron app. Its own notes are in `apps/desktop/CLAUDE.md`.
-- `apps/server`: the Sales API (not started yet).
+- `apps/server` (`@open-sales/server`): the Sales API. `src/app.ts` builds the
+  Hono app (routes under `/api/v1`, dependencies passed in so tests need no
+  database); `src/index.ts` reads settings, runs migrations, then serves.
+  `src/db/schema.ts` is the Drizzle schema; `drizzle/` holds the generated SQL
+  migrations. Its Dockerfile builds from the repo root.
 - `packages/shared` (`@open-sales/shared`): types and rules both sides use, such
   as roles and `canEditCompany`. It ships TypeScript source, no build step;
   Vite and Bun read it directly. The desktop config bundles it into the main
@@ -132,14 +139,26 @@ rules) goes in `packages/shared`, never copied into both.
   shared code serves both sides. Drizzle's `casing: 'snake_case'` maps
   `ownerId` in code to `owner_id` in Postgres, so nobody converts by hand.
 
+- Migration files are Drizzle's number plus a kebab-case name
+  (`0000_create-workspace.sql`): run `bun run db:generate <name>` in
+  `apps/server`.
+
 ## Commands
 
 ```bash
 bun install
-bun run dev        # the desktop app
-bun run typecheck  # also: lint, test, build; each runs in every package
+bun run dev          # the desktop app
+docker compose up -d # the server and Postgres
+bun run typecheck    # also: lint, test, build; each runs in every package
 bun run format
 ```
+
+The server answers at `http://localhost:8787/api/v1/health`. Postgres listens
+on `localhost:5433` (not 5432, which another project may use). Settings come
+from `.env` beside `docker-compose.yml`; see `.env.example`. To run the server
+outside Docker with hot reload, keep the database container running, copy
+`apps/server/.env.example` to `apps/server/.env`, and run `bun run dev:server`
+(stop the server container first, or set another `PORT`).
 
 Run one package's scripts with `bun run --cwd apps/desktop <script>` or
 `bun run --filter @open-sales/shared <script>`. Add a dependency from inside the
@@ -149,7 +168,8 @@ package that uses it (`cd apps/desktop && bun add x`).
 
 1. Design the main screens (Today, Pipeline, Leads, Accounts, People, Reports,
    Playbooks, Settings) before building them.
-2. Build the server: schema, roles, auth, first-run setup, Docker Compose.
+2. Build the server: schema, roles, auth, first-run setup. (Docker Compose,
+   migrations and the health check are done.)
 3. Connect the app to the server; first-launch server address screen.
 4. Integrations, starting with CSV import and SMTP.
 5. Packaging, signing and auto-update.

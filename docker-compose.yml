@@ -1,0 +1,48 @@
+# The server and its database, started with one command:
+#
+#   docker compose up -d
+#
+# The API is then at http://localhost:8787/api/v1. Settings come from .env
+# next to this file (see .env.example); the defaults suit a laptop.
+
+name: open-sales
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: open_sales
+      POSTGRES_USER: open_sales
+      # Set your own in .env for a real install.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-open-sales}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Only reachable from this machine, for local tools. 5433 so it doesn't
+    # clash with another Postgres on 5432.
+    ports:
+      - '127.0.0.1:${DB_PORT:-5433}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U open_sales -d open_sales']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    # Passes Docker's stop signal on, so the server shuts down cleanly.
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://open_sales:${POSTGRES_PASSWORD:-open-sales}@db:5432/open_sales
+      PORT: 8787
+    ports:
+      - '${SERVER_PORT:-8787}:8787'
+
+volumes:
+  db-data:

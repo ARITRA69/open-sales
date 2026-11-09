@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "dev": "bun run --cwd apps/desktop dev",
+    "dev:server": "bun run --cwd apps/server dev",
     "build": "bun run --filter '@open-sales/*' build",
     "typecheck": "bun run --filter '@open-sales/*' typecheck",
     "lint": "bun run --filter '@open-sales/*' lint",
