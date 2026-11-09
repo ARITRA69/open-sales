@@ -108,6 +108,13 @@ A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
 Anything the app and server must agree on (API shapes, validation, permission
 rules) goes in `packages/shared`, never copied into both.
 
+## Conventions
+
+- File and folder names are always kebab-case: `sales-sidebar.tsx`,
+  `use-brand.ts`, `components-sheet/`. This includes screens and pages.
+  Dots only for a file's role (`brand-config.test.ts`, `brand.config.json`).
+  Standard names keep their usual form: `README.md`, `CLAUDE.md`, `LICENSE`.
+
 ## Commands
 
 ```bash
