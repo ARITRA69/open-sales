@@ -238,6 +238,36 @@ Shared, reusable AI instructions. Like skills for the sales team.
 | Backups       | Documented Postgres backup and restore for self-hosters.                          | Admin | P1       |
 | Upgrades      | Pull a new server image; migrations only add, so upgrades are safe.               | Admin | P0       |
 
+## 17. White label
+
+A self-hosted company can make the product look like its own. Two levels: what
+changes from Settings, and what needs the desktop app rebuilt.
+
+**From Settings (no rebuild).** The app loads the brand from the server when it
+connects, so every teammate sees it straight away.
+
+| Feature             | What it does                                                                                               | Who   | Priority |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- | ----- | -------- |
+| Product name        | Replaces "Open Sales" everywhere in the app: sidebar, window title, sign-in, empty states.                 | Admin | P1       |
+| Logo                | Sidebar and sign-in screen. Light background only, matching the light theme.                               | Admin | P0       |
+| Brand colour        | Replaces the graphite primary and accent. The app checks contrast and warns if text would be hard to read. | Admin | P1       |
+| AI assistant's name | "Ask Nova" instead of "Ask AI" (as Day AI lets customers name theirs).                                     | Admin | P1       |
+| Sign-in screen      | Logo, name and a short welcome line on the server address and sign-in screens.                             | Admin | P1       |
+| Emails              | Sender name, reply-to, logo and footer on invites, reminders and notifications.                            | Admin | P1       |
+| "Powered by"        | Show or hide "Powered by Open Sales". Hidden is allowed by the MIT licence.                                | Admin | P1       |
+| Custom domain       | The server runs on the company's own domain (e.g. `sales.acme.com`). Documented, not built into the app.   | Admin | P0       |
+
+**Rebuilt desktop app.** What the operating system shows comes from the app
+bundle itself, so it can't change at runtime.
+
+| Feature           | What it does                                                                                                  | Who   | Priority |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- | ----- | -------- |
+| Brand config file | One file holds the app name, bundle id, icon, colours and update feed. Nothing else needs editing to rebrand. | Admin | P2       |
+| Branded build     | A build script makes Mac and Windows installers with that name and icon in the dock, menu bar and taskbar.    | Admin | P2       |
+| Own update feed   | The branded app updates from the company's own GitHub Releases (or another feed), not the main project's.     | Admin | P2       |
+| Own signing       | Sign with the company's Apple and Windows certificates so installs don't show security warnings.              | Admin | P2       |
+| Locked server     | Optionally build the company's server address into the app, so teammates skip the address screen.             | Admin | P2       |
+
 ---
 
 ## Open questions
@@ -250,6 +280,8 @@ Shared, reusable AI instructions. Like skills for the sales team.
    owner's account, or only read it?
 4. **Email content.** By default, should teammates see email subjects, or
    metadata only?
+5. **White-label scope.** Should a branded server be able to require its
+   branded app, or keep accepting the standard Open Sales app too?
 
 ## References (Mobbin)
 

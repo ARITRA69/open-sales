@@ -27,6 +27,8 @@ steps, what the AI does, and what can go wrong.
 | 17  | [Ask about a report](#17-ask-about-a-report)                            | All            | P1       |
 | 18  | [Change an account you don't own](#18-change-an-account-you-dont-own)   | Member         | P1       |
 | 19  | [When the AI tool isn't available](#19-when-the-ai-tool-isnt-available) | All            | P0       |
+| 20  | [Brand it as your own](#20-brand-it-as-your-own)                        | Admin          | P1       |
+| 21  | [Build a branded desktop app](#21-build-a-branded-desktop-app)          | Admin          | P2       |
 
 ## The proposal lifecycle
 
@@ -466,3 +468,56 @@ records read-only._
 | Server offline                 | AI can't read or propose; the panel says the server is unreachable and retries.                               |
 
 The sidebar footer always shows the AI tool's state ("Claude Code is ready").
+
+---
+
+## White label
+
+### 20. Brand it as your own
+
+**Who:** Admin · **Starts from:** Settings › Branding
+
+1. **Name.** Type the product name ("Acme Sales"). A preview shows the sidebar
+   and sign-in screen with it.
+2. **Logo.** Upload a logo (PNG or SVG). The preview shows it in the sidebar.
+3. **Colour.** Pick a brand colour. It replaces the graphite primary and accent
+   in the preview. If text on it would be hard to read, a warning suggests a
+   darker shade.
+4. **AI assistant.** Optionally rename "Ask AI" ("Ask Nova").
+5. **Emails.** Sender name, reply-to and footer. **Send a test email**.
+6. **Powered by.** Turn "Powered by Open Sales" on or off.
+7. **Save.** Every open app updates live; people signing in later see the new
+   brand on the sign-in screen.
+
+**AI:** none.
+
+**Edge cases**
+
+- Logo too wide or too tall: crop and preview before saving.
+- Reset: **Use the default brand** puts everything back.
+- The OS still says "Open Sales" in the dock and menu bar. The page says so and
+  links to flow 21.
+
+### 21. Build a branded desktop app
+
+**Who:** Admin (or their developer) · **Starts from:** a clone of the repo
+
+1. Copy the example brand config and fill it in: app name, bundle id, icon,
+   colours, update feed, and optionally the company's server address.
+2. Run the brand build script. It makes Mac and Windows installers with that
+   name and icon.
+3. Optionally sign them with the company's Apple and Windows certificates, so
+   installs don't show security warnings.
+4. Publish the installers to the company's own releases page. The branded app
+   updates from there.
+5. Teammates install the branded app. With a built-in server address, they go
+   straight to sign-in.
+
+**AI:** none.
+
+**Edge cases**
+
+- Unsigned builds: Mac and Windows show warnings; the docs explain how to open
+  the app anyway.
+- New Open Sales release: the company rebuilds from the new version with the same
+  config.

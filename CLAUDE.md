@@ -46,8 +46,19 @@ a person's approval.
   - Manager: sees and edits everything, reassigns companies.
   - Member: a sales executive. Can read every company; can change only the
     companies they own. Every company has exactly one owner.
-- **Generic, not company-specific.** Pipeline stages, custom fields, app name and
-  logo are settings.
+- **Generic, not company-specific.** Pipeline stages and custom fields are
+  settings.
+- **White label.** A self-hoster can rebrand it as their own product. MIT
+  allows this, and "Powered by Open Sales" can be turned off. Two levels:
+  - In the app, from server settings, no rebuild: product name, logo, brand
+    colour, the AI assistant's name, sign-in screen, and email sender and
+    footer. The app fetches the brand when it connects. The brand colour
+    overrides the primary and accent tokens at runtime, with a contrast check.
+  - The desktop app itself, which needs a rebuild: name in the dock or menu
+    bar, icon, installer, bundle id, update feed and code signing. One brand
+    config file and a build script do this, so nobody edits code to rebrand.
+  - So never hard-code "Open Sales" in what users see: read the product name
+    from the brand. Its only defaults live in the brand config.
 - **Sign-in:** built-in email and password, plus optional SSO (OIDC).
 - **Server stack** (decided, not built yet):
   - Hono on Bun for the API, mounted under `/api/v1`.
