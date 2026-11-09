@@ -2,15 +2,16 @@ import { join } from 'node:path'
 
 import { app, BrowserWindow, nativeImage, shell } from 'electron'
 
+import brand from '../../brand.config.json'
 import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
-
-const WINDOWS_APP_ID = 'io.github.aritra69.open-sales'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
+    // The page sets its own title from the brand once it loads.
+    title: brand.productName,
     width: 1440,
     height: 900,
     minWidth: 1100,
@@ -18,7 +19,7 @@ const createMainWindow = () => {
     show: false,
     // Windows takes the taskbar icon from the window.
     ...(process.platform === 'win32' ? { icon: windowsIconPath } : {}),
-    // On a Mac the traffic lights sit in the sidebar, centred on the 52px top bar.
+    // On a Mac the traffic lights sit in the sidebar, centred on the 44px top bar.
     ...(process.platform === 'darwin'
       ? {
           titleBarStyle: 'hidden' as const,
@@ -60,7 +61,7 @@ void app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(macIconPath))
   }
   // Without this, Windows groups the app under Electron in the taskbar.
-  if (process.platform === 'win32') app.setAppUserModelId(WINDOWS_APP_ID)
+  if (process.platform === 'win32') app.setAppUserModelId(brand.appId)
 
   createMainWindow()
 

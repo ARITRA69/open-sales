@@ -14,6 +14,7 @@ import { Link } from '@/components/shared/link'
 import { Avatar } from '@/components/ui/bits'
 import { Icon, type TIcon } from '@/components/ui/icon'
 import { Dot } from '@/components/ui/status'
+import { useBrand } from '@/hooks/use-brand'
 import { cn } from '@/lib/utils'
 
 export type TSalesNavId =
@@ -107,54 +108,58 @@ export const SalesSidebar = ({
   userName,
   userInitials,
   roleLabel
-}: TSalesSidebarProps) => (
-  <nav
-    aria-label="Open Sales"
-    className="box-border flex h-full w-50 flex-none flex-col gap-3 border-r border-border bg-muted px-2 pb-2 text-foreground"
-  >
-    {/* The traffic lights and window controls sit here, and it drags the window. */}
-    <div aria-hidden className="sales-drag-region -mx-2 h-11 flex-none" />
+}: TSalesSidebarProps) => {
+  const { productName } = useBrand()
 
-    <div className="flex min-h-0 flex-1 flex-col gap-0.5">
-      {SALES_NAV_ITEMS.map((item) => (
-        <SalesNavLink
-          key={item.id}
-          isActive={item.id === active}
-          item={item}
-          waitingCount={item.id === 'today' ? waiting : undefined}
-        />
-      ))}
-    </div>
+  return (
+    <nav
+      aria-label={productName}
+      className="box-border flex h-full w-50 flex-none flex-col gap-3 border-r border-border bg-muted px-2 pb-2 text-foreground"
+    >
+      {/* The traffic lights and window controls sit here, and it drags the window. */}
+      <div aria-hidden className="sales-drag-region -mx-2 h-11 flex-none" />
 
-    <div className="flex flex-col gap-0.5">
-      <Link
-        className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
-        href="#/settings"
-        title="Which AI tool is on, and how to fix it"
-      >
-        <Dot size="sm" tone="success" />
-        <span className="truncate">{engine} is ready</span>
-      </Link>
-      <SalesNavLink
-        isActive={active === 'settings'}
-        item={{
-          id: 'settings',
-          label: 'Settings',
-          icon: Settings01Icon,
-          href: '#/settings'
-        }}
-      />
-      <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0.5">
-        <Avatar initials={userInitials} size={24} />
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-body-sm leading-4 font-semibold">
-            {userName}
-          </span>
-          <span className="truncate text-xs leading-3.5 text-muted-foreground">
-            {roleLabel}
-          </span>
-        </span>
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5">
+        {SALES_NAV_ITEMS.map((item) => (
+          <SalesNavLink
+            key={item.id}
+            isActive={item.id === active}
+            item={item}
+            waitingCount={item.id === 'today' ? waiting : undefined}
+          />
+        ))}
       </div>
-    </div>
-  </nav>
-)
+
+      <div className="flex flex-col gap-0.5">
+        <Link
+          className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
+          href="#/settings"
+          title="Which AI tool is on, and how to fix it"
+        >
+          <Dot size="sm" tone="success" />
+          <span className="truncate">{engine} is ready</span>
+        </Link>
+        <SalesNavLink
+          isActive={active === 'settings'}
+          item={{
+            id: 'settings',
+            label: 'Settings',
+            icon: Settings01Icon,
+            href: '#/settings'
+          }}
+        />
+        <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0.5">
+          <Avatar initials={userInitials} size={24} />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-body-sm leading-4 font-semibold">
+              {userName}
+            </span>
+            <span className="truncate text-xs leading-3.5 text-muted-foreground">
+              {roleLabel}
+            </span>
+          </span>
+        </div>
+      </div>
+    </nav>
+  )
+}

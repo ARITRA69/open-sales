@@ -1,11 +1,11 @@
 # Open Sales
 
 An open-source, self-hosted sales pipeline for small sales teams. MIT licence.
-"Open Sales" is a working name; rename it everywhere in one pass when it's
-chosen (the package names `@open-sales/*`, `productName` in
-`apps/desktop/package.json`, index.html, bundle ids in `apps/desktop/src/main/index.ts`
-and `apps/desktop/scripts/dev.mjs`, the preload bridge `window.openSales`, the
-sidebar label).
+"Open Sales" is a working name. To rename what users see, change
+`apps/desktop/brand.config.json` and `productName` in
+`apps/desktop/package.json` (a test fails if they differ). Internal names
+(`@open-sales/*` packages, the `window.openSales` bridge, storage keys) can be
+renamed separately when the name is chosen; users never see them.
 
 ## Positioning
 
@@ -57,8 +57,12 @@ a person's approval.
   - The desktop app itself, which needs a rebuild: name in the dock or menu
     bar, icon, installer, bundle id, update feed and code signing. One brand
     config file and a build script do this, so nobody edits code to rebrand.
-  - So never hard-code "Open Sales" in what users see: read the product name
-    from the brand. Its only defaults live in the brand config.
+  - So never hard-code "Open Sales" in what users see. The defaults live in
+    `apps/desktop/brand.config.json` (product name, app id; icon, colours and
+    update feed join it when packaging is set up). The renderer reads the
+    brand with `useBrand()`; the main process and `scripts/dev.mjs` read the
+    config file. The `TBrand` shape is in `packages/shared`, ready for the
+    server's branding settings.
 - **Sign-in:** built-in email and password, plus optional SSO (OIDC).
 - **Server stack** (decided, not built yet):
   - Hono on Bun for the API, mounted under `/api/v1`.

@@ -2,7 +2,8 @@
  * Starts the app in development. A Mac takes the bold name in the menu bar from
  * the app bundle, so it would say Electron. On a Mac this runs a renamed copy of
  * Electron from node_modules/.dev-app and leaves the installed one untouched. A
- * packaged build gets its name from productName and doesn't need any of this.
+ * packaged build gets its name from the brand config and doesn't need any of
+ * this.
  */
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs'
@@ -16,12 +17,13 @@ const require = createRequire(resolve(ROOT, 'package.json'))
 const packageDir = (name) => dirname(require.resolve(`${name}/package.json`))
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
-const { productName } = readJson(resolve(ROOT, 'package.json'))
+// The name and id come from the brand config, so a rebranded app runs as itself.
+const { productName, appId } = readJson(resolve(ROOT, 'brand.config.json'))
 const ELECTRON_DIR = packageDir('electron')
 const { version: electronVersion } = readJson(
   resolve(ELECTRON_DIR, 'package.json')
 )
-const DEV_APP_ID = 'io.github.aritra69.open-sales.dev'
+const DEV_APP_ID = `${appId}.dev`
 
 const prepareNamedMacApp = () => {
   const appDir = resolve(ROOT, 'node_modules/.dev-app', electronVersion)

@@ -25,6 +25,9 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
 - `src/main`: window setup. Mac: hidden title bar, traffic lights at x 16, y 15.
   Windows: icon from `build/icon.ico` and an app user model id.
 - `src/preload`: exposes `window.openSales` (platform only, so far).
+- `brand.config.json`: the product name and app id. User-facing text gets the
+  name from `useBrand()` (`hooks/use-brand.ts`), never a literal "Open Sales".
+  The window title follows it too.
 - `src/renderer/src/components/ui`: the UI kit. `components/sales`: app-specific
   parts (AppShell, sidebar, window controls, Ask AI panel).
 - The kit is built on shadcn/ui patterns and Radix (`radix-ui`), with cva for
