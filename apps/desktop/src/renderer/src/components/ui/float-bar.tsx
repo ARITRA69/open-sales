@@ -22,7 +22,7 @@ type TFloatBarProps = {
 }
 
 const BAR_BUTTON =
-  'flex h-8 items-center rounded-full outline-none transition-colors duration-150 keyboard-focus:shadow-(--halo-keyboard)'
+  'flex h-7 items-center rounded-full outline-none transition-colors duration-150 keyboard-focus:shadow-(--halo-keyboard)'
 
 /**
  * A dark pill for a short message or for acting on a selection. It rises in
@@ -57,10 +57,10 @@ export const FloatBar = ({
     >
       <div
         aria-label={isSelection ? t('Selection') : undefined}
-        className="pointer-events-auto inline-flex h-12 items-center gap-1.5 rounded-full bg-primary pr-2 pl-5 whitespace-nowrap text-primary-foreground shadow-(--shadow-menu)"
+        className="pointer-events-auto inline-flex h-10 items-center gap-1 rounded-full bg-primary pr-1.5 pl-4 whitespace-nowrap text-primary-foreground shadow-(--shadow-menu)"
         role={isSelection ? 'toolbar' : 'status'}
       >
-        <span className="pr-2.5 text-sm font-semibold tabular-nums">
+        <span className="pr-2 text-sm font-semibold tabular-nums">
           {text ?? (isSelection ? t('{count} selected', { count }) : '')}
         </span>
         {actions.map((action) => (
@@ -68,7 +68,7 @@ export const FloatBar = ({
             key={action.label}
             className={cn(
               BAR_BUTTON,
-              'bg-on-primary-fill px-3.5 text-body-sm font-semibold text-primary-foreground hover:bg-primary-active'
+              'bg-on-primary-fill px-3 text-body-sm font-semibold text-primary-foreground hover:bg-primary-active'
             )}
             type="button"
             onClick={action.onClick}
@@ -80,7 +80,7 @@ export const FloatBar = ({
           aria-label={isSelection ? t('Clear selection') : t('Dismiss')}
           className={cn(
             BAR_BUTTON,
-            'w-8 justify-center text-primary-foreground hover:bg-on-primary-fill'
+            'w-7 justify-center text-primary-foreground hover:bg-on-primary-fill'
           )}
           type="button"
           onClick={onClose}

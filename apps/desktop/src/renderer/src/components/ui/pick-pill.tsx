@@ -7,7 +7,7 @@ import { Button, type TButtonProps } from './button'
 import { Icon } from './icon'
 import { Menu } from './menu'
 
-// 32 in a table row, 36 in a list row, 40 in a toolbar.
+// 28 in a table row, 32 in a list row, 36 in a toolbar.
 const PILL_SIZE = { sm: 'sm', md: 'md', lg: 'lg' } as const
 
 type TPickPillSize = keyof typeof PILL_SIZE
@@ -29,7 +29,7 @@ export const PickPillTrigger = ({
 }: TPickPillTriggerProps) => (
   <Button
     {...buttonProps}
-    className={cn('max-w-full pr-3 pl-3.5', className)}
+    className={cn('max-w-full pr-2.5 pl-3', className)}
     size={PILL_SIZE[size]}
     trail={
       <Icon

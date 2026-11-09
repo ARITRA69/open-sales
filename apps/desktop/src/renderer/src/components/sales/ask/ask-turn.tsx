@@ -21,15 +21,12 @@ import type { TAskEmail, TAskScenario, TAskTurn } from './ask-types'
 import { fillScenario, type TAskSession } from './use-ask-session'
 
 export const ASK_SUGGESTION_CLASS =
-  'bg-muted hover:bg-secondary rounded-row flex w-full items-center gap-2.5 border-none px-3 py-2 text-left text-sm font-medium transition-colors keyboard-focus:shadow-(--halo-keyboard) outline-none'
+  'bg-muted hover:bg-secondary rounded-row flex w-full items-center gap-2 border-none px-2.5 py-1.5 text-left text-sm font-medium transition-colors keyboard-focus:shadow-(--halo-keyboard) outline-none'
 
 type TAskStepsProps = { turn: TAskTurn; scenario: TAskScenario }
 
 const AskSteps = ({ turn, scenario }: TAskStepsProps) => (
-  <div
-    className="flex flex-col gap-2.5 rounded-card bg-muted p-3.5"
-    role="status"
-  >
+  <div className="flex flex-col gap-2 rounded-card bg-muted p-3" role="status">
     <span className="text-body-sm font-semibold">
       {turn.engine} is working on this computer
     </span>
@@ -41,14 +38,14 @@ const AskSteps = ({ turn, scenario }: TAskStepsProps) => (
         <div
           key={stepLabel}
           className={cn(
-            'flex items-center gap-2.5 text-sm',
+            'flex items-center gap-2 text-sm',
             isNow && 'font-semibold',
             !isDone && !isNow && 'text-muted-foreground'
           )}
         >
           <span
             className={cn(
-              'flex size-5 flex-none items-center justify-center rounded-full',
+              'flex size-4.5 flex-none items-center justify-center rounded-full',
               isDone && 'bg-success text-primary-foreground',
               isNow && 'text-accent',
               !isDone && !isNow && 'bg-input'
@@ -59,7 +56,7 @@ const AskSteps = ({ turn, scenario }: TAskStepsProps) => (
             ) : null}
             {isNow ? (
               <span className="flex animate-spin">
-                <Icon icon={Loading03Icon} size={18} strokeWidth={1.6} />
+                <Icon icon={Loading03Icon} size={16} strokeWidth={1.6} />
               </span>
             ) : null}
           </span>
@@ -75,7 +72,7 @@ const AskEmail = ({ email }: { email: TAskEmail }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-card bg-muted p-3.5 text-sm">
+    <div className="flex flex-col gap-2 rounded-card bg-muted p-3 text-sm">
       <span className="text-body-sm text-muted-foreground">To {email.to}</span>
       <b className="font-semibold">{email.subject}</b>
       <span className="whitespace-pre-line">{email.body}</span>
@@ -124,25 +121,25 @@ const AskAnswer = ({ turn, scenario, session, isLatest }: TAskAnswerProps) => {
     : []
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <span className="text-body-sm text-muted-foreground">
         {stepCount} {stepCount === 1 ? 'step' : 'steps'} · {turn.engine} · every
         read is logged
       </span>
       {scenario.intro ? (
-        <p className="m-0 text-body-lg leading-5.5">{scenario.intro}</p>
+        <p className="m-0 text-base">{scenario.intro}</p>
       ) : null}
       {scenario.bullets?.map((bullet) => (
         <div
           key={bullet.text}
-          className="flex flex-col items-start gap-1 text-body-lg leading-5.5"
+          className="flex flex-col items-start gap-1 text-base"
         >
           <span>{bullet.text}</span>
           <Link
-            className="inline-flex h-[22px] items-center gap-1 rounded-full bg-secondary px-2 text-xs font-semibold whitespace-nowrap text-foreground-soft no-underline hover:bg-input hover:text-foreground"
+            className="inline-flex h-4.5 items-center gap-1 rounded-full bg-secondary px-1.5 text-xs font-semibold whitespace-nowrap text-foreground-soft no-underline hover:bg-input hover:text-foreground"
             href={bullet.href ?? '#'}
           >
-            <Icon icon={Link01Icon} size={12} strokeWidth={1.6} />
+            <Icon icon={Link01Icon} size={11} strokeWidth={1.6} />
             {bullet.source}
           </Link>
         </div>
@@ -185,7 +182,7 @@ const AskAnswer = ({ turn, scenario, session, isLatest }: TAskAnswerProps) => {
           {followScenarios.map((followScenario) => (
             <button
               key={followScenario.id}
-              className={cn(ASK_SUGGESTION_CLASS, 'min-h-[38px] text-body-sm')}
+              className={cn(ASK_SUGGESTION_CLASS, 'min-h-8 text-body-sm')}
               type="button"
               onClick={() => session.startScenario(followScenario)}
             >
@@ -214,7 +211,7 @@ export const AskTurnView = ({ turn, session, isLatest }: TAskTurnViewProps) => {
 
   return (
     <>
-      <div className="box-border max-w-[85%] self-end rounded-card bg-secondary px-3.5 py-2.5 text-sm">
+      <div className="box-border max-w-[85%] self-end rounded-card bg-secondary px-3 py-2 text-sm">
         {turn.question}
       </div>
 
@@ -238,7 +235,7 @@ export const AskTurnView = ({ turn, session, isLatest }: TAskTurnViewProps) => {
       ) : null}
 
       {turn.phase === 'blanks' ? (
-        <div className="flex flex-col gap-3 rounded-card bg-muted p-3.5">
+        <div className="flex flex-col gap-2.5 rounded-card bg-muted p-3">
           {scenario.blanks?.map((blank) => (
             <div
               key={blank.key}
@@ -277,7 +274,7 @@ export const AskTurnView = ({ turn, session, isLatest }: TAskTurnViewProps) => {
       ) : null}
 
       {turn.phase === 'limit' ? (
-        <Banner className="flex-col items-stretch gap-2.5">
+        <Banner className="flex-col items-stretch gap-2">
           <span>
             <b className="font-semibold">{turn.engine} has hit its limit.</b> It
             comes back at 4:00 pm. Your question is saved.

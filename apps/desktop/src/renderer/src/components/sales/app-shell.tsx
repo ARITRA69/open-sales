@@ -34,7 +34,7 @@ export const AppShell = ({
       <div
         className={cn(
           'sales-sidebar-slot h-full flex-none overflow-hidden',
-          isSidebarOpen ? 'w-[218px]' : 'w-0 *:-translate-x-full'
+          isSidebarOpen ? 'w-50' : 'w-0 *:-translate-x-full'
         )}
         data-testid="sidebar-slot"
         inert={!isSidebarOpen}
@@ -45,8 +45,8 @@ export const AppShell = ({
       <div className="flex min-w-0 flex-1 flex-col">
         <header
           className={cn(
-            'sales-drag-region sales-window-bar box-border flex h-13 flex-none items-center border-b border-border pr-6 select-none',
-            isSidebarOpen ? 'pl-10' : hasTrafficLights ? 'pl-47' : 'pl-30'
+            'sales-drag-region sales-window-bar box-border flex h-11 flex-none items-center border-b border-border pr-4 select-none',
+            isSidebarOpen ? 'pl-6' : hasTrafficLights ? 'pl-44' : 'pl-27'
           )}
         >
           <span className="truncate text-sm font-semibold">{title}</span>
@@ -61,7 +61,7 @@ export const AppShell = ({
 
       <WindowControls
         className={cn(
-          'absolute top-2.5',
+          'absolute top-2',
           hasTrafficLights ? 'left-20' : 'left-3'
         )}
         isSidebarOpen={isSidebarOpen}
@@ -79,10 +79,10 @@ type TPageBodyProps = {
 
 /** The scrolling area of a page, with the standard gutters. */
 export const PageBody = ({ narrow = false, children }: TPageBodyProps) => (
-  <div className="box-border flex min-h-0 flex-1 scrollbar-thin flex-col gap-5 overflow-y-auto px-10 pt-7 pb-10">
+  <div className="box-border flex min-h-0 flex-1 scrollbar-thin flex-col gap-4 overflow-y-auto px-6 pt-5 pb-8">
     <div
       className={cn(
-        'flex w-full flex-col gap-5',
+        'flex w-full flex-col gap-4',
         narrow && 'mx-auto max-w-225'
       )}
     >

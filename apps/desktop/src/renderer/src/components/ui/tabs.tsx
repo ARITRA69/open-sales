@@ -63,8 +63,8 @@ export const Tabs = ({
         aria-label={label ?? t('Sections')}
         className={cn(
           isSegmented
-            ? 'inline-flex gap-0.5 rounded-full bg-secondary p-0.75'
-            : 'flex gap-6',
+            ? 'inline-flex gap-0.5 rounded-full bg-secondary p-0.5'
+            : 'flex gap-5',
           className
         )}
         data-slot="tabs"
@@ -88,11 +88,11 @@ export const Tabs = ({
                   ? cn(
                       'rounded-full',
                       size === 'sm'
-                        ? 'h-7 px-3 text-body-sm'
-                        : 'h-8 px-4 text-sm',
+                        ? 'h-6 px-2.5 text-body-sm'
+                        : 'h-7 px-3 text-sm',
                       !isActive && 'hover:bg-background/50'
                     )
-                  : cn(size === 'sm' ? 'pb-2 text-sm' : 'pb-2.5 text-body-lg')
+                  : cn(size === 'sm' ? 'pb-1.5 text-body-sm' : 'pb-2 text-sm')
               )}
               value={String(index)}
             >

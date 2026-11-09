@@ -33,9 +33,9 @@ export const buttonVariants = cva(
         link: 'h-auto rounded-sm bg-transparent px-0.5 text-foreground underline decoration-faint underline-offset-4 hover:decoration-current disabled:bg-transparent disabled:decoration-input'
       },
       size: {
-        sm: 'h-8 gap-1.5 px-3.5 text-body-sm',
-        md: 'h-9 gap-2 px-4 text-sm',
-        lg: 'h-10 gap-2 px-5 text-sm'
+        sm: 'h-7 gap-1 px-2.5 text-body-sm',
+        md: 'h-8 gap-1.5 px-3 text-sm',
+        lg: 'h-9 gap-2 px-4 text-sm'
       },
       iconOnly: { true: 'aspect-square px-0', false: '' }
     },
@@ -46,7 +46,7 @@ export const buttonVariants = cva(
 
 type TButtonOwnProps = {
   variant?: NonNullable<VariantProps<typeof buttonVariants>['variant']>
-  // 40 for a page's main actions, 36 in panels and cards, 32 in tight rows.
+  // 36 for a page's main actions, 32 in panels and cards, 28 in tight rows.
   size?: 'sm' | 'md' | 'lg'
   leadIcon?: TIcon
   trailIcon?: TIcon
@@ -114,7 +114,7 @@ export const Button = ({
 
   if (hidden) return null
 
-  const iconSize = size === 'sm' ? 14 : 16
+  const iconSize = size === 'lg' ? 16 : 14
   const isIconOnly = !children
   const textLabel = typeof children === 'string' ? children : undefined
 

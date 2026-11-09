@@ -30,7 +30,7 @@ export const SectionHeader = ({
     type={type}
     {...buttonProps}
     className={cn(
-      'flex h-12 w-full items-center gap-2.5 rounded-card pr-3.5 pl-4 text-left text-foreground outline-none',
+      'flex h-9 w-full items-center gap-2 rounded-panel pr-2.5 pl-3 text-left text-foreground outline-none',
       'transition-colors duration-200 keyboard-focus:shadow-(--halo-keyboard)',
       tone === 'accent'
         ? 'bg-accent-soft hover:bg-secondary'
@@ -40,7 +40,7 @@ export const SectionHeader = ({
     data-slot="section-header"
   >
     {tone === 'accent' ? <Dot /> : null}
-    <span className="text-body-lg font-semibold">{title}</span>
+    <span className="text-sm font-semibold">{title}</span>
     {count === undefined ? null : (
       <span className="text-body-sm font-semibold text-muted-foreground tabular-nums">
         {count}

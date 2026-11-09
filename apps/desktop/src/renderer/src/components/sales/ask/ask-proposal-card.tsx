@@ -8,7 +8,7 @@ import { Dot } from '@/components/ui/status'
 import type { TAskCard, TAskTurn } from './ask-types'
 import type { TAskSession } from './use-ask-session'
 
-const PROPOSAL_CLASS = 'bg-accent-soft rounded-card flex flex-col gap-2.5 p-3.5'
+const PROPOSAL_CLASS = 'bg-accent-soft rounded-card flex flex-col gap-2 p-3'
 
 type TAskProposalCardProps = {
   askCard: TAskCard
@@ -29,8 +29,8 @@ export const AskProposalCard = ({
 
   if (cardStatus === 'approved') {
     return (
-      <div className="flex min-h-9 items-center gap-2 text-sm">
-        <span className="flex size-5 flex-none items-center justify-center rounded-full bg-success text-primary-foreground">
+      <div className="flex min-h-8 items-center gap-2 text-sm">
+        <span className="flex size-4.5 flex-none items-center justify-center rounded-full bg-success text-primary-foreground">
           <Icon icon={Tick02Icon} size={13} strokeWidth={1.6} />
         </span>
         <span className="min-w-0 flex-1">
@@ -49,7 +49,7 @@ export const AskProposalCard = ({
 
   if (cardStatus === 'declined') {
     return (
-      <div className="flex min-h-9 items-center justify-between gap-2 text-body-sm text-muted-foreground">
+      <div className="flex min-h-8 items-center justify-between gap-2 text-body-sm text-muted-foreground">
         <span>Declined: {askCard.title}. Nothing was saved.</span>
         <Button
           size="sm"

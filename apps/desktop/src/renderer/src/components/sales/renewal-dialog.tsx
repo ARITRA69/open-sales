@@ -71,7 +71,7 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
         if (!isOpen) onClose()
       }}
     >
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <Banner>
           <Icon
             className="flex-none"
@@ -85,7 +85,7 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
             reminders stop.
           </span>
         </Banner>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Field
             label="Value"
             value={renewalValue}
@@ -138,13 +138,13 @@ const WontRenewDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
         if (!isOpen) onClose()
       }}
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {WONT_RENEW_REASONS.map((reasonLabel) => (
           <button
             key={reasonLabel}
             aria-pressed={reason === reasonLabel}
             className={cn(
-              'sales-choice w-full rounded-card border-none px-4 py-3 text-left text-body-lg font-medium outline-none keyboard-focus:shadow-(--halo-keyboard)',
+              'sales-choice w-full rounded-row border-none px-3 py-2 text-left text-sm font-medium outline-none keyboard-focus:shadow-(--halo-keyboard)',
               reason === reasonLabel
                 ? 'bg-background shadow-(--shadow-choice)'
                 : 'bg-muted hover:bg-secondary'

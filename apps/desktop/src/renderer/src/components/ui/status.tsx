@@ -65,7 +65,7 @@ export const StatusDot = ({
 )
 
 const tagVariants = cva(
-  'inline-flex h-6.5 items-center gap-1.5 rounded-full px-2.5 text-body-sm font-semibold whitespace-nowrap text-foreground-soft transition-colors duration-200',
+  'inline-flex h-5.5 items-center gap-1 rounded-full px-2 text-body-sm font-semibold whitespace-nowrap text-foreground-soft transition-colors duration-200',
   {
     variants: {
       tone: {
@@ -104,7 +104,7 @@ type TStatusPillProps = { children: ReactNode; className?: string }
 export const StatusPill = ({ children, className }: TStatusPillProps) => (
   <span
     className={cn(
-      'inline-flex h-9 items-center gap-2 rounded-full bg-accent-soft pr-4 pl-3 text-sm font-semibold whitespace-nowrap text-foreground',
+      'inline-flex h-7 items-center gap-1.5 rounded-full bg-accent-soft pr-3 pl-2.5 text-sm font-semibold whitespace-nowrap text-foreground',
       className
     )}
     data-slot="status-pill"
@@ -112,7 +112,7 @@ export const StatusPill = ({ children, className }: TStatusPillProps) => (
   >
     <span
       aria-hidden
-      className="size-4 flex-none animate-spin rounded-full border-2 border-input border-t-accent"
+      className="size-3.5 flex-none animate-spin rounded-full border-2 border-input border-t-accent"
     />
     <span className="min-w-0 truncate">{children}</span>
   </span>
@@ -124,7 +124,7 @@ type TNumberBadgeProps = { children: ReactNode; className?: string }
 export const NumberBadge = ({ children, className }: TNumberBadgeProps) => (
   <span
     className={cn(
-      'inline-flex h-5.5 min-w-5.5 flex-none items-center justify-center rounded-full bg-accent px-1.5 text-xs font-bold text-accent-foreground tabular-nums',
+      'inline-flex h-4.5 min-w-4.5 flex-none items-center justify-center rounded-full bg-accent px-1 text-xs font-bold text-accent-foreground tabular-nums',
       className
     )}
     data-slot="number-badge"
@@ -166,7 +166,7 @@ export const ProgressTrack = ({
         <span
           key={step}
           className={cn(
-            'h-1.5 flex-1 rounded-full transition-colors duration-300',
+            'h-1 flex-1 rounded-full transition-colors duration-300',
             step < done
               ? 'bg-accent'
               : step === done && inProgress

@@ -16,7 +16,7 @@ export const Banner = ({
   <div
     {...divProps}
     className={cn(
-      'flex items-center gap-3 rounded-card px-4 py-3 text-sm text-foreground',
+      'flex items-center gap-2.5 rounded-card px-3 py-2 text-sm text-foreground',
       tone === 'accent' ? 'bg-accent-soft font-medium' : 'bg-muted',
       className
     )}
@@ -35,12 +35,12 @@ type TStatTileProps = {
 export const StatTile = ({ value, label, className }: TStatTileProps) => (
   <div
     className={cn(
-      'flex flex-col gap-1.5 rounded-dialog bg-muted px-5 py-4',
+      'flex flex-col gap-1 rounded-card bg-muted px-4 py-3',
       className
     )}
     data-slot="stat-tile"
   >
     <span className="text-title-xl font-bold tabular-nums">{value}</span>
-    <span className="text-sm text-muted-foreground">{label}</span>
+    <span className="text-body-sm text-muted-foreground">{label}</span>
   </div>
 )

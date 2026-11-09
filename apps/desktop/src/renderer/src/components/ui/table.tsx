@@ -206,7 +206,7 @@ export const Table = ({
 
   const header = (
     <div
-      className="group/head grid min-h-10 grid-cols-(--table-columns) items-center gap-4 px-3"
+      className="group/head grid min-h-8 grid-cols-(--table-columns) items-center gap-3 px-2"
       role="row"
     >
       {selectable ? (
@@ -292,11 +292,11 @@ export const Table = ({
                       animate={{ opacity: 1 }}
                       aria-selected={selectable ? isSelected : undefined}
                       className={cn(
-                        'group/row relative grid grid-cols-(--table-columns) items-center gap-4 rounded-row px-3 py-1.5 text-sm',
+                        'group/row relative grid grid-cols-(--table-columns) items-center gap-3 rounded-row px-2 py-1 text-sm',
                         'transition-colors duration-150',
-                        'before:pointer-events-none before:absolute before:inset-x-3 before:bottom-0 before:h-px before:bg-border before:transition-opacity before:duration-150',
+                        'before:pointer-events-none before:absolute before:inset-x-2 before:bottom-0 before:h-px before:bg-border before:transition-opacity before:duration-150',
                         'last:before:opacity-0 hover:before:opacity-0',
-                        isCompact ? 'min-h-11' : 'min-h-15',
+                        isCompact ? 'min-h-8' : 'min-h-11',
                         isSelected
                           ? 'bg-secondary before:opacity-0'
                           : 'hover:bg-muted',
@@ -411,7 +411,7 @@ export const Table = ({
         {selectable && !noBar && isReady && selection.length > 0 ? (
           <div
             key="bar"
-            className="pointer-events-none sticky bottom-6 z-30 mt-4 flex justify-center"
+            className="pointer-events-none sticky bottom-4 z-30 mt-3 flex justify-center"
           >
             <FloatBar
               actions={barActions}

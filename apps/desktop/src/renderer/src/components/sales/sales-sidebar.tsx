@@ -61,7 +61,7 @@ const SALES_NAV_ITEMS: TSalesNavItem[] = [
 ]
 
 const NAV_LINK_CLASS =
-  'hover:bg-secondary rounded-panel text-body-lg flex h-[38px] flex-none items-center gap-3 px-3 font-medium transition-colors'
+  'hover:bg-secondary rounded-panel text-sm flex h-7.5 flex-none items-center gap-2.5 px-2.5 font-medium transition-colors'
 const NAV_LINK_ACTIVE_CLASS =
   'bg-background hover:bg-background font-semibold shadow-(--shadow-tile)'
 
@@ -77,12 +77,12 @@ const SalesNavLink = ({ item, isActive, waitingCount }: TSalesNavLinkProps) => (
     className={cn(NAV_LINK_CLASS, isActive && NAV_LINK_ACTIVE_CLASS)}
     href={item.href}
   >
-    <Icon className="flex-none" icon={item.icon} size={18} strokeWidth={1.6} />
+    <Icon className="flex-none" icon={item.icon} size={16} strokeWidth={1.6} />
     <span className="truncate">{item.label}</span>
     {waitingCount ? (
       <span
         aria-label={`${waitingCount} waiting on you`}
-        className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.25 text-xs font-bold text-accent-foreground"
+        className="ml-auto flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-accent px-1 text-xs font-bold text-accent-foreground"
       >
         {waitingCount}
       </span>
@@ -110,10 +110,10 @@ export const SalesSidebar = ({
 }: TSalesSidebarProps) => (
   <nav
     aria-label="Open Sales"
-    className="box-border flex h-full w-[218px] flex-none flex-col gap-4.5 border-r border-border bg-muted px-3 pb-3 text-foreground"
+    className="box-border flex h-full w-50 flex-none flex-col gap-3 border-r border-border bg-muted px-2 pb-2 text-foreground"
   >
     {/* The traffic lights and window controls sit here, and it drags the window. */}
-    <div aria-hidden className="sales-drag-region -mx-3 h-13 flex-none" />
+    <div aria-hidden className="sales-drag-region -mx-2 h-11 flex-none" />
 
     <div className="flex min-h-0 flex-1 flex-col gap-0.5">
       {SALES_NAV_ITEMS.map((item) => (
@@ -126,9 +126,9 @@ export const SalesSidebar = ({
       ))}
     </div>
 
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-0.5">
       <Link
-        className="flex h-8 items-center gap-2 px-3 text-body-sm font-medium text-foreground-soft"
+        className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
         href="#/settings"
         title="Which AI tool is on, and how to fix it"
       >
@@ -144,13 +144,13 @@ export const SalesSidebar = ({
           href: '#/settings'
         }}
       />
-      <div className="flex items-center gap-2.5 px-3 pt-2 pb-0.5">
-        <Avatar initials={userInitials} size={28} />
+      <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0.5">
+        <Avatar initials={userInitials} size={24} />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm leading-4.5 font-semibold">
+          <span className="truncate text-body-sm leading-4 font-semibold">
             {userName}
           </span>
-          <span className="truncate text-body-sm leading-4.5 text-muted-foreground">
+          <span className="truncate text-xs leading-3.5 text-muted-foreground">
             {roleLabel}
           </span>
         </span>

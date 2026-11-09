@@ -15,7 +15,7 @@ const OVERLAY_CLASS = cn(
 
 const CONTENT_CLASS = cn(
   'fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-48px)] max-w-[calc(100vw-48px)] -translate-1/2 flex-col overflow-y-auto',
-  'rounded-modal bg-background p-7 text-foreground shadow-(--shadow-dialog) outline-none',
+  'rounded-modal bg-background p-5 text-foreground shadow-(--shadow-dialog) outline-none',
   'data-[state=open]:animate-in data-[state=open]:duration-200 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=open]:zoom-in-[0.97]',
   'data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97]'
 )
@@ -84,13 +84,13 @@ export const Dialog = ({
           {...(description ? {} : { 'aria-describedby': undefined })}
           className={cn(
             CONTENT_CLASS,
-            'gap-6',
-            wide ? 'w-180' : 'w-140',
+            'gap-4',
+            wide ? 'w-160' : 'w-120',
             className
           )}
           data-slot="dialog"
         >
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
             <DialogPrimitive.Title className={TITLE_CLASS}>
               {title}
             </DialogPrimitive.Title>
@@ -154,14 +154,14 @@ export const ConfirmDialog = ({
         <AlertDialog.Overlay className={OVERLAY_CLASS} />
         <AlertDialog.Content
           {...focusReturn}
-          className={cn(CONTENT_CLASS, 'w-120 gap-2')}
+          className={cn(CONTENT_CLASS, 'w-100 gap-1.5')}
           data-slot="confirm-dialog"
         >
           <AlertDialog.Title className={TITLE_CLASS}>{title}</AlertDialog.Title>
           <AlertDialog.Description className={DESCRIPTION_CLASS}>
             {body}
           </AlertDialog.Description>
-          <div className="mt-5 flex justify-end gap-2">
+          <div className="mt-4 flex justify-end gap-2">
             <AlertDialog.Cancel asChild>
               <Button size="lg" variant="secondary" onClick={onCancel}>
                 {cancelLabel ?? t('Cancel')}

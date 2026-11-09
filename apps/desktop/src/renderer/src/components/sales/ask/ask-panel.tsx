@@ -56,14 +56,14 @@ export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
   return (
     <aside
       aria-label="Ask AI"
-      className="sales-ask-panel relative box-border flex h-full w-95 flex-none flex-col bg-background text-foreground shadow-(--shadow-panel-edge)"
+      className="sales-ask-panel relative box-border flex h-full w-90 flex-none flex-col bg-background text-foreground shadow-(--shadow-panel-edge)"
     >
-      <div className="box-border flex h-16 flex-none items-center gap-3 pr-3 pl-5">
+      <div className="box-border flex h-12 flex-none items-center gap-2 pr-2 pl-4">
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-base leading-5 font-semibold">
+          <span className="truncate text-sm leading-4.5 font-semibold">
             Ask AI
           </span>
-          <span className="truncate text-body-sm leading-4.5 text-muted-foreground">
+          <span className="truncate text-xs leading-3.5 text-muted-foreground">
             {context}
           </span>
         </div>
@@ -84,9 +84,9 @@ export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
         />
       </div>
 
-      <div className="box-border flex min-h-0 flex-1 scrollbar-thin flex-col gap-4 overflow-y-auto px-5 py-4">
+      <div className="box-border flex min-h-0 flex-1 scrollbar-thin flex-col gap-3 overflow-y-auto px-4 py-3">
         {hasTurns ? null : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <p className="m-0 mb-1 text-body-sm text-muted-foreground">
               It reads through sales tools only, and it asks you before changing
               anything.
@@ -119,10 +119,10 @@ export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
         ))}
       </div>
 
-      <div className="mx-3 mb-3 flex flex-col gap-1.5 rounded-modal bg-background py-2.5 pr-2.5 pl-3.5 shadow-(--shadow-float)">
+      <div className="mx-2.5 mb-2.5 flex flex-col gap-1 rounded-dialog bg-background py-2 pr-2 pl-3 shadow-(--shadow-float)">
         <textarea
           aria-label="Ask a question"
-          className="box-border w-full resize-none border-none bg-transparent pt-1 text-body-lg leading-5.5 text-foreground outline-none placeholder:text-faint"
+          className="box-border w-full resize-none border-none bg-transparent pt-1 text-sm leading-5 text-foreground outline-none placeholder:text-faint"
           placeholder="Ask about this, or anything in your pipeline"
           rows={2}
           value={questionText}

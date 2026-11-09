@@ -58,28 +58,39 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* Type: body text stays at 14 to 16 so it reads easily. */
-  --text-body-sm: 13px;
-  --text-body-sm--line-height: 18px;
-  --text-body-lg: 15px;
-  --text-body-lg--line-height: 22px;
-  --text-heading: 22px;
-  --text-heading--line-height: 28px;
-  --text-heading--letter-spacing: -0.02em;
-  --text-title-xl: 28px;
-  --text-title-xl--line-height: 34px;
-  --text-title-xl--letter-spacing: -0.025em;
-  --text-display: 40px;
-  --text-display--line-height: 46px;
-  --text-display--letter-spacing: -0.03em;
+  /*
+   * Type: compact, like a work tool. 13 for most text (lists, fields,
+   * buttons), 12 for meta, 14 for reading (notes and AI answers).
+   */
+  --text-xs: 11px;
+  --text-xs--line-height: 14px;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 18px;
+  --text-body-lg: 13px;
+  --text-body-lg--line-height: 20px;
+  --text-base: 14px;
+  --text-base--line-height: 21px;
+  --text-lg: 15px;
+  --text-lg--line-height: 22px;
+  --text-heading: 17px;
+  --text-heading--line-height: 24px;
+  --text-heading--letter-spacing: -0.015em;
+  --text-title-xl: 20px;
+  --text-title-xl--line-height: 26px;
+  --text-title-xl--letter-spacing: -0.02em;
+  --text-display: 28px;
+  --text-display--line-height: 34px;
+  --text-display--letter-spacing: -0.025em;
 
   /* Corners, from small controls up to dialogs. */
-  --radius-sm: 6px;
-  --radius-panel: 10px;
-  --radius-row: 12px;
-  --radius-card: 14px;
-  --radius-dialog: 18px;
-  --radius-modal: 22px;
+  --radius-sm: 5px;
+  --radius-panel: 7px;
+  --radius-row: 8px;
+  --radius-card: 10px;
+  --radius-dialog: 12px;
+  --radius-modal: 16px;
 }
 
 body {

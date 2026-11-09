@@ -25,7 +25,7 @@ const WindowButton = ({
   <Button
     aria-label={label}
     disabled={disabled}
-    lead={<Icon icon={icon} size={18} strokeWidth={1.6} />}
+    lead={<Icon icon={icon} size={16} strokeWidth={1.6} />}
     size="sm"
     title={label}
     variant="ghost"

@@ -98,12 +98,12 @@ export const TableCell = ({
         <span
           className={cn(
             'flex min-w-0 items-center',
-            showSub ? 'gap-3' : 'gap-2.5'
+            showSub ? 'gap-2.5' : 'gap-2'
           )}
         >
           <Avatar
             initials={detail.initials ?? ''}
-            size={showSub ? 36 : 28}
+            size={showSub ? 28 : 24}
             src={detail.src}
             tone={detail.tone}
           />

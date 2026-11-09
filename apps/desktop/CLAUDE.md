@@ -22,7 +22,7 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
 
 ## Code layout
 
-- `src/main`: window setup. Mac: hidden title bar, traffic lights at x 16, y 19.
+- `src/main`: window setup. Mac: hidden title bar, traffic lights at x 16, y 15.
   Windows: icon from `build/icon.ico` and an app user model id.
 - `src/preload`: exposes `window.openSales` (platform only, so far).
 - `src/renderer/src/components/ui`: the UI kit. `components/sales`: app-specific
@@ -42,7 +42,7 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
 ### Window frame
 
 Like the Claude desktop app: the sidebar runs to the top edge with the traffic
-lights in it. A 52px top bar with a hairline holds the page title. The sidebar
+lights in it. A 44px top bar with a hairline holds the page title. The sidebar
 toggle and back/forward buttons sit beside the lights (they end about 76px in,
 so the controls start at 80px). ⌘B / Ctrl+B toggles the sidebar, which slides
 rather than snapping, and remembers its state.
@@ -51,8 +51,13 @@ rather than snapping, and remembers its state.
 
 - Desktop first: wide screens, keyboard and hover. Check at about 1040px wide as
   well as 1440px.
-- Users may be older and non-technical: familiar controls, large type, words
-  instead of icons, everyday language, one obvious primary button.
+- Compact and dense, but readable, like Attio or Linear: a work tool people
+  live in all day, with room beside the work for the Ask AI panel. 13px for
+  most text (lists, fields, buttons), 12px for meta; controls 28 to 32px tall;
+  table rows 32px, or 44px with a second line. Spend space on data, not
+  padding.
+- Users aren't all technical: familiar controls, words beside icons, everyday
+  language, one obvious primary button.
 - Colours come only from `tokens.css`. Light theme only. Add a token rather than
   a colour value.
 - The accent is graphite, nearly as dark as primary. Anything that relies on it

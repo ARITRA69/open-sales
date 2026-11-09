@@ -22,7 +22,7 @@ const createMainWindow = () => {
     ...(process.platform === 'darwin'
       ? {
           titleBarStyle: 'hidden' as const,
-          trafficLightPosition: { x: 16, y: 19 }
+          trafficLightPosition: { x: 16, y: 15 }
         }
       : {}),
     webPreferences: {

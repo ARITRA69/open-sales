@@ -11,7 +11,7 @@ const avatarVariants = cva(
     variants: {
       size: {
         24: 'size-6 text-[10px]',
-        28: 'size-7 text-[11px]',
+        28: 'size-7 text-xs',
         36: 'size-9 text-body-sm'
       },
       tone: {
@@ -64,7 +64,7 @@ type TKeyProps = {
 export const Key = ({ tone = 'grey', children, className }: TKeyProps) => (
   <kbd
     className={cn(
-      'inline-flex h-6 min-w-6 flex-none items-center justify-center rounded-sm px-1.5 font-sans text-xs font-semibold text-muted-foreground',
+      'inline-flex h-5 min-w-5 flex-none items-center justify-center rounded-sm px-1 font-sans text-xs font-semibold text-muted-foreground',
       tone === 'grey' && 'bg-secondary',
       tone === 'raised' && 'bg-background shadow-(--shadow-key)',
       tone === 'plain' && 'bg-background',
@@ -81,7 +81,7 @@ type TDividerLabelProps = { children: ReactNode; className?: string }
 /** A hairline with words in the middle, like "or". */
 export const DividerLabel = ({ children, className }: TDividerLabelProps) => (
   <div
-    className={cn('flex items-center gap-3', className)}
+    className={cn('flex items-center gap-2.5', className)}
     data-slot="divider-label"
     role="separator"
   >

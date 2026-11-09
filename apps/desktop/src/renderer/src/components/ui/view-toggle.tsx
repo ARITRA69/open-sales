@@ -34,7 +34,7 @@ export const ViewToggle = ({
     <ToggleGroup.Root
       aria-label={t('View')}
       className={cn(
-        'inline-flex flex-none gap-0.5 rounded-full bg-secondary p-0.75',
+        'inline-flex flex-none gap-0.5 rounded-full bg-secondary p-0.5',
         className
       )}
       data-slot="view-toggle"
@@ -49,13 +49,13 @@ export const ViewToggle = ({
         <ToggleGroup.Item
           key={mode.value}
           className={cn(
-            'flex h-8 items-center gap-1.5 rounded-full px-3 text-body-sm font-semibold text-muted-foreground outline-none',
+            'flex h-6 items-center gap-1 rounded-full px-2.5 text-body-sm font-semibold text-muted-foreground outline-none',
             'transition-[background-color,box-shadow,color] duration-200 keyboard-focus:shadow-(--halo-keyboard)',
             'hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-(--shadow-segment)'
           )}
           value={mode.value}
         >
-          <Icon icon={mode.icon} size={15} />
+          <Icon icon={mode.icon} size={13} />
           {mode.label}
         </ToggleGroup.Item>
       ))}

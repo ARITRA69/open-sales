@@ -79,7 +79,7 @@ export const DealStatusNote = ({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3.5 transition-colors',
+        'flex flex-col gap-3 transition-colors',
         isFileOver && 'bg-muted'
       )}
       onDragLeave={(dragEvent) => {
@@ -98,14 +98,14 @@ export const DealStatusNote = ({
       <div className="flex items-center gap-2.5">
         <span
           className={cn(
-            'flex size-9 flex-none items-center justify-center rounded-panel bg-secondary',
+            'flex size-7 flex-none items-center justify-center rounded-panel bg-secondary',
             STATUS_TONE_CLASS[statusLook.tone]
           )}
         >
-          <Icon icon={statusLook.icon} size={17} strokeWidth={1.7} />
+          <Icon icon={statusLook.icon} size={15} strokeWidth={1.7} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-body-lg leading-5 font-semibold">
+          <span className="truncate text-sm leading-4.5 font-semibold">
             {draft.status}
           </span>
           <span className="truncate text-body-sm text-muted-foreground">
@@ -139,10 +139,10 @@ export const DealStatusNote = ({
             {draft.files.map((statusFile, fileIndex) => (
               <li
                 key={`${statusFile.name}-${statusFile.bytes}`}
-                className="flex min-h-8 items-center gap-2 rounded-panel bg-muted py-0.5 pr-0.5 pl-2.5"
+                className="flex min-h-7 items-center gap-2 rounded-panel bg-muted py-0.5 pr-0.5 pl-2"
               >
                 <span className="flex flex-none text-foreground-soft">
-                  <Icon icon={File01Icon} size={15} strokeWidth={1.6} />
+                  <Icon icon={File01Icon} size={14} strokeWidth={1.6} />
                 </span>
                 <span
                   className="min-w-0 flex-1 truncate text-sm"

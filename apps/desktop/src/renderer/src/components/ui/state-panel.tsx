@@ -67,7 +67,7 @@ export const SkeletonRows = ({
   return (
     <div
       aria-label={t('Loading')}
-      className={cn('flex flex-col gap-2', className)}
+      className={cn('flex flex-col gap-1.5', className)}
       data-slot="skeleton"
       role="status"
     >
@@ -77,13 +77,13 @@ export const SkeletonRows = ({
         return (
           <div
             key={index}
-            className="kit-skeleton flex h-15 items-center gap-3.5 rounded-row bg-muted px-4"
+            className="kit-skeleton flex h-11 items-center gap-2.5 rounded-row bg-muted px-3"
             style={order}
           >
-            <span className="size-8 flex-none rounded-full bg-input" />
+            <span className="size-6 flex-none rounded-full bg-input" />
             <span
               className={cn(
-                'h-2.5 rounded-full bg-input',
+                'h-2 rounded-full bg-input',
                 SKELETON_WIDTHS[index % SKELETON_WIDTHS.length]
               )}
             />
@@ -125,7 +125,7 @@ export const StatePanel = ({
   return (
     <section
       className={cn(
-        'flex flex-col items-center gap-4 rounded-dialog bg-muted px-8 py-12 text-center text-foreground',
+        'flex flex-col items-center gap-3 rounded-dialog bg-muted px-6 py-8 text-center text-foreground',
         className
       )}
       data-kind={kind}
@@ -135,14 +135,14 @@ export const StatePanel = ({
       <span
         aria-hidden
         className={cn(
-          'flex size-13 items-center justify-center rounded-card bg-background shadow-(--shadow-tile)',
+          'flex size-10 items-center justify-center rounded-panel bg-background shadow-(--shadow-tile)',
           kind === 'error' ? 'text-destructive' : 'text-foreground-soft'
         )}
       >
-        <Icon icon={icon ?? copy.icon} size={22} strokeWidth={1.6} />
+        <Icon icon={icon ?? copy.icon} size={18} strokeWidth={1.6} />
       </span>
-      <div className="flex max-w-105 flex-col gap-1.5">
-        <h2 className="m-0 text-lg font-bold">{title ?? copy.title}</h2>
+      <div className="flex max-w-95 flex-col gap-1">
+        <h2 className="m-0 text-base font-semibold">{title ?? copy.title}</h2>
         <p className="m-0 text-body-lg text-muted-foreground">
           {body ?? copy.body}
         </p>

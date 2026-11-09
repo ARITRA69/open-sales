@@ -39,7 +39,7 @@ const DealStatusChip = ({
       type="button"
       {...buttonProps}
       className={cn(
-        'relative box-border inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border-none bg-secondary px-2 text-body-sm whitespace-nowrap transition-colors outline-none hover:bg-input keyboard-focus:shadow-(--halo-search)',
+        'relative box-border inline-flex h-6 max-w-full items-center gap-1 rounded-full border-none bg-secondary px-2 text-body-sm whitespace-nowrap transition-colors outline-none hover:bg-input keyboard-focus:shadow-(--halo-search)',
         isIdle
           ? 'font-medium text-muted-foreground'
           : 'font-semibold text-foreground',
@@ -49,7 +49,7 @@ const DealStatusChip = ({
       <span
         className={cn('flex flex-none', STATUS_TONE_CLASS[statusLook.tone])}
       >
-        <Icon icon={statusLook.icon} size={15} strokeWidth={1.7} />
+        <Icon icon={statusLook.icon} size={14} strokeWidth={1.7} />
       </span>
       <span className="truncate">{status}</span>
       <Icon className="flex-none" icon={ArrowDown01Icon} size={12} />
@@ -179,7 +179,7 @@ export const DealStatus = ({
         <Popover.Content
           align="start"
           aria-label={`${noteDraft?.status}, note and files`}
-          className="sales-popover z-50 box-border max-h-(--radix-popover-content-available-height) w-85 scrollbar-thin overflow-y-auto rounded-dialog bg-background p-4.5 shadow-(--shadow-menu)"
+          className="sales-popover z-50 box-border max-h-(--radix-popover-content-available-height) w-80 scrollbar-thin overflow-y-auto rounded-dialog bg-background p-3.5 shadow-(--shadow-menu)"
           collisionPadding={12}
           sideOffset={6}
           onInteractOutside={(outsideEvent) => {

@@ -50,12 +50,12 @@ const FieldWrap = ({
 
   return (
     <div
-      className={cn('flex w-full flex-col gap-2', className)}
+      className={cn('flex w-full flex-col gap-1.5', className)}
       data-slot="field"
     >
       {label ? (
         <label
-          className="text-sm font-semibold text-foreground"
+          className="text-body-sm font-semibold text-foreground"
           htmlFor={controlId}
         >
           {label}
@@ -194,7 +194,7 @@ const SearchField = ({
   return (
     <label
       className={cn(
-        'flex h-10 items-center gap-2.5 rounded-full bg-secondary pr-2 pl-3.5 text-muted-foreground',
+        'flex h-8 items-center gap-2 rounded-full bg-secondary pr-1.5 pl-3 text-muted-foreground',
         'transition-[background-color,box-shadow,color] duration-200 ease-(--ease-out-soft)',
         'focus-within:bg-background focus-within:text-foreground focus-within:shadow-(--halo-search) hover:bg-secondary-hover',
         className
@@ -260,7 +260,7 @@ const SelectField = ({
           className={cn(
             fieldControlClass({ invalid: Boolean(error), readOnly }),
             // A select is a button, so its ring is for the keyboard only.
-            'flex h-11 items-center gap-3 pr-3.5 pl-4 text-left focus:bg-muted focus:shadow-none keyboard-focus:bg-background keyboard-focus:shadow-(--halo-field)',
+            'flex h-8 items-center gap-2 pr-2.5 pl-3 text-left focus:bg-muted focus:shadow-none keyboard-focus:bg-background keyboard-focus:shadow-(--halo-field)',
             isOpen &&
               'bg-background shadow-(--halo-field) hover:bg-background focus:bg-background',
             !selected && 'text-faint',
@@ -307,7 +307,7 @@ const SelectField = ({
               tabIndex={-1}
             >
               {searchable ? (
-                <div className="-mx-1.5 -mt-1.5 mb-1.5 flex h-12 items-center gap-2.5 px-4 shadow-[inset_0_-1px_0_var(--border)]">
+                <div className="-mx-1.5 -mt-1.5 mb-1.5 flex h-9 items-center gap-2 px-3 shadow-[inset_0_-1px_0_var(--border)]">
                   <Icon
                     className="flex-none text-muted-foreground"
                     icon={Search01Icon}
@@ -322,7 +322,7 @@ const SelectField = ({
                 </div>
               ) : null}
               <Command.List className="max-h-72 overflow-y-auto">
-                <Command.Empty className="px-3 py-2.5 text-sm text-muted-foreground">
+                <Command.Empty className="px-2.5 py-2 text-sm text-muted-foreground">
                   {t('Nothing matches')}
                 </Command.Empty>
                 {selectOptions.map((option) => {

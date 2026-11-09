@@ -45,12 +45,12 @@ export const PageHeader = ({
 
   return (
     <header
-      className={cn('flex w-full flex-col gap-4 text-foreground', className)}
+      className={cn('flex w-full flex-col gap-3 text-foreground', className)}
       data-slot="page-header"
     >
       {crumbs.length > 0 ? (
         <nav aria-label={t('Breadcrumb')}>
-          <ol className="m-0 flex list-none items-center gap-1.5 p-0 text-sm font-medium">
+          <ol className="m-0 flex list-none items-center gap-1 p-0 text-body-sm font-medium">
             {crumbs.map((crumb, index) => {
               const isCurrent = index === crumbs.length - 1
 
@@ -82,7 +82,7 @@ export const PageHeader = ({
         <Link
           className={cn(
             QUIET_LINK,
-            '-mb-1 inline-flex items-center gap-1 self-start text-sm font-medium'
+            '-mb-1 inline-flex items-center gap-1 self-start text-body-sm font-medium'
           )}
           href={backLink.href}
         >
@@ -90,27 +90,37 @@ export const PageHeader = ({
           {backLink.label}
         </Link>
       ) : null}
-      <div className="flex min-h-10 items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {/*
+        The title keeps room for itself. When the search and buttons don't fit
+        beside it (a narrow window with Ask AI open), they move to a line below.
+      */}
+      <div className="flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex min-w-48 flex-1 flex-col gap-0.5">
           <h1 className="m-0 truncate text-title-xl font-bold">{title}</h1>
           {subtitle ? (
-            <p className="m-0 text-body-lg text-muted-foreground">{subtitle}</p>
+            <p className="m-0 truncate text-body-lg text-muted-foreground">
+              {subtitle}
+            </p>
           ) : null}
         </div>
-        {search}
-        {actions}
+        {search || actions ? (
+          <div className="flex flex-none items-center gap-3">
+            {search}
+            {actions}
+          </div>
+        ) : null}
       </div>
       {tabs.length > 0 ? (
         <nav
           aria-label={t('Sections')}
-          className="flex gap-6 shadow-[inset_0_-1px_0_var(--border)]"
+          className="flex gap-5 shadow-[inset_0_-1px_0_var(--border)]"
         >
           {tabs.map((tab) => (
             <Link
               key={tab.href}
               aria-current={tab.active ? 'page' : undefined}
               className={cn(
-                'relative pb-3 text-body-lg whitespace-nowrap no-underline transition-colors duration-150 outline-none',
+                'relative pb-2 text-sm whitespace-nowrap no-underline transition-colors duration-150 outline-none',
                 'after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:transition-colors after:duration-200',
                 'keyboard-focus:shadow-(--halo-keyboard)',
                 tab.active

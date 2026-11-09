@@ -24,7 +24,7 @@ export const Checkbox = ({
     {...checkboxProps}
     checked={checked}
     className={cn(
-      'relative inline-flex size-5 flex-none rounded-sm bg-background shadow-(--shadow-outline)',
+      'relative inline-flex size-4 flex-none rounded-sm bg-background shadow-(--shadow-outline)',
       FOCUS,
       DISABLED,
       className
@@ -62,7 +62,7 @@ export const RadioGroup = ({
 }: ComponentProps<typeof RadioGroupPrimitive.Root>) => (
   <RadioGroupPrimitive.Root
     {...groupProps}
-    className={cn('flex flex-col gap-3', className)}
+    className={cn('flex flex-col gap-2', className)}
     data-slot="radio-group"
   />
 )
@@ -74,7 +74,7 @@ export const Radio = ({
   <RadioGroupPrimitive.Item
     {...radioProps}
     className={cn(
-      'relative inline-flex size-5 flex-none rounded-full bg-background shadow-(--shadow-outline)',
+      'relative inline-flex size-4 flex-none rounded-full bg-background shadow-(--shadow-outline)',
       FOCUS,
       DISABLED,
       className
@@ -82,7 +82,7 @@ export const Radio = ({
     data-slot="radio"
   >
     <RadioGroupPrimitive.Indicator forceMount className={MARK}>
-      <span className="size-2 rounded-full bg-primary-foreground" />
+      <span className="size-1.5 rounded-full bg-primary-foreground" />
     </RadioGroupPrimitive.Indicator>
   </RadioGroupPrimitive.Item>
 )
@@ -101,7 +101,7 @@ export const Switch = ({
     {...switchProps}
     className={cn(
       'group/switch inline-flex flex-none items-center rounded-full bg-input p-0.5 transition-colors duration-200 data-[state=checked]:bg-primary',
-      size === 'sm' ? 'h-5.5 w-9.5' : 'h-6.5 w-11',
+      size === 'sm' ? 'h-4.5 w-7.5' : 'h-5 w-8.5',
       FOCUS,
       DISABLED,
       className
@@ -112,8 +112,8 @@ export const Switch = ({
       className={cn(
         'block rounded-full bg-background shadow-(--shadow-knob) transition-transform duration-200 ease-(--ease-out-soft)',
         size === 'sm'
-          ? 'size-4.5 data-[state=checked]:translate-x-4'
-          : 'size-5.5 data-[state=checked]:translate-x-4.5'
+          ? 'size-3.5 data-[state=checked]:translate-x-3'
+          : 'size-4 data-[state=checked]:translate-x-3.5'
       )}
     />
   </SwitchPrimitive.Root>
@@ -138,7 +138,7 @@ export const Chip = ({
     {...buttonProps}
     aria-pressed={active}
     className={cn(
-      'inline-flex h-8.5 flex-none items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap transition-colors duration-200',
+      'inline-flex h-7 flex-none items-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200',
       active
         ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
         : 'bg-secondary text-secondary-foreground hover:bg-secondary-hover',

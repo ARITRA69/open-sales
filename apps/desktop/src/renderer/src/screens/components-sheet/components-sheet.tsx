@@ -107,8 +107,8 @@ const WAITING_ITEMS = [
 type TSheetSectionProps = { title: string; children: ReactNode }
 
 const SheetSection = ({ title, children }: TSheetSectionProps) => (
-  <section className="flex flex-col gap-4">
-    <h2 className="m-0 text-lg font-bold">{title}</h2>
+  <section className="flex flex-col gap-3">
+    <h2 className="m-0 text-base font-semibold">{title}</h2>
     {children}
   </section>
 )
@@ -119,7 +119,7 @@ const PaletteSection = () => (
       {COLOUR_GROUPS.map((group) => (
         <div
           key={group.title}
-          className="flex flex-col gap-3 rounded-dialog bg-muted p-4"
+          className="flex flex-col gap-2 rounded-card bg-muted p-3"
         >
           <h3 className="m-0 text-body-sm font-semibold text-muted-foreground">
             {group.title}
@@ -127,7 +127,7 @@ const PaletteSection = () => (
           {group.swatches.map((swatch) => (
             <div key={swatch.name} className="flex items-center gap-3">
               <span
-                className={`${swatch.swatchClass} size-10 flex-none rounded-panel shadow-(--shadow-swatch)`}
+                className={`${swatch.swatchClass} size-7 flex-none rounded-sm shadow-(--shadow-swatch)`}
               />
               <span className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-semibold">
@@ -148,14 +148,14 @@ const PaletteSection = () => (
 const TypeSection = () => (
   <SheetSection title="Type">
     <div className="flex flex-col gap-2">
-      <p className="m-0 text-display font-bold">Display, 40</p>
-      <p className="m-0 text-title-xl font-bold">Page title, 28</p>
-      <p className="m-0 text-heading font-bold">Dialog title, 22</p>
-      <p className="m-0 text-base">Body, 16. Notes and AI answers.</p>
-      <p className="m-0 text-body-lg">Large body, 15. Fields and lists.</p>
-      <p className="m-0 text-sm font-semibold">Label, 14. Buttons and chips.</p>
+      <p className="m-0 text-display font-bold">Display, 28</p>
+      <p className="m-0 text-title-xl font-bold">Page title, 20</p>
+      <p className="m-0 text-heading font-bold">Dialog title, 17</p>
+      <p className="m-0 text-base">Body, 14. Notes and AI answers.</p>
+      <p className="m-0 text-body-lg">Text, 13. Lists, fields and buttons.</p>
+      <p className="m-0 text-sm font-semibold">Label, 13. Buttons and chips.</p>
       <p className="m-0 text-body-sm text-muted-foreground">
-        Meta, 13. Hints and dates.
+        Meta, 12. Hints and dates.
       </p>
     </div>
   </SheetSection>
@@ -257,10 +257,10 @@ export const ComponentsSheet = () => {
             <Button loading>Saving</Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm">Small, 32</Button>
-            <Button>Medium, 36</Button>
+            <Button size="sm">Small, 28</Button>
+            <Button>Medium, 32</Button>
             <Button size="lg" trailIcon={ArrowRight01Icon}>
-              Large, 40
+              Large, 36
             </Button>
             <Button aria-label="Add" leadIcon={Add01Icon} variant="secondary" />
             <Button aria-label="Add" leadIcon={Add01Icon} size="lg" />
@@ -306,16 +306,16 @@ export const ComponentsSheet = () => {
         </SheetSection>
 
         <SheetSection title="Choices">
-          <div className="flex flex-wrap items-start gap-10">
-            <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-3 text-body-lg">
+          <div className="flex flex-wrap items-start gap-8">
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-body-lg">
                 <Checkbox
                   checked={isTicked}
                   onCheckedChange={(checked) => setIsTicked(checked === true)}
                 />
                 Remind me before it closes
               </label>
-              <label className="flex items-center gap-3 text-body-lg">
+              <label className="flex items-center gap-2 text-body-lg">
                 <Switch checked={isSwitchOn} onCheckedChange={setIsSwitchOn} />
                 Send me a daily summary
               </label>
@@ -325,11 +325,11 @@ export const ComponentsSheet = () => {
               value={plan}
               onValueChange={setPlan}
             >
-              <label className="flex items-center gap-3 text-body-lg">
+              <label className="flex items-center gap-2 text-body-lg">
                 <Radio value="monthly" />
                 Billed monthly
               </label>
-              <label className="flex items-center gap-3 text-body-lg">
+              <label className="flex items-center gap-2 text-body-lg">
                 <Radio value="yearly" />
                 Billed yearly
               </label>
@@ -458,7 +458,7 @@ export const ComponentsSheet = () => {
                 {WAITING_ITEMS.map((item) => (
                   <li
                     key={item}
-                    className="flex min-h-10 items-center gap-3 text-body-lg"
+                    className="flex min-h-8 items-center gap-2 text-body-lg"
                   >
                     <Dot size="sm" />
                     {item}

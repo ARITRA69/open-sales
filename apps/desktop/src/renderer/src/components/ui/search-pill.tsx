@@ -32,7 +32,7 @@ export const SearchPill = ({
       aria-expanded={open}
       aria-haspopup="dialog"
       className={cn(
-        'flex h-10 w-70 items-center gap-2.5 rounded-full pr-2 pl-3.5 text-sm font-medium whitespace-nowrap outline-none',
+        'flex h-8 w-60 items-center gap-2 rounded-full pr-1.5 pl-3 text-sm font-medium whitespace-nowrap outline-none',
         'transition-[background-color,box-shadow,color] duration-200 ease-(--ease-out-soft)',
         'keyboard-focus:shadow-(--halo-keyboard)',
         open

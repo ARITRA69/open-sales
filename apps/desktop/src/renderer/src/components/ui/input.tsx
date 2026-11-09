@@ -37,7 +37,7 @@ export const Input = ({
     aria-invalid={invalid || undefined}
     className={cn(
       fieldControlClass({ invalid, readOnly }),
-      'h-11 px-4 placeholder:text-faint',
+      'h-8 px-3 placeholder:text-faint',
       className
     )}
     data-slot="input"
@@ -60,7 +60,7 @@ export const Textarea = ({
     aria-invalid={invalid || undefined}
     className={cn(
       fieldControlClass({ invalid, readOnly }),
-      'resize-none px-4 py-3 placeholder:text-faint',
+      'resize-none px-3 py-2 placeholder:text-faint',
       className
     )}
     data-slot="textarea"

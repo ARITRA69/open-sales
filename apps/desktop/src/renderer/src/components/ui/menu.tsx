@@ -94,7 +94,7 @@ export const Menu = ({
               return (
                 <DropdownMenu.Separator
                   key={`line-${index}`}
-                  className="mx-3 my-1.5 h-px bg-border"
+                  className="mx-2 my-1 h-px bg-border"
                 />
               )
             }
@@ -103,7 +103,7 @@ export const Menu = ({
             const isChoiceItem = item.selected !== undefined
             const itemClass = cn(
               POPUP_ITEM_CLASS,
-              item.description && 'py-2',
+              item.description && 'py-1.5',
               item.danger && 'text-destructive',
               item.selected && 'bg-muted font-semibold'
             )
