@@ -85,6 +85,8 @@ A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
   as roles and `canEditCompany`. It ships TypeScript source, no build step;
   Vite and Bun read it directly. The desktop config bundles it into the main
   and preload code rather than loading it at runtime.
+- `docs`: product docs. `features.md` (what it does, by priority) and
+  `user-flows.md` (step-by-step journeys). Update them when a decision changes.
 - Root: `tsconfig.base.json` (strict options every package extends), Prettier
   config, `bunfig.toml` (hoisted `node_modules`, which Electron packagers expect).
 
