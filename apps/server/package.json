@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@open-sales/shared": "workspace:*",
+    "better-auth": "1.7.18",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.17",
     "postgres": "^3.4",

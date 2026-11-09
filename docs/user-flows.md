@@ -57,25 +57,36 @@ created, and again when it's approved.
 
 ### 1. Set up the server
 
-**Who:** Admin · **Starts from:** a terminal on the company's server
+**Who:** Admin · **Starts from:** a terminal on the company's server, then the
+desktop app. First-run happens in the app; the server has no web pages.
 
 1. Clone the repo (or download the compose file) and run `docker compose up -d`.
-2. The server starts Postgres, runs migrations, and prints its address.
-3. The admin opens the address in a browser. A first-run page appears because no
-   account exists yet.
-4. They enter their name, email and password, and name the workspace (with an
-   optional logo).
-5. The page confirms the admin account and shows the server address to share
-   with the team, with a link to download the desktop app.
+2. The server starts Postgres, runs migrations, makes its own sign-in secret
+   (unless `AUTH_SECRET` is set), and answers at `/api/v1/health`.
+3. The admin opens the desktop app and enters the server's address (flow 3,
+   step 1).
+4. The server has no accounts yet, so the app shows **Create the admin
+   account**: workspace name, their name, work email and password (at least 8
+   characters).
+5. **Create account** makes the workspace and its first admin, and signs them
+   in straight away. They land in the app.
 
 **AI:** none.
 
+**Built (sign-in slice):** steps 1 to 5. The logo comes later, with branding
+settings.
+
 **Edge cases**
 
-- Someone else reaches the first-run page first: it disappears once an admin
-  exists, so the first page should say "Only open this on a private network
-  until you've finished".
-- The database can't start: show the error and the log command, not a blank page.
+- Two people set up at once: the server lets only the first one through
+  (setup holds a database lock), and the other sees "This server is already
+  set up."
+- Someone else reaches a new server first: they become its admin. Keep a new
+  server on a private network until setup is done.
+- Open sign-up is switched off: new people join by invite (flow 2), never by
+  signing themselves up.
+- The database can't start: the server exits with a clear message and Docker
+  restarts it until the database answers.
 
 **Mobbin:** workspace creation in [Attio onboarding](https://mobbin.com/flows/33785144-9ef2-4b1a-8a1c-27c13ce0e1c6?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (logo, name, then data).
 
@@ -107,10 +118,14 @@ started list
 **Who:** All · **Starts from:** opening the desktop app for the first time
 
 1. **Server address.** The app asks for the company's server address (pre-filled
-   if they came from an invite link). It checks the address and shows the
-   workspace name and logo to confirm.
-2. **Sign in.** Email and password, or **Sign in with SSO** if the admin turned
-   it on. New invitees set a password here.
+   if they came from an invite link). Typing `sales.acme.com` is enough: local
+   addresses get `http://`, others `https://`. The app checks it's one of our
+   servers and that the server can reach its database, then remembers it.
+2. **Create admin or sign in.** A server with no accounts shows **Create the
+   admin account** (flow 1). Otherwise **Sign in to {workspace}**: email and
+   password, or **Sign in with SSO** if the admin turned it on (later). New
+   invitees set a password here (later). The session is kept encrypted in the
+   OS keychain, so next launch goes straight in.
 3. **About you.** Name and photo (optional), as Attio does.
 4. **AI tool.** The app looks for Claude Code and Codex:
    - Found and signed in: "Claude Code is ready" with a tick.
@@ -126,9 +141,16 @@ started list
 **Edge cases**
 
 - Server unreachable: say whether it's the address, the network, or the server
-  being down, and keep what they typed.
-- Wrong password several times: slow down attempts; offer "Ask your admin to
-  reset it" (no self-serve reset without SMTP).
+  being down, and keep what they typed. A saved server that stops answering
+  shows **Can't reach your server** with **Try again** and **Use a different
+  server**.
+- Wrong password: "That email and password don't match." Many tries: the
+  server slows them down ("Too many tries"). The form says "Forgot it? Ask
+  your admin to reset it" (no self-serve reset without SMTP).
+- Session expired or signed out elsewhere: next launch shows sign-in again.
+
+**Built (sign-in slice):** steps 1 and 2, plus Sign out from the account menu
+at the bottom of the sidebar. Steps 3 to 6 come later.
 
 **Mobbin:** [Attio onboarding](https://mobbin.com/flows/33785144-9ef2-4b1a-8a1c-27c13ce0e1c6?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (profile step, "Sync your email and calendar" with a sharing choice, and "Continue without sync").
 

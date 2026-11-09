@@ -41,6 +41,10 @@ services:
     environment:
       DATABASE_URL: postgres://open_sales:${POSTGRES_PASSWORD:-open-sales}@db:5432/open_sales
       PORT: 8787
+      # Optional. Unset, the server makes its own secret and keeps it in the
+      # database. PUBLIC_URL is where people reach this server.
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      PUBLIC_URL: ${PUBLIC_URL:-}
     ports:
       - '${SERVER_PORT:-8787}:8787'
 

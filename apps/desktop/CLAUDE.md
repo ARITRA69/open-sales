@@ -24,7 +24,20 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
 
 - `src/main`: window setup. Mac: hidden title bar, traffic lights at x 16, y 15.
   Windows: icon from `build/icon.ico` and an app user model id.
-- `src/preload`: exposes `window.openSales` (platform only, so far).
+- `src/main`: also the server connection. `server-api.ts` calls the Sales API,
+  `connection-store.ts` keeps the server address and the encrypted session
+  token in userData, `connection.ts` works out which step to show, and
+  `ipc.ts` answers the renderer (checking its input with the shared schemas).
+- `src/preload`: exposes `window.openSales`: `platform` and `connection`
+  (getState, chooseServer, forgetServer, createAdmin, signIn, signOut). Types
+  and channel names are in `bridge-types.ts`.
+- `screens/connect`: server address, create admin, sign in and can't-reach
+  screens, and `ConnectionGate`, which picks one from the main process's
+  state. In a plain browser tab or a test there's no bridge, so `app.tsx`
+  skips the gate and opens the components sheet.
+- To see the connect screens in the browser preview, mount `ConnectionGate`
+  with a stand-in bridge object; the real one needs Electron. Changes to
+  `src/main` or `src/preload` need `bun run dev` restarted.
 - `brand.config.json`: the product name and app id. User-facing text gets the
   name from `useBrand()` (`hooks/use-brand.ts`), never a literal "Open Sales".
   The window title follows it too.

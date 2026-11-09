@@ -1,10 +1,14 @@
 import { join } from 'node:path'
 
-import { app, BrowserWindow, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, nativeImage, safeStorage, shell } from 'electron'
 
 import brand from '../../brand.config.json'
 import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
+import { createConnection } from './connection'
+import { createConnectionStore } from './connection-store'
+import { registerConnectionIpc } from './ipc'
+import { createServerApi } from './server-api'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
 
@@ -62,6 +66,14 @@ void app.whenReady().then(() => {
   }
   // Without this, Windows groups the app under Electron in the taskbar.
   if (process.platform === 'win32') app.setAppUserModelId(brand.appId)
+
+  // The main process talks to the server and keeps the session token.
+  registerConnectionIpc(
+    createConnection(
+      createServerApi(),
+      createConnectionStore(app.getPath('userData'), safeStorage)
+    )
+  )
 
   createMainWindow()
 

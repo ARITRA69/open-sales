@@ -39,9 +39,9 @@ person approves (see [Proposals and audit](#4-proposals-and-audit)).
 | Feature                  | What it does                                                                                                                                | Who   | AI  | Priority |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- | -------- |
 | One-command server       | `docker compose up` starts the Sales API and Postgres. Migrations run on start.                                                             | Admin | —   | P0       |
-| First-run admin account  | The first person to open the server creates the admin account and names the workspace.                                                      | Admin | —   | P0       |
-| Server address screen    | On first launch the app asks for the company's server address, checks it and remembers it.                                                  | All   | —   | P0       |
-| Email and password login | Built-in sign-in. Session token kept in the OS keychain.                                                                                    | All   | —   | P0       |
+| First-run admin account  | On a server with no accounts, the app asks the first person to create the admin account and name the workspace. Built.                      | Admin | —   | P0       |
+| Server address screen    | On first launch the app asks for the company's server address, checks it and remembers it. Built.                                           | All   | —   | P0       |
+| Email and password login | Built-in sign-in. Session token kept in the OS keychain. Built.                                                                             | All   | —   | P0       |
 | SSO (OIDC)               | Optional sign-in with the company's identity provider.                                                                                      | Admin | —   | P1       |
 | Invite teammates         | Invite by email with a role (Admin, Manager, Member). The invite link opens the app or shows how to install it.                             | Admin | —   | P0       |
 | AI tool check            | Finds Claude Code or Codex on the machine, shows whether it's signed in and ready, and explains how to fix it. Shown in the sidebar footer. | All   | —   | P0       |

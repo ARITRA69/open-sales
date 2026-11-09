@@ -18,7 +18,10 @@ import {
   type TDealStatus
 } from '@/components/sales/deal-status-config'
 import { RenewalDialog } from '@/components/sales/renewal-dialog'
-import { SalesSidebar } from '@/components/sales/sales-sidebar'
+import {
+  SalesSidebar,
+  type TSidebarAccount
+} from '@/components/sales/sales-sidebar'
 import { Avatar, DividerLabel, Key } from '@/components/ui/bits'
 import { Button } from '@/components/ui/button'
 import {
@@ -161,7 +164,23 @@ const TypeSection = () => (
   </SheetSection>
 )
 
-export const ComponentsSheet = () => {
+// Who the sidebar shows when no one is signed in (browser preview, tests).
+const SAMPLE_ACCOUNT: TSidebarAccount = {
+  name: 'Asha Menon',
+  email: 'asha@example.com',
+  initials: 'AM',
+  roleLabel: 'Member'
+}
+
+type TComponentsSheetProps = {
+  account?: TSidebarAccount
+  onSignOut?: () => void
+}
+
+export const ComponentsSheet = ({
+  account = SAMPLE_ACCOUNT,
+  onSignOut
+}: TComponentsSheetProps) => {
   const [viewMode, setViewMode] = useState<TViewMode>('list')
   const [activeTab, setActiveTab] = useState(0)
   const [activeFilter, setActiveFilter] = useState(0)
@@ -211,11 +230,10 @@ export const ComponentsSheet = () => {
       }
       sidebar={
         <SalesSidebar
+          account={account}
           active="today"
-          roleLabel="Rep"
-          userInitials="AM"
-          userName="Asha Menon"
           waiting={3}
+          onSignOut={onSignOut}
         />
       }
       title="Components"

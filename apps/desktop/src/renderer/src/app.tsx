@@ -5,6 +5,7 @@ import { MotionConfig } from 'motion/react'
 import { useBrand } from '@/hooks/use-brand'
 import { useInputTracking } from '@/hooks/use-input-tracking'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
+import { ConnectionGate } from '@/screens/connect/connection-gate'
 
 export const App = () => {
   useInputTracking()
@@ -18,7 +19,12 @@ export const App = () => {
   // Motion follows the system's "reduce motion" setting everywhere.
   return (
     <MotionConfig reducedMotion="user">
-      <ComponentsSheet />
+      {/* No bridge in a plain browser tab or a test: show the UI without a server. */}
+      {window.openSales ? (
+        <ConnectionGate bridge={window.openSales.connection} />
+      ) : (
+        <ComponentsSheet />
+      )}
     </MotionConfig>
   )
 }

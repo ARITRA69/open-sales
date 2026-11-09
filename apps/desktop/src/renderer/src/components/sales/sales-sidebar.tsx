@@ -13,6 +13,7 @@ import {
 import { Link } from '@/components/shared/link'
 import { Avatar } from '@/components/ui/bits'
 import { Icon, type TIcon } from '@/components/ui/icon'
+import { Menu } from '@/components/ui/menu'
 import { Dot } from '@/components/ui/status'
 import { useBrand } from '@/hooks/use-brand'
 import { cn } from '@/lib/utils'
@@ -91,23 +92,44 @@ const SalesNavLink = ({ item, isActive, waitingCount }: TSalesNavLinkProps) => (
   </Link>
 )
 
+/** The signed-in person, as the sidebar shows them. */
+export type TSidebarAccount = {
+  name: string
+  email: string
+  initials: string
+  roleLabel: string
+}
+
 type TSalesSidebarProps = {
   active?: TSalesNavId
   // How many proposals are waiting for this person. It shows on Today.
   waiting?: number
   engine?: string
-  userName: string
-  userInitials: string
-  roleLabel: string
+  account: TSidebarAccount
+  // Turns the person's name into a menu with Sign out.
+  onSignOut?: () => void
 }
+
+const AccountSummary = ({ account }: { account: TSidebarAccount }) => (
+  <>
+    <Avatar initials={account.initials} size={24} />
+    <span className="flex min-w-0 flex-col">
+      <span className="truncate text-body-sm leading-4 font-semibold">
+        {account.name}
+      </span>
+      <span className="truncate text-xs leading-3.5 text-muted-foreground">
+        {account.roleLabel}
+      </span>
+    </span>
+  </>
+)
 
 export const SalesSidebar = ({
   active,
   waiting = 0,
   engine = 'Claude Code',
-  userName,
-  userInitials,
-  roleLabel
+  account,
+  onSignOut
 }: TSalesSidebarProps) => {
   const { productName } = useBrand()
 
@@ -148,17 +170,31 @@ export const SalesSidebar = ({
             href: '#/settings'
           }}
         />
-        <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-0.5">
-          <Avatar initials={userInitials} size={24} />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-body-sm leading-4 font-semibold">
-              {userName}
-            </span>
-            <span className="truncate text-xs leading-3.5 text-muted-foreground">
-              {roleLabel}
-            </span>
-          </span>
-        </div>
+        {onSignOut ? (
+          <Menu
+            align="start"
+            header={
+              <p className="m-0 truncate px-2 py-1.5 text-body-sm text-muted-foreground">
+                {account.email}
+              </p>
+            }
+            items={[{ label: 'Sign out', onSelect: onSignOut }]}
+            label="Your account"
+            side="top"
+            trigger={
+              <button
+                className="flex w-full items-center gap-2 rounded-panel px-2.5 py-1 text-left transition-colors outline-none hover:bg-secondary keyboard-focus:shadow-(--halo-keyboard)"
+                type="button"
+              >
+                <AccountSummary account={account} />
+              </button>
+            }
+          />
+        ) : (
+          <div className="flex items-center gap-2 px-2.5 py-1">
+            <AccountSummary account={account} />
+          </div>
+        )}
       </div>
     </nav>
   )

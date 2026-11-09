@@ -36,9 +36,10 @@ a person's approval.
 
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
 - **Two parts.** A desktop app (built) and a server (started: health check,
-  database and migrations in Docker Compose; no sign-in or data yet).
-  - Server: Sales API + Postgres, started with one Docker Compose command. The
-    first person to open it creates the admin account.
+  first-run setup and sign-in; no sales data yet).
+  - Server: Sales API + Postgres, started with one Docker Compose command. It
+    has no web pages: the first person to connect from the desktop app creates
+    the admin account there.
   - Desktop app: asks for the company's server address on first launch. It must
     stay a desktop app, because AI help runs through each person's own Claude
     Code or Codex installed on their machine. The app never pays for or proxies AI.
@@ -73,8 +74,17 @@ a person's approval.
     start, and only ever add: self-hosters upgrade by pulling a new image.
     The driver is `postgres` 3.4: version 4 crashes under Bun when the database
     drops a connection, so don't upgrade it without testing that.
-  - Better Auth for email and password, OIDC SSO and sessions. The app keeps its
-    session token in the OS keychain (Electron `safeStorage`).
+  - Better Auth (1.7) for email and password, OIDC SSO (later) and sessions,
+    mounted at `/api/v1/auth` with the bearer plugin. Open sign-up is blocked
+    in Hono (`/auth/sign-up/*` returns 404): accounts come from first-run setup
+    (`POST /api/v1/setup`) and, later, invites. A `user.create` hook makes the
+    first user admin; `role` can't be set by clients. The signing secret is
+    `AUTH_SECRET` if set, else generated once and kept in `instance_setting`.
+  - The desktop app's main process is the API client: it calls the server,
+    stores the server address in userData and the session token encrypted
+    with `safeStorage`. The renderer never sees the token; it asks the main
+    process through `window.openSales.connection` (see
+    `apps/desktop/src/preload/bridge-types.ts`).
   - pg-boss for background jobs (imports, email and CRM sync), so Postgres is
     the only service the server needs.
   - Live updates: the server sends Postgres NOTIFY on each change and each
@@ -101,8 +111,10 @@ A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
 - `apps/server` (`@open-sales/server`): the Sales API. `src/app.ts` builds the
   Hono app (routes under `/api/v1`, dependencies passed in so tests need no
   database); `src/index.ts` reads settings, runs migrations, then serves.
-  `src/db/schema.ts` is the Drizzle schema; `drizzle/` holds the generated SQL
-  migrations. Its Dockerfile builds from the repo root.
+  `src/db/schema.ts` is the Drizzle schema (workspace, Better Auth's tables,
+  instance settings); `drizzle/` holds the generated SQL migrations.
+  `src/auth.ts` sets up Better Auth, `src/setup.ts` is first-run setup and
+  `src/secret.ts` the signing secret. Its Dockerfile builds from the repo root.
 - `packages/shared` (`@open-sales/shared`): types and rules both sides use, such
   as roles and `canEditCompany`. It ships TypeScript source, no build step;
   Vite and Bun read it directly. The desktop config bundles it into the main
@@ -178,8 +190,11 @@ package that uses it (`cd apps/desktop && bun add x`).
 
 1. Design the main screens (Today, Pipeline, Leads, Accounts, People, Reports,
    Playbooks, Settings) before building them.
-2. Build the server: schema, roles, auth, first-run setup. (Docker Compose,
-   migrations and the health check are done.)
-3. Connect the app to the server; first-launch server address screen.
+2. Accounts, people and deals: schema with server-side role checks, the real
+   app shell with Accounts, People and Pipeline, and CSV import. (Sign-in is
+   done: first-run setup, server address screen, sign-in, sign out.)
+3. Proposals and the MCP bridge, so Claude Code or Codex read records and
+   propose changes as the signed-in person; then Today. Invites and user
+   management come with Settings.
 4. Integrations, starting with CSV import and SMTP.
 5. Packaging, signing and auto-update.

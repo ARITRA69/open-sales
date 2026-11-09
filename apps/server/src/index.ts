@@ -1,8 +1,11 @@
 import packageJson from '../package.json'
 import { createApp } from './app'
+import { createAuth } from './auth'
 import { createDatabase } from './db/client'
 import { runMigrations } from './db/migrate'
 import { readEnv } from './env'
+import { resolveAuthSecret } from './secret'
+import { createSetupService } from './setup'
 
 const env = readEnv(process.env)
 const { db, sql, isReachable } = createDatabase(env.DATABASE_URL)
@@ -17,9 +20,17 @@ try {
   process.exit(1)
 }
 
+const auth = createAuth({
+  db,
+  secret: await resolveAuthSecret(db, env.AUTH_SECRET),
+  baseURL: env.PUBLIC_URL ?? `http://localhost:${env.PORT}`
+})
+
 const app = createApp({
   version: packageJson.version,
-  isDatabaseReachable: isReachable
+  isDatabaseReachable: isReachable,
+  handleAuth: auth.handler,
+  setup: createSetupService(db, auth)
 })
 const server = Bun.serve({ port: env.PORT, fetch: app.fetch })
 console.log(`Server listening on ${server.url}`)
