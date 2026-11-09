@@ -1,0 +1,4 @@
+[install]
+# One shared node_modules at the root. Electron packagers expect this layout;
+# Bun's "isolated" layout uses symlinks they handle less reliably.
+linker = "hoisted"

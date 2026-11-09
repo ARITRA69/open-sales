@@ -20,9 +20,15 @@ bun run dev
 ```
 
 Other scripts: `bun run typecheck`, `bun run lint`, `bun run test`,
-`bun run build`.
+`bun run build`. Each runs in every package.
 
-To redraw the app icon: `bunx electron scripts/make-app-icon.mjs`.
+## Layout
+
+- `apps/desktop`: the desktop app.
+- `apps/server`: the server (coming).
+- `packages/shared`: types and rules the app and server share.
+
+To redraw the app icon: `cd apps/desktop && bunx electron scripts/make-app-icon.mjs`.
 
 ## Licence
 

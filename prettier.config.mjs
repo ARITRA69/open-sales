@@ -7,7 +7,7 @@ const config = {
   trailingComma: 'none',
   arrowParens: 'always',
   plugins: ['prettier-plugin-tailwindcss'],
-  tailwindStylesheet: './src/renderer/src/styles/globals.css',
+  tailwindStylesheet: './apps/desktop/src/renderer/src/styles/globals.css',
   tailwindAttributes: ['/.*ClassName$/'],
   tailwindFunctions: ['clsx', 'cn', 'cva'],
   overrides: [

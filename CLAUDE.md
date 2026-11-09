@@ -2,8 +2,10 @@
 
 An open-source, self-hosted sales pipeline for small sales teams. MIT licence.
 "Open Sales" is a working name; rename it everywhere in one pass when it's
-chosen (package.json, index.html, bundle ids in `src/main/index.ts` and
-`scripts/dev.mjs`, the preload bridge `window.openSales`, the sidebar label).
+chosen (the package names `@open-sales/*`, `productName` in
+`apps/desktop/package.json`, index.html, bundle ids in `apps/desktop/src/main/index.ts`
+and `apps/desktop/scripts/dev.mjs`, the preload bridge `window.openSales`, the
+sidebar label).
 
 ## Decisions so far
 
@@ -22,6 +24,25 @@ chosen (package.json, index.html, bundle ids in `src/main/index.ts` and
 - **Generic, not company-specific.** Pipeline stages, custom fields, app name and
   logo are settings.
 - **Sign-in:** built-in email and password, plus optional SSO (OIDC).
+- **Server stack** (decided, not built yet):
+  - Hono on Bun for the API, mounted under `/api/v1`.
+  - Zod schemas in `packages/shared` describe every request and response; the
+    API publishes them as OpenAPI (`@hono/zod-openapi`).
+  - Drizzle for Postgres. Migrations are committed SQL files that run on server
+    start, and only ever add: self-hosters upgrade by pulling a new image.
+  - Better Auth for email and password, OIDC SSO and sessions. The app keeps its
+    session token in the OS keychain (Electron `safeStorage`).
+  - pg-boss for background jobs (imports, email and CRM sync), so Postgres is
+    the only service the server needs.
+  - Live updates: the server sends Postgres NOTIFY on each change and each
+    server copy LISTENs, then pushes to apps over WebSockets (Hono's
+    `upgradeWebSocket` on Bun). Events carry a type and an id, never the record
+    (NOTIFY payloads max out near 8 KB); the app fetches the record through the
+    normal, role-checked API. Events aren't stored, so on reconnect the app
+    reloads what's on screen. The socket signs in with a short-lived ticket from
+    the API, since a WebSocket can't send the usual auth header. Event shapes
+    live in `packages/shared`. pg-boss does the work that must happen; events
+    only say something changed.
 - **Integrations** (all planned): CSV import, CRMs (HubSpot and others), email
   and calendar. Ship plain SMTP before Gmail/Outlook sign-in: those need each
   self-hoster to register their own Google or Microsoft app.
@@ -29,72 +50,34 @@ chosen (package.json, index.html, bundle ids in `src/main/index.ts` and
   warnings; signing needs an Apple developer account (about $99/year) and a
   Windows certificate. No packager (electron-builder or similar) is set up yet.
 
-## Stack and commands
+## Repo layout
 
-Electron 45, electron-vite 6, Vite 8, React 19, Tailwind 4, Bun, Vitest.
+A Bun workspace monorepo. Plain workspaces, no Turborepo or Nx.
+
+- `apps/desktop`: the Electron app. Its own notes are in `apps/desktop/CLAUDE.md`.
+- `apps/server`: the Sales API (not started yet).
+- `packages/shared` (`@open-sales/shared`): types and rules both sides use, such
+  as roles and `canEditCompany`. It ships TypeScript source, no build step;
+  Vite and Bun read it directly. The desktop config bundles it into the main
+  and preload code rather than loading it at runtime.
+- Root: `tsconfig.base.json` (strict options every package extends), Prettier
+  config, `bunfig.toml` (hoisted `node_modules`, which Electron packagers expect).
+
+Anything the app and server must agree on (API shapes, validation, permission
+rules) goes in `packages/shared`, never copied into both.
+
+## Commands
 
 ```bash
 bun install
-bun run dev        # also: typecheck, lint, test, build
-bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
+bun run dev        # the desktop app
+bun run typecheck  # also: lint, test, build; each runs in every package
+bun run format
 ```
 
-- `bun run dev` runs `scripts/dev.mjs`. A Mac takes the menu bar name from the app
-  bundle, so this runs a renamed copy of Electron from `node_modules/.dev-app`.
-  Never edit the installed Electron bundle in `node_modules/electron`.
-  `bun run start` still says "Electron" in the menu bar.
-- Page screenshots don't show the Mac traffic lights. To check the real window,
-  use `screencapture -l <window id>`.
-
-## Code layout
-
-- `src/main`: window setup. Mac: hidden title bar, traffic lights at x 16, y 19.
-  Windows: icon from `build/icon.ico` and an app user model id.
-- `src/preload`: exposes `window.openSales` (platform only, so far).
-- `src/renderer/src/components/ui`: the UI kit. `components/sales`: app-specific
-  parts (AppShell, sidebar, window controls, Ask AI panel).
-- The kit is built on shadcn/ui patterns and Radix (`radix-ui`), with cva for
-  variants. Menus, selects and popovers share `components/ui/popup.ts`; text
-  that changes uses `AnimatedLabel`. Tests run with motion animations skipped
-  (`src/renderer/src/test-setup.ts`).
-- `screens/components-sheet`: every component on one page. The app opens on it;
-  real screens aren't built yet.
-- Styles: `tokens.css` is the only place a colour value is written. Motion and
-  things Tailwind can't express go in `components.css` or `sales.css`.
-- Lint enforces the shadcn rules (`no-arbitrary-values`, `no-restyle`,
-  `no-raw-colors`). Tests that touch `localStorage` need
-  `// @vitest-environment jsdom`.
-
-### Window frame
-
-Like the Claude desktop app: the sidebar runs to the top edge with the traffic
-lights in it. A 52px top bar with a hairline holds the page title. The sidebar
-toggle and back/forward buttons sit beside the lights (they end about 76px in,
-so the controls start at 80px). ⌘B / Ctrl+B toggles the sidebar, which slides
-rather than snapping, and remembers its state.
-
-## Design rules
-
-- Desktop first: wide screens, keyboard and hover. Check at about 1040px wide as
-  well as 1440px.
-- Users may be older and non-technical: familiar controls, large type, words
-  instead of icons, everyday language, one obvious primary button.
-- Colours come only from `tokens.css`. Light theme only. Add a token rather than
-  a colour value.
-- The accent is graphite, nearly as dark as primary. Anything that relies on it
-  to stand out (unread, needs you, progress) also gets a dot, a count or a pale
-  `accent-soft` fill.
-- No hard borders or black rings for selected states: use a white card on a soft
-  shadow, or a light grey tile. Buttons never wrap; pill-shaped; one black
-  primary plus a grey or text secondary.
-- Reuse components (Table, Menu, FloatBar, Field…) before building new markup;
-  extend a component rather than copy it. Selection = hover checkboxes +
-  FloatBar, never a separate "Select" mode.
-- Nothing snaps: changing text, widths and colours animate; elements enter and
-  leave with `motion/react`. Buttons never scale on press. Focus rings show for
-  keyboard only. Menus fit their content.
-- When adopting a designed component, keep every control it shows unless told
-  to remove one.
+Run one package's scripts with `bun run --cwd apps/desktop <script>` or
+`bun run --filter @open-sales/shared <script>`. Add a dependency from inside the
+package that uses it (`cd apps/desktop && bun add x`).
 
 ## Next steps
 

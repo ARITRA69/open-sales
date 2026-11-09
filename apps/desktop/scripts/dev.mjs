@@ -6,14 +6,20 @@
  */
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const readJson = (path) => JSON.parse(readFileSync(resolve(ROOT, path), 'utf8'))
+// Workspace installs may hoist packages to the repo root, so ask Node where
+// they are rather than assuming this app's own node_modules.
+const require = createRequire(resolve(ROOT, 'package.json'))
+const packageDir = (name) => dirname(require.resolve(`${name}/package.json`))
+const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
-const { productName } = readJson('package.json')
+const { productName } = readJson(resolve(ROOT, 'package.json'))
+const ELECTRON_DIR = packageDir('electron')
 const { version: electronVersion } = readJson(
-  'node_modules/electron/package.json'
+  resolve(ELECTRON_DIR, 'package.json')
 )
 const DEV_APP_ID = 'io.github.aritra69.open-sales.dev'
 
@@ -30,7 +36,7 @@ const prepareNamedMacApp = () => {
     mkdirSync(appDir, { recursive: true })
     execFileSync('cp', [
       '-cR',
-      resolve(ROOT, 'node_modules/electron/dist/Electron.app'),
+      resolve(ELECTRON_DIR, 'dist/Electron.app'),
       partApp
     ])
     setPlistValue('CFBundleName', productName)
@@ -56,7 +62,7 @@ if (process.platform === 'darwin') {
 const electronVite = spawn(
   process.execPath,
   [
-    resolve(ROOT, 'node_modules/electron-vite/bin/electron-vite.js'),
+    resolve(packageDir('electron-vite'), 'bin/electron-vite.js'),
     'dev',
     ...process.argv.slice(2)
   ],
