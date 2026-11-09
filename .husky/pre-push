@@ -1,0 +1,3 @@
+# Typechecks and tests every package before anything leaves this machine.
+# Skip in an emergency with: git push --no-verify
+bun run typecheck && bun run test

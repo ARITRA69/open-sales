@@ -1,0 +1,3 @@
+# Formats and lints the staged files only. Each package has its own
+# .lintstagedrc.json, so ESLint runs from inside that package.
+bunx lint-staged

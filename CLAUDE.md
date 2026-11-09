@@ -160,6 +160,16 @@ outside Docker with hot reload, keep the database container running, copy
 `apps/server/.env.example` to `apps/server/.env`, and run `bun run dev:server`
 (stop the server container first, or set another `PORT`).
 
+Git hooks (Husky, installed by `bun install`):
+
+- pre-commit: lint-staged formats staged files with Prettier and lints them
+  with ESLint. Each package has its own `.lintstagedrc.json`, so ESLint runs
+  from inside the package, as `bun run lint` does (the desktop config uses
+  paths relative to `apps/desktop`). Root files and `docs` only get Prettier.
+- pre-push: `bun run typecheck && bun run test` (about 15 seconds).
+- Fix the problem rather than skipping a hook; `--no-verify` is for
+  emergencies.
+
 Run one package's scripts with `bun run --cwd apps/desktop <script>` or
 `bun run --filter @open-sales/shared <script>`. Add a dependency from inside the
 package that uses it (`cd apps/desktop && bun add x`).
