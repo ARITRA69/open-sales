@@ -18,7 +18,27 @@ describe('summariseAiTools', () => {
           { ...CODEX, state: 'ready', version: '0.1' }
         ]
       })
-    ).toEqual({ label: 'Codex is ready', tone: 'success' })
+    ).toEqual({
+      label: 'Codex ready',
+      detail: 'Codex is ready',
+      tone: 'success',
+      // Both installed tools get a logo; the one that can't be used is faded.
+      tools: [
+        { id: 'claude-code', muted: true },
+        { id: 'codex', muted: false }
+      ]
+    })
+  })
+
+  it('says AI ready, briefly, when both are ready', () => {
+    const summary = summariseAiTools({
+      tools: [
+        { ...CLAUDE, state: 'ready', version: null },
+        { ...CODEX, state: 'ready', version: null }
+      ]
+    })
+    expect(summary.label).toBe('AI ready')
+    expect(summary.detail).toBe('Claude Code and Codex are ready')
   })
 
   it('asks to sign in when nothing is ready', () => {
@@ -40,6 +60,10 @@ describe('summariseAiTools', () => {
           { ...CODEX, state: 'not-installed' }
         ]
       })
-    ).toEqual({ label: 'No AI tool found', tone: 'destructive' })
+    ).toMatchObject({
+      label: 'No AI tool found',
+      tone: 'destructive',
+      tools: []
+    })
   })
 })

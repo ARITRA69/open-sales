@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { Logout01Icon, RefreshIcon } from '@hugeicons/core-free-icons'
 
+import { AiToolLogo } from '@/components/sales/ai-tool-logo'
 import { PageBody } from '@/components/sales/app-shell'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
@@ -118,7 +119,10 @@ const AiToolRow = ({ tool }: { tool: TAiToolStatus }) => {
 
   return (
     <div className={ROW_CLASS}>
-      <dt className="w-32 flex-none text-muted-foreground">{tool.name}</dt>
+      <dt className="flex w-32 flex-none items-center gap-2 text-muted-foreground">
+        <AiToolLogo id={tool.id} muted={tool.state !== 'ready'} />
+        {tool.name}
+      </dt>
       <dd className="m-0 flex min-w-0 flex-col gap-1">
         <span className="flex items-center gap-2">
           <Dot size="sm" tone={tone} />

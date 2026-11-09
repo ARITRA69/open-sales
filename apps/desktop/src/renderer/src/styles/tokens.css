@@ -67,6 +67,7 @@
   --shadow-swatch: inset 0 0 0 1px rgba(0, 0, 0, 0.07); /* So a white swatch shows. */
   --shadow-panel-edge: inset 1px 0 0 var(--border); /* A panel docked on the right. */
   --shadow-outline: inset 0 0 0 1.5px var(--input); /* Empty checkbox and radio. */
+  --shadow-badge-ring: 0 0 0 1.5px var(--muted); /* A status dot on a logo, on grey. */
 
   /* Focus halos: rings of colour, shown for the keyboard only. */
   --halo-keyboard: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);

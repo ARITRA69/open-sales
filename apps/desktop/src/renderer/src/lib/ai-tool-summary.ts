@@ -1,26 +1,66 @@
 import type { TDotTone } from '@/components/ui/status'
 
 import type {
+  TAiToolId,
   TAiToolsStatus,
   TAiToolStatus
 } from '../../../preload/bridge-types'
 
-/** One line for the sidebar footer: the tool the AI help will use. */
-export type TAiToolSummary = { label: string; tone: TDotTone }
+/**
+ * The sidebar footer: a short line that fits the sidebar, a longer one for
+ * its tooltip, and the installed tools' logos (faded if not usable yet).
+ */
+export type TAiToolSummary = {
+  label: string
+  detail: string
+  tone: TDotTone
+  tools: { id: TAiToolId; muted: boolean }[]
+}
 
-/** Picks what to say: the first ready tool, else what needs doing. */
+/** Picks what to say: the ready tools, else what needs doing. */
 export const summariseAiTools = (
   status: TAiToolsStatus | null
 ): TAiToolSummary => {
-  if (!status) return { label: 'Checking for your AI tool…', tone: 'faint' }
+  if (!status) {
+    const label = 'Checking for AI…'
+    return { label, detail: label, tone: 'faint', tools: [] }
+  }
 
-  const ready = status.tools.find((tool) => tool.state === 'ready')
-  if (ready) return { label: `${ready.name} is ready`, tone: 'success' }
+  const tools = status.tools
+    .filter((tool) => tool.state !== 'not-installed')
+    .map((tool) => ({ id: tool.id, muted: tool.state !== 'ready' }))
+
+  const ready = status.tools.filter((tool) => tool.state === 'ready')
+  if (ready.length > 1) {
+    const names = ready.map((tool) => tool.name).join(' and ')
+    return {
+      label: 'AI ready',
+      detail: `${names} are ready`,
+      tone: 'success',
+      tools
+    }
+  }
+  if (ready.length === 1) {
+    return {
+      label: `${ready[0].name} ready`,
+      detail: `${ready[0].name} is ready`,
+      tone: 'success',
+      tools
+    }
+  }
 
   const unsigned = status.tools.find((tool) => tool.state === 'needs-sign-in')
-  if (unsigned) return { label: `Sign in to ${unsigned.name}`, tone: 'accent' }
+  if (unsigned) {
+    const label = `Sign in to ${unsigned.name}`
+    return { label, detail: label, tone: 'accent', tools }
+  }
 
-  return { label: 'No AI tool found', tone: 'destructive' }
+  return {
+    label: 'No AI tool found',
+    detail: 'Install Claude Code or Codex. See Settings.',
+    tone: 'destructive',
+    tools
+  }
 }
 
 const INSTALL_COMMANDS: Record<TAiToolStatus['id'], string> = {

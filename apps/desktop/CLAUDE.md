@@ -34,6 +34,9 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   `~/.local/bin` and similar, since a Dock-launched app gets a short PATH.
   The renderer reads it through `window.openSales.aiTools` (`useAiTools`),
   for the sidebar footer and Settings › AI tool, and looks again on focus.
+  The footer shows the installed tools' logos (`components/sales/ai-tool-logo.tsx`,
+  images in `assets/ai-tools/`) on white discs with one status dot. The
+  logos are images, the one exception to "colours only from tokens.css".
 - `src/preload`: exposes `window.openSales`: `platform`, `aiTools` and `connection`
   (getState, chooseServer, forgetServer, createAdmin, signIn, signOut). Types
   and channel names are in `bridge-types.ts`.
@@ -49,7 +52,8 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
 - Browser preview: there's no Electron bridge, so `app.tsx` opens the
   components sheet. In development, `?preview=<step>` (choose-server,
   create-admin, sign-in, server-unreachable, signed-in) runs the real screens
-  against a pretend server (`lib/preview-bridge.ts`), e.g.
+  against a pretend server (`lib/preview-bridge.ts`); add `&ai=both`,
+  `&ai=sign-in` or `&ai=none` for other AI tool states. For example
   `http://localhost:5173/?preview=sign-in`. Production builds never use it.
   Changes to `src/main` or `src/preload` need `bun run dev` restarted.
 - `brand.config.json`: the product name and app id. User-facing text gets the

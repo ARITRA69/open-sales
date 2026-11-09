@@ -19,6 +19,8 @@ import { useBrand } from '@/hooks/use-brand'
 import type { TAiToolSummary } from '@/lib/ai-tool-summary'
 import { cn } from '@/lib/utils'
 
+import { AiToolStack } from './ai-tool-logo'
+
 export type TSalesNavId =
   | 'today'
   | 'pipeline'
@@ -129,7 +131,12 @@ const AccountSummary = ({ account }: { account: TSidebarAccount }) => (
 export const SalesSidebar = ({
   active,
   waiting = 0,
-  aiTool = { label: 'Claude Code is ready', tone: 'success' },
+  aiTool = {
+    label: 'Claude Code ready',
+    detail: 'Claude Code is ready',
+    tone: 'success',
+    tools: [{ id: 'claude-code', muted: false }]
+  },
   account,
   onSignOut
 }: TSalesSidebarProps) => {
@@ -157,11 +164,15 @@ export const SalesSidebar = ({
       <div className="flex flex-col gap-0.5">
         {aiTool ? (
           <Link
-            className="flex h-7 items-center gap-2 px-2.5 text-body-sm font-medium text-foreground-soft"
+            className="flex h-8 items-center gap-2 rounded-panel px-2.5 text-body-sm font-medium text-foreground-soft transition-colors hover:bg-secondary"
             href="#/settings"
-            title="Which AI tool is on, and how to fix it"
+            title={`${aiTool.detail}. Open Settings for details.`}
           >
-            <Dot size="sm" tone={aiTool.tone} />
+            {aiTool.tools.length > 0 ? (
+              <AiToolStack tone={aiTool.tone} tools={aiTool.tools} />
+            ) : (
+              <Dot size="sm" tone={aiTool.tone} />
+            )}
             <span className="truncate">{aiTool.label}</span>
           </Link>
         ) : null}
