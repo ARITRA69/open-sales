@@ -5,5 +5,5 @@
     "types": ["bun"],
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "drizzle.config.ts", "package.json"]
+  "include": ["src/**/*", "scripts/**/*", "drizzle.config.ts", "package.json"]
 }

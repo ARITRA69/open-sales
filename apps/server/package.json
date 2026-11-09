@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun scripts/dev.ts",
     "start": "bun src/index.ts",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",

@@ -176,17 +176,28 @@ rules) goes in `packages/shared`, never copied into both.
 ```bash
 bun install
 bun run dev          # the desktop app
-docker compose up -d # the server and Postgres
+bun run dev:server   # the server with hot reload (starts Docker and Postgres)
+docker compose up -d # the server and Postgres, as self-hosters run them
 bun run typecheck    # also: lint, test, build; each runs in every package
 bun run format
 ```
 
 The server answers at `http://localhost:8787/api/v1/health`. Postgres listens
 on `localhost:5433` (not 5432, which another project may use). Settings come
-from `.env` beside `docker-compose.yml`; see `.env.example`. To run the server
-outside Docker with hot reload, keep the database container running, copy
-`apps/server/.env.example` to `apps/server/.env`, and run `bun run dev:server`
-(stop the server container first, or set another `PORT`).
+from `.env` beside `docker-compose.yml`; see `.env.example`.
+
+`bun run dev:server` (`apps/server/scripts/dev.ts`) does everything the server
+needs in development: it opens Docker Desktop or OrbStack on a Mac if Docker
+isn't running, stops the server container (it holds port 8787), starts the
+database container, makes `apps/server/.env` from `.env.example` the first
+time, then runs the server with `bun --watch`. Ctrl+C stops the server; the
+database keeps running (`docker compose stop db`).
+
+Both dev scripts print short, coloured steps (`styleText`, so no colours when
+the output isn't a terminal) instead of the tools' build reports. They tidy
+lines they recognise and show everything else, such as errors, as it is. The
+server script recognises the two lines `src/index.ts` prints at start, so
+change both together.
 
 Git hooks (Husky, installed by `bun install`):
 
