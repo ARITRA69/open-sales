@@ -1,0 +1,89 @@
+/*
+ * Open Sales colour tokens. This is the only file that writes a colour value;
+ * everything else refers to these names. Light theme only.
+ *
+ * The palette is neutral grey with a graphite accent. Because the accent is
+ * nearly as dark as primary, anything that relies on it to stand out (unread
+ * dots, progress, "needs you") pairs it with a pale fill, a dot or a number.
+ */
+:root {
+  color-scheme: light;
+
+  /* Surfaces and text */
+  --background: #ffffff;
+  --foreground: #1c1c1c;
+  --foreground-soft: #474747; /* Text on tags and chips; second-level icons. */
+  --muted: #f6f6f6; /* Cards, tiles, fields, the sidebar. */
+  --muted-foreground: #696969; /* Helper text, meta lines, idle tabs. */
+  --faint: #9a9a9a; /* Placeholders and decorative marks only. */
+
+  /* Primary: the one black button per screen, checks and switches. */
+  --primary: #1c1c1c;
+  --primary-foreground: #ffffff;
+  --primary-hover: #383838;
+  --primary-active: #4a4a4a;
+
+  /* Secondary: grey buttons, chips, tags and segmented tracks. */
+  --secondary: #ededed;
+  --secondary-foreground: #1c1c1c;
+  --secondary-hover: #e3e3e3;
+  --secondary-active: #d9d9d9;
+
+  /* Accent: graphite. A fill for dots, counts and progress, never a border. */
+  --accent: #2b2b2b;
+  --accent-foreground: #ffffff;
+  --accent-soft: #f0f0f0; /* "Needs you" sections, AI working pill. */
+  --ring: #c9c9c9; /* Keyboard focus halo and focused fields. */
+
+  /* Lines */
+  --border: #e8e8e8; /* Hairlines and dividers. */
+  --input: #dedede; /* Empty tracks, switch off, checkbox outline. */
+
+  /* Status. Success is for status marks only, never a button. */
+  --destructive: #d42c1f;
+  --destructive-foreground: #ffffff;
+  --destructive-hover: #b8261b;
+  --success: #17803d;
+  --success-soft: #e6f4ea;
+
+  /* Overlays */
+  --scrim: rgba(20, 20, 20, 0.28);
+  --on-primary-soft: rgba(255, 255, 255, 0.68); /* Counts on a dark chip. */
+  --on-primary-fill: rgba(255, 255, 255, 0.14); /* Buttons on a dark bar. */
+
+  /* Elevation: soft shadows stand in for borders and selected outlines. */
+  --shadow-tile: 0 1px 2px rgba(0, 0, 0, 0.07), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --shadow-tile-hover:
+    0 1px 2px rgba(0, 0, 0, 0.07), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-choice:
+    0 1px 2px rgba(0, 0, 0, 0.07), 0 6px 18px rgba(0, 0, 0, 0.09);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 26px rgba(0, 0, 0, 0.09);
+  --shadow-menu: 0 1px 3px rgba(0, 0, 0, 0.06), 0 14px 36px rgba(0, 0, 0, 0.13);
+  --shadow-dialog:
+    0 2px 6px rgba(0, 0, 0, 0.05), 0 28px 70px rgba(0, 0, 0, 0.2);
+  --shadow-segment: 0 1px 2px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.04);
+  --shadow-knob: 0 1px 2px rgba(0, 0, 0, 0.22);
+  --shadow-key: 0 1px 1px rgba(0, 0, 0, 0.1);
+  --shadow-swatch: inset 0 0 0 1px rgba(0, 0, 0, 0.07); /* So a white swatch shows. */
+  --shadow-panel-edge: inset 1px 0 0 var(--border); /* A panel docked on the right. */
+  --shadow-outline: inset 0 0 0 1.5px var(--input); /* Empty checkbox and radio. */
+
+  /* Focus halos: rings of colour, shown for the keyboard only. */
+  --halo-keyboard: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  --halo-search: 0 0 0 3px var(--ring);
+  --halo-field: 0 0 0 3px var(--ring);
+  --halo-error: 0 0 0 2px var(--destructive);
+
+  /* Names some shadcn parts expect. */
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+
+  /* Chart series: distinct greys first, then two hues for contrast. */
+  --chart-1: #1c1c1c;
+  --chart-2: #6b6b6b;
+  --chart-3: #a8a8a8;
+  --chart-4: #2f7d8c;
+  --chart-5: #c2662d;
+}

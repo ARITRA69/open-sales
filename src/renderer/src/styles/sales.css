@@ -1,0 +1,67 @@
+/*
+ * What only the sales screens need, for the things Tailwind classes can't say: the
+ * window's drag region and panel motion.
+ */
+
+.sales-drag-region {
+  app-region: drag;
+}
+
+.sales-no-drag {
+  app-region: no-drag;
+}
+
+@keyframes sales-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes sales-panel-in {
+  from {
+    opacity: 0;
+    translate: 16px 0;
+  }
+}
+
+.sales-popover {
+  animation: sales-popover-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sales-ask-panel {
+  animation: sales-panel-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.sales-choice {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* The sidebar and the bar's title glide together when the sidebar closes. */
+.sales-sidebar-slot {
+  transition: width 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sales-sidebar-slot > * {
+  transition: translate 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sales-window-bar {
+  transition: padding-left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-popover,
+  .sales-ask-panel {
+    animation: none;
+  }
+
+  .sales-choice,
+  .sales-sidebar-slot,
+  .sales-sidebar-slot > *,
+  .sales-window-bar {
+    transition: none;
+  }
+}

@@ -1,0 +1,54 @@
+/*
+ * Kit rules that utility classes can't express neatly. Most of the kit's look
+ * lives in the components themselves; this file holds the shared motion.
+ */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* One easing for everything the kit moves, so motion feels of a piece. */
+:root {
+  --ease-out-soft: cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+/* Loading placeholders breathe, each a beat after the one above. */
+.kit-skeleton {
+  animation: kit-breathe 1.5s ease-in-out infinite;
+  animation-delay: calc(var(--skeleton-index, 0) * 140ms);
+}
+
+@keyframes kit-breathe {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* The tick inside a checkbox draws itself in once the box fills. */
+.kit-tick path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.12s ease;
+}
+
+[data-state='checked'] > .kit-tick path,
+[data-state='indeterminate'] > .kit-tick path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.24s 0.06s var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kit-skeleton {
+    animation: none;
+  }
+
+  .kit-tick path {
+    transition: none !important;
+  }
+
+  [data-slot] {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

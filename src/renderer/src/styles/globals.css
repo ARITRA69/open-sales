@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/inter';
+@import './tokens.css';
+@import './components.css';
+@import './sales.css';
+
+/*
+ * Focus rings are for keyboard users. The app marks <html> with
+ * data-pointer-input while someone uses a mouse or touch (see
+ * hooks/use-input-tracking.ts), so these variants stay quiet after a click even
+ * when a script moves focus. Fields you type into use plain `focus:` instead,
+ * because there the ring shows where the text will go.
+ */
+@custom-variant keyboard-focus (html:not([data-pointer-input]) &:focus-visible);
+@custom-variant has-keyboard-focus (html:not([data-pointer-input]) &:has(:focus-visible));
+
+/* Tailwind names for the tokens, plus the type and corner scale. */
+@theme inline {
+  --font-sans:
+    'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-active: var(--secondary-active);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-ring: var(--ring);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-scrim: var(--scrim);
+  --color-on-primary-soft: var(--on-primary-soft);
+  --color-on-primary-fill: var(--on-primary-fill);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Type: body text stays at 14 to 16 so it reads easily. */
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 18px;
+  --text-body-lg: 15px;
+  --text-body-lg--line-height: 22px;
+  --text-heading: 22px;
+  --text-heading--line-height: 28px;
+  --text-heading--letter-spacing: -0.02em;
+  --text-title-xl: 28px;
+  --text-title-xl--line-height: 34px;
+  --text-title-xl--letter-spacing: -0.025em;
+  --text-display: 40px;
+  --text-display--line-height: 46px;
+  --text-display--letter-spacing: -0.03em;
+
+  /* Corners, from small controls up to dialogs. */
+  --radius-sm: 6px;
+  --radius-panel: 10px;
+  --radius-row: 12px;
+  --radius-card: 14px;
+  --radius-dialog: 18px;
+  --radius-modal: 22px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+}
+
+button:not(:disabled),
+[role='button']:not(:disabled) {
+  cursor: pointer;
+}
