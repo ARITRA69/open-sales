@@ -54,7 +54,13 @@ export const CreateAdminScreen = ({
 
   return (
     <ConnectLayout
-      intro={`You’re the first person on ${serverHost}. You’ll run this workspace and invite your team.`}
+      intro="You’re the first person here. You’ll run this workspace and invite your team."
+      server={{
+        host: serverHost,
+        workspaceName: null,
+        onChange: onChangeServer
+      }}
+      step={{ current: 2, total: 2 }}
       title="Create the admin account"
     >
       <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -93,9 +99,6 @@ export const CreateAdminScreen = ({
         <FormProblem message={problem} />
         <Button className="w-full" loading={isSaving} size="lg" type="submit">
           Create account
-        </Button>
-        <Button variant="link" onClick={onChangeServer}>
-          Use a different server
         </Button>
       </form>
     </ConnectLayout>

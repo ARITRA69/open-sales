@@ -29,6 +29,7 @@ export const ServerAddressScreen = ({
   return (
     <ConnectLayout
       intro="Enter the address your admin gave you."
+      step={{ current: 1, total: 2 }}
       title="Connect to your server"
     >
       <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit}>

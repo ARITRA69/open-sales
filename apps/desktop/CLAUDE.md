@@ -32,12 +32,20 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   (getState, chooseServer, forgetServer, createAdmin, signIn, signOut). Types
   and channel names are in `bridge-types.ts`.
 - `screens/connect`: server address, create admin, sign in and can't-reach
-  screens, and `ConnectionGate`, which picks one from the main process's
-  state. In a plain browser tab or a test there's no bridge, so `app.tsx`
-  skips the gate and opens the components sheet.
-- To see the connect screens in the browser preview, mount `ConnectionGate`
-  with a stand-in bridge object; the real one needs Electron. Changes to
-  `src/main` or `src/preload` need `bun run dev` restarted.
+  screens on `ConnectLayout` (the form on the left, a brand panel saying what
+  the product does on the right, a server chip with Change), and
+  `ConnectionGate`, which picks one from the main process's state.
+- `screens/app`: the signed-in app. `SignedInApp` is the shell and a hash
+  router (`hooks/use-hash-route.ts`; the sidebar links to `#/today`,
+  `#/pipeline`…). Today and Settings are real; the other pages show an empty
+  state (`empty-page.tsx`) until the server holds sales data. `#/components`
+  opens the components sheet.
+- Browser preview: there's no Electron bridge, so `app.tsx` opens the
+  components sheet. In development, `?preview=<step>` (choose-server,
+  create-admin, sign-in, server-unreachable, signed-in) runs the real screens
+  against a pretend server (`lib/preview-bridge.ts`), e.g.
+  `http://localhost:5173/?preview=sign-in`. Production builds never use it.
+  Changes to `src/main` or `src/preload` need `bun run dev` restarted.
 - `brand.config.json`: the product name and app id. User-facing text gets the
   name from `useBrand()` (`hooks/use-brand.ts`), never a literal "Open Sales".
   The window title follows it too.
@@ -47,8 +55,8 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   variants. Menus, selects and popovers share `components/ui/popup.ts`; text
   that changes uses `AnimatedLabel`. Tests run with motion animations skipped
   (`src/renderer/src/test-setup.ts`).
-- `screens/components-sheet`: every component on one page. The app opens on it;
-  real screens aren't built yet.
+- `screens/components-sheet`: every component on one page, at `#/components`
+  once signed in, and the browser preview's default page.
 - Styles: `tokens.css` is the only place a colour value is written. Motion and
   things Tailwind can't express go in `components.css` or `sales.css`.
 - Lint enforces the shadcn rules (`no-arbitrary-values`, `no-restyle`,

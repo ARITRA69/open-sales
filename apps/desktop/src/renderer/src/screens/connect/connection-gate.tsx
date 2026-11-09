@@ -1,20 +1,11 @@
-import type { Role } from '@open-sales/shared'
-
 import { useConnection } from '@/hooks/use-connection'
-import { getInitials } from '@/lib/initials'
-import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
+import { SignedInApp } from '@/screens/app/signed-in-app'
 
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { CreateAdminScreen } from './create-admin-screen'
 import { ServerAddressScreen } from './server-address-screen'
 import { ServerUnreachableScreen } from './server-unreachable-screen'
 import { SignInScreen } from './sign-in-screen'
-
-const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
-  member: 'Member'
-}
 
 const hostOf = (serverUrl: string) => new URL(serverUrl).host
 
@@ -63,13 +54,10 @@ export const ConnectionGate = ({ bridge }: TConnectionGateProps) => {
       )
     case 'signed-in':
       return (
-        <ComponentsSheet
-          account={{
-            name: state.user.name,
-            email: state.user.email,
-            initials: getInitials(state.user.name),
-            roleLabel: ROLE_LABELS[state.user.role]
-          }}
+        <SignedInApp
+          serverHost={hostOf(state.serverUrl)}
+          user={state.user}
+          workspaceName={state.workspaceName}
           onSignOut={connection.signOut}
         />
       )

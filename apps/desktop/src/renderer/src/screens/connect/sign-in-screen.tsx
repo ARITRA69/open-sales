@@ -46,8 +46,9 @@ export const SignInScreen = ({
 
   return (
     <ConnectLayout
-      intro={workspaceName ? serverHost : undefined}
-      title={`Sign in to ${workspaceName ?? serverHost}`}
+      intro="Welcome back. Sign in with your work email."
+      server={{ host: serverHost, workspaceName, onChange: onChangeServer }}
+      title="Sign in"
     >
       <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <Field
@@ -76,9 +77,6 @@ export const SignInScreen = ({
           type="submit"
         >
           Sign in
-        </Button>
-        <Button variant="link" onClick={onChangeServer}>
-          Use a different server
         </Button>
       </form>
     </ConnectLayout>

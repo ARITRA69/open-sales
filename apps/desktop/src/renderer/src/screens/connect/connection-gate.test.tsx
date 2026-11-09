@@ -95,9 +95,10 @@ describe('ConnectionGate', () => {
     })
     render(<ConnectionGate bridge={bridge} />)
 
-    expect(
-      await screen.findByRole('heading', { name: 'Sign in to Halden' })
-    ).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeTruthy()
+    // The server it's signing in to, with a way to change it.
+    expect(screen.getByText('Halden')).toBeTruthy()
+    expect(screen.getByText('localhost:8787')).toBeTruthy()
     type('Email', 'asha@example.com')
     type('Password', 'wrong password')
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
@@ -105,7 +106,7 @@ describe('ConnectionGate', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Nope.')
   })
 
-  it('shows the signed-in person in the sidebar', async () => {
+  it('opens on Today, with the signed-in person in the sidebar', async () => {
     render(
       <ConnectionGate
         bridge={makeBridge({
@@ -117,11 +118,31 @@ describe('ConnectionGate', () => {
       />
     )
 
-    // The sheet itself shows sample people, so look only in the sidebar.
     const sidebar = await screen.findByRole('navigation', {
       name: brand.productName
     })
     expect(within(sidebar).getByText('Asha Menon')).toBeTruthy()
     expect(within(sidebar).getByText('Admin')).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { level: 1, name: /, Asha$/ })
+    ).toBeTruthy()
+  })
+
+  it('signs out from Settings', async () => {
+    window.location.hash = '#/settings'
+    const bridge = makeBridge({
+      step: 'signed-in',
+      serverUrl: SERVER,
+      workspaceName: 'Halden',
+      user: ADMIN
+    })
+    render(<ConnectionGate bridge={bridge} />)
+
+    expect(await screen.findByText('asha@example.com')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeTruthy()
+    expect(bridge.signOut).toHaveBeenCalled()
+    window.location.hash = ''
   })
 })

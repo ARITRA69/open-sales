@@ -4,8 +4,15 @@ import { MotionConfig } from 'motion/react'
 
 import { useBrand } from '@/hooks/use-brand'
 import { useInputTracking } from '@/hooks/use-input-tracking'
+import { createPreviewBridge } from '@/lib/preview-bridge'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import { ConnectionGate } from '@/screens/connect/connection-gate'
+
+// The real bridge in Electron. In a browser tab during development,
+// `?preview=<step>` swaps in a pretend server; otherwise there's none.
+const CONNECTION =
+  window.openSales?.connection ??
+  (import.meta.env.DEV ? createPreviewBridge(window.location.search) : null)
 
 export const App = () => {
   useInputTracking()
@@ -20,8 +27,8 @@ export const App = () => {
   return (
     <MotionConfig reducedMotion="user">
       {/* No bridge in a plain browser tab or a test: show the UI without a server. */}
-      {window.openSales ? (
-        <ConnectionGate bridge={window.openSales.connection} />
+      {CONNECTION ? (
+        <ConnectionGate bridge={CONNECTION} />
       ) : (
         <ComponentsSheet />
       )}
