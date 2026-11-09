@@ -1,6 +1,9 @@
+import type { TSessionUser } from '@open-sales/shared'
 import {
   apiErrorSchema,
   healthResponseSchema,
+  joinLinkResponseSchema,
+  joinResponseSchema,
   setupStatusSchema,
   signedInResponseSchema
 } from '@open-sales/shared'
@@ -9,6 +12,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { createApp } from './app'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
+import type { TTeamService } from './team'
+import { EmailTakenError, JoinLinkInvalidError } from './team'
 
 const ADMIN = {
   id: 'u1',
@@ -30,17 +35,52 @@ const makeSetup = (overrides: Partial<TSetupService> = {}): TSetupService => ({
   ...overrides
 })
 
+const LINK = {
+  token: 'link-token',
+  allowedDomain: 'halden.com',
+  role: 'member' as const,
+  createdAt: new Date('2026-11-09T10:00:00Z')
+}
+
+const makeTeam = (overrides: Partial<TTeamService> = {}): TTeamService => ({
+  getJoinLink: async () => LINK,
+  createJoinLink: async () => LINK,
+  updateJoinLink: async () => LINK,
+  disableJoinLink: async () => undefined,
+  previewJoin: async (token) =>
+    token === LINK.token ? { workspaceName: 'Halden Capital' } : null,
+  join: async () => ({ status: 'pending', ticket: 'ticket-1' }),
+  getJoinRequestStatus: async (ticket) =>
+    ticket === 'ticket-1' ? { status: 'pending' } : null,
+  listMembers: async () => [],
+  approve: async () => undefined,
+  decline: async () => undefined,
+  ...overrides
+})
+
 const makeApp = ({
   isUp = true,
   setup = makeSetup(),
+  team = makeTeam(),
+  me = ADMIN as TSessionUser | null,
   handleAuth = vi.fn(async () => Response.json({ forwarded: true }))
 } = {}) =>
   createApp({
     version: '1.2.3',
     isDatabaseReachable: async () => isUp,
     handleAuth,
-    setup
+    getSessionUser: async () => me,
+    setup,
+    team,
+    publicUrl: 'https://sales.halden.com'
   })
+
+const VALID_JOIN = {
+  token: LINK.token,
+  name: 'Ravi Shah',
+  email: 'ravi@gmail.com',
+  password: 'correct horse'
+}
 
 const postJson = (body: unknown) => ({
   method: 'POST',
@@ -148,5 +188,156 @@ describe('/api/v1/auth', () => {
 
     expect(await response.json()).toEqual({ forwarded: true })
     expect(handleAuth).toHaveBeenCalledOnce()
+  })
+})
+
+describe('joining with the team link', () => {
+  it('shows which team a live link joins, and 404s a dead one', async () => {
+    const app = makeApp()
+    const live = await app.request(`/api/v1/join/${LINK.token}`)
+    const dead = await app.request('/api/v1/join/old-token')
+
+    expect(await live.json()).toEqual({ workspaceName: 'Halden Capital' })
+    expect(dead.status).toBe(404)
+  })
+
+  it('answers 202 with a ticket when an admin must approve', async () => {
+    const join = vi.fn(async () => ({
+      status: 'pending' as const,
+      ticket: 'ticket-1'
+    }))
+    const response = await makeApp({ team: makeTeam({ join }) }).request(
+      '/api/v1/join',
+      postJson(VALID_JOIN)
+    )
+
+    expect(response.status).toBe(202)
+    expect(joinResponseSchema.parse(await response.json())).toEqual({
+      status: 'pending',
+      ticket: 'ticket-1'
+    })
+    expect(join).toHaveBeenCalledWith(VALID_JOIN)
+  })
+
+  it('answers 201 with a session when the domain lets them straight in', async () => {
+    const team = makeTeam({
+      join: async () => ({
+        status: 'active',
+        token: 'session-1',
+        user: { ...ADMIN, role: 'member' }
+      })
+    })
+    const response = await makeApp({ team }).request(
+      '/api/v1/join',
+      postJson({ ...VALID_JOIN, email: 'ravi@halden.com' })
+    )
+
+    expect(response.status).toBe(201)
+    expect(joinResponseSchema.parse(await response.json()).status).toBe(
+      'active'
+    )
+  })
+
+  it('says why joining failed', async () => {
+    const taken = makeTeam({
+      join: async () => {
+        throw new EmailTakenError()
+      }
+    })
+    const dead = makeTeam({
+      join: async () => {
+        throw new JoinLinkInvalidError()
+      }
+    })
+
+    const takenResponse = await makeApp({ team: taken }).request(
+      '/api/v1/join',
+      postJson(VALID_JOIN)
+    )
+    const deadResponse = await makeApp({ team: dead }).request(
+      '/api/v1/join',
+      postJson(VALID_JOIN)
+    )
+
+    expect(takenResponse.status).toBe(409)
+    expect(deadResponse.status).toBe(404)
+  })
+
+  it('reports a request’s status only to the ticket holder', async () => {
+    const app = makeApp()
+    const known = await app.request('/api/v1/join/request', {
+      headers: { 'x-join-ticket': 'ticket-1' }
+    })
+    const unknown = await app.request('/api/v1/join/request')
+
+    expect(await known.json()).toEqual({ status: 'pending' })
+    expect(unknown.status).toBe(404)
+  })
+
+  it('serves a page that hands the link to the app', async () => {
+    const response = await makeApp().request(`/join/${LINK.token}`)
+    const html = await response.text()
+
+    expect(response.headers.get('content-type')).toContain('text/html')
+    expect(html).toContain('Join Halden Capital')
+    expect(html).toContain(
+      `open-sales://join?link=${encodeURIComponent(
+        'https://sales.halden.com/join/link-token'
+      )}`
+    )
+  })
+})
+
+describe('/api/v1/team', () => {
+  it('gives admins the join link as a full URL', async () => {
+    const response = await makeApp().request('/api/v1/team/join-link')
+
+    expect(joinLinkResponseSchema.parse(await response.json())).toEqual({
+      joinLink: {
+        url: 'https://sales.halden.com/join/link-token',
+        allowedDomain: 'halden.com',
+        role: 'member',
+        createdAt: '2026-11-09T10:00:00.000Z'
+      }
+    })
+  })
+
+  it('is for admins only', async () => {
+    const signedOut = await makeApp({ me: null }).request(
+      '/api/v1/team/members'
+    )
+    const member = await makeApp({ me: { ...ADMIN, role: 'member' } }).request(
+      '/api/v1/team/members'
+    )
+
+    expect(signedOut.status).toBe(401)
+    expect(member.status).toBe(403)
+  })
+
+  it('checks the allowed domain before making a new link', async () => {
+    const createJoinLink = vi.fn(async () => LINK)
+    const response = await makeApp({
+      team: makeTeam({ createJoinLink })
+    }).request('/api/v1/team/join-link', postJson({ allowedDomain: '@halden' }))
+
+    expect(response.status).toBe(400)
+    expect(createJoinLink).not.toHaveBeenCalled()
+  })
+
+  it('approves and declines people, recording who decided', async () => {
+    const approve = vi.fn(async () => undefined)
+    const decline = vi.fn(async () => undefined)
+    const app = makeApp({ team: makeTeam({ approve, decline }) })
+
+    const approved = await app.request('/api/v1/team/members/u2/approve', {
+      method: 'POST'
+    })
+    const declined = await app.request('/api/v1/team/members/u3/decline', {
+      method: 'POST'
+    })
+
+    expect([approved.status, declined.status]).toEqual([204, 204])
+    expect(approve).toHaveBeenCalledWith('u2', ADMIN.id)
+    expect(decline).toHaveBeenCalledWith('u3', ADMIN.id)
   })
 })

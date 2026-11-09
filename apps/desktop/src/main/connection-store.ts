@@ -1,6 +1,9 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+/** Someone who joined and waits for approval: their ticket and email. */
+export type TJoinTicket = { ticket: string; email: string }
+
 type TEncryption = {
   isEncryptionAvailable: () => boolean
   encryptString: (plain: string) => Buffer
@@ -16,6 +19,9 @@ type TEncryption = {
 export const createConnectionStore = (dir: string, encryption: TEncryption) => {
   const serverFile = join(dir, 'server.json')
   const tokenFile = join(dir, 'session-token.bin')
+  // A join request waiting for approval. The ticket only reveals whether
+  // they've been let in, so it isn't encrypted.
+  const joinFile = join(dir, 'join-request.json')
   let memoryToken: string | null = null
 
   const readServerUrl = async (): Promise<string | null> => {
@@ -58,6 +64,27 @@ export const createConnectionStore = (dir: string, encryption: TEncryption) => {
   const clearAll = async () => {
     await clearToken()
     await rm(serverFile, { force: true })
+    await clearJoinTicket()
+  }
+
+  const readJoinTicket = async (): Promise<TJoinTicket | null> => {
+    try {
+      const saved = JSON.parse(await readFile(joinFile, 'utf8'))
+      return typeof saved.ticket === 'string' && typeof saved.email === 'string'
+        ? { ticket: saved.ticket, email: saved.email }
+        : null
+    } catch {
+      return null
+    }
+  }
+
+  const saveJoinTicket = async (joinTicket: TJoinTicket) => {
+    await mkdir(dir, { recursive: true })
+    await writeFile(joinFile, JSON.stringify(joinTicket))
+  }
+
+  const clearJoinTicket = async () => {
+    await rm(joinFile, { force: true })
   }
 
   return {
@@ -66,7 +93,10 @@ export const createConnectionStore = (dir: string, encryption: TEncryption) => {
     readToken,
     saveToken,
     clearToken,
-    clearAll
+    clearAll,
+    readJoinTicket,
+    saveJoinTicket,
+    clearJoinTicket
   }
 }
 

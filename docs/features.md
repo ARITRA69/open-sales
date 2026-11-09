@@ -36,17 +36,18 @@ person approves (see [Proposals and audit](#4-proposals-and-audit)).
 
 ## 1. Setup and access
 
-| Feature                  | What it does                                                                                                                                | Who   | AI  | Priority |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- | -------- |
-| One-command server       | `docker compose up` starts the Sales API and Postgres. Migrations run on start.                                                             | Admin | —   | P0       |
-| First-run admin account  | On a server with no accounts, the app asks the first person to create the admin account and name the workspace. Built.                      | Admin | —   | P0       |
-| Server address screen    | On first launch the app asks for the company's server address, checks it and remembers it. Built.                                           | All   | —   | P0       |
-| Email and password login | Built-in sign-in. Session token kept in the OS keychain. Built.                                                                             | All   | —   | P0       |
-| SSO (OIDC)               | Optional sign-in with the company's identity provider.                                                                                      | Admin | —   | P1       |
-| Invite teammates         | Invite by email with a role (Admin, Manager, Member). The invite link opens the app or shows how to install it.                             | Admin | —   | P0       |
-| AI tool check            | Finds Claude Code or Codex on the machine, shows whether it's signed in and ready, and explains how to fix it. Shown in the sidebar footer. | All   | —   | P0       |
-| Getting started list     | A short checklist (connect email, import data, invite team, set stages) with progress, like Attio's "Getting started 4/6".                  | Admin | —   | P1       |
-| Workspace switcher       | Connect to more than one server (for people who sell for two companies).                                                                    | All   | —   | P2       |
+| Feature                  | What it does                                                                                                                                                      | Who   | AI  | Priority |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --- | -------- |
+| One-command server       | `docker compose up` starts the Sales API and Postgres. Migrations run on start.                                                                                   | Admin | —   | P0       |
+| First-run admin account  | On a server with no accounts, the app asks the first person to create the admin account and name the workspace. Built.                                            | Admin | —   | P0       |
+| Server address screen    | On first launch the app asks for the company's server address, checks it and remembers it. Built.                                                                 | All   | —   | P0       |
+| Email and password login | Built-in sign-in. Session token kept in the OS keychain. Built.                                                                                                   | All   | —   | P0       |
+| SSO (OIDC)               | Optional sign-in with the company's identity provider.                                                                                                            | Admin | —   | P1       |
+| Team join link           | One shared link to post where the team talks. A trusted email domain joins at once; anyone else waits for an admin to approve. Reset or turn off any time. Built. | Admin | —   | P0       |
+| Invite by email          | Per-person invites with a role, for admins and managers (the join link only makes Members).                                                                       | Admin | —   | P1       |
+| AI tool check            | Finds Claude Code or Codex on the machine, shows whether it's signed in and ready, and explains how to fix it. Shown in the sidebar footer.                       | All   | —   | P0       |
+| Getting started list     | A short checklist (connect email, import data, invite team, set stages) with progress, like Attio's "Getting started 4/6".                                        | Admin | —   | P1       |
+| Workspace switcher       | Connect to more than one server (for people who sell for two companies).                                                                                          | All   | —   | P2       |
 
 ## 2. Today
 

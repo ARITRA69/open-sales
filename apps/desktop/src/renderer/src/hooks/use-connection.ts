@@ -24,8 +24,13 @@ export const useConnection = (bridge: TBridgeConnection) => {
     void bridge.getState().then((next) => {
       if (isCurrent) setState(next)
     })
+    // A join link opened the app, and the main process moved on.
+    const stopListening = bridge.onStateChange((next) => {
+      if (isCurrent) setState(next)
+    })
     return () => {
       isCurrent = false
+      stopListening()
     }
   }, [bridge])
 
@@ -44,6 +49,9 @@ export const useConnection = (bridge: TBridgeConnection) => {
       run(bridge.createAdmin(input)),
     signIn: (input: Parameters<TBridgeConnection['signIn']>[0]) =>
       run(bridge.signIn(input)),
+    join: (input: Parameters<TBridgeConnection['join']>[0]) =>
+      run(bridge.join(input)),
+    cancelJoin: async () => setState(await bridge.cancelJoin()),
     forgetServer: async () => setState(await bridge.forgetServer()),
     signOut: async () => setState(await bridge.signOut())
   }

@@ -1,3 +1,5 @@
+import { sessionUserSchema } from '@open-sales/shared'
+
 import packageJson from '../package.json'
 import { createApp } from './app'
 import { createAuth } from './auth'
@@ -6,6 +8,7 @@ import { runMigrations } from './db/migrate'
 import { readEnv } from './env'
 import { resolveAuthSecret } from './secret'
 import { createSetupService } from './setup'
+import { createTeamService } from './team'
 
 const env = readEnv(process.env)
 const { db, sql, isReachable } = createDatabase(env.DATABASE_URL)
@@ -30,7 +33,15 @@ const app = createApp({
   version: packageJson.version,
   isDatabaseReachable: isReachable,
   handleAuth: auth.handler,
-  setup: createSetupService(db, auth)
+  getSessionUser: async (headers) => {
+    const found = await auth.api.getSession({ headers })
+    const parsed = sessionUserSchema.safeParse(found?.user)
+    return parsed.success ? parsed.data : null
+  },
+  setup: createSetupService(db, auth),
+  team: createTeamService(db, auth),
+  publicUrl: env.PUBLIC_URL,
+  appScheme: env.APP_URL_SCHEME
 })
 const server = Bun.serve({ port: env.PORT, fetch: app.fetch })
 console.log(`Server listening on ${server.url}`)

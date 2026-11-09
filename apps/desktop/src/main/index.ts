@@ -1,10 +1,18 @@
 import { join } from 'node:path'
 
-import { app, BrowserWindow, nativeImage, safeStorage, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  nativeImage,
+  safeStorage,
+  shell
+} from 'electron'
 
 import brand from '../../brand.config.json'
 import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
+import { CONNECTION_CHANNELS } from '../preload/bridge-types'
 import { createConnection } from './connection'
 import { createConnectionStore } from './connection-store'
 import { registerAiToolsIpc, registerConnectionIpc } from './ipc'
@@ -59,6 +67,49 @@ const createMainWindow = () => {
   }
 }
 
+/*
+ * Join links. The server's join page opens `open-sales://join?link=…` (the
+ * scheme is brand.urlScheme). A Mac delivers it as `open-url`; Windows and
+ * Linux start a second copy with it in argv, which hands it to this one.
+ */
+const JOIN_LINK_PREFIX = `${brand.urlScheme}://`
+let openJoinLink: ((link: string) => Promise<void>) | null = null
+// A link that arrived before the app was ready.
+let earlyJoinLink: string | null = null
+
+const handleJoinLink = (link: string) => {
+  if (openJoinLink) void openJoinLink(link)
+  else earlyJoinLink = link
+}
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const link = argv.find((arg) => arg.startsWith(JOIN_LINK_PREFIX))
+    if (link) handleJoinLink(link)
+    const [window] = BrowserWindow.getAllWindows()
+    if (window) {
+      if (window.isMinimized()) window.restore()
+      window.focus()
+    }
+  })
+}
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  handleJoinLink(url)
+})
+
+// In development the app runs through Electron with a path argument, so the
+// link has to say how to start it again.
+if (process.defaultApp && process.argv[1]) {
+  app.setAsDefaultProtocolClient(brand.urlScheme, process.execPath, [
+    process.argv[1]
+  ])
+} else {
+  app.setAsDefaultProtocolClient(brand.urlScheme)
+}
+
 void app.whenReady().then(() => {
   // Note: a packaged Mac app gets its dock icon from icon.icns in the bundle.
   if (!app.isPackaged) {
@@ -68,16 +119,41 @@ void app.whenReady().then(() => {
   if (process.platform === 'win32') app.setAppUserModelId(brand.appId)
 
   // The main process talks to the server and keeps the session token.
-  registerConnectionIpc(
-    createConnection(
-      createServerApi(),
-      createConnectionStore(app.getPath('userData'), safeStorage)
-    )
+  const connection = createConnection(
+    createServerApi(),
+    createConnectionStore(app.getPath('userData'), safeStorage)
   )
+  registerConnectionIpc(connection)
+
+  openJoinLink = async (link) => {
+    const result = await connection.openJoinLink(link)
+    const [window] = BrowserWindow.getAllWindows()
+    if (!window) return
+    if (result.ok) {
+      window.webContents.send(CONNECTION_CHANNELS.onStateChange, result.state)
+    } else {
+      void dialog.showMessageBox(window, {
+        type: 'warning',
+        message: 'That join link didn’t work',
+        detail: result.message
+      })
+    }
+    window.focus()
+  }
   // Finds the person's own Claude Code or Codex, which the AI help runs on.
   registerAiToolsIpc()
 
   createMainWindow()
+
+  // Windows and Linux pass a link that started the app in argv.
+  const startLink =
+    earlyJoinLink ??
+    process.argv.find((arg) => arg.startsWith(JOIN_LINK_PREFIX))
+  if (startLink) {
+    const [window] = BrowserWindow.getAllWindows()
+    // After the page loads, so it hears the new state.
+    window?.webContents.once('did-finish-load', () => handleJoinLink(startLink))
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()

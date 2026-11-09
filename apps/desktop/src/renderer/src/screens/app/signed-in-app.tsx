@@ -8,6 +8,7 @@ import {
 } from '@/components/sales/sales-sidebar'
 import { useAiTools } from '@/hooks/use-ai-tools'
 import { useHashRoute } from '@/hooks/use-hash-route'
+import { useTeam } from '@/hooks/use-team'
 import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
@@ -44,6 +45,8 @@ type TSignedInAppProps = {
   serverHost: string
   // Checks for Claude Code and Codex. Null where there's no way to check.
   aiToolsBridge?: TOpenSalesBridge['aiTools'] | null
+  // Admins' team tools: the join link and approvals.
+  teamBridge?: TOpenSalesBridge['team'] | null
   onSignOut: () => void
 }
 
@@ -53,10 +56,13 @@ export const SignedInApp = ({
   workspaceName,
   serverHost,
   aiToolsBridge = null,
+  teamBridge = null,
   onSignOut
 }: TSignedInAppProps) => {
   const route = useHashRoute(ROUTES, 'today')
   const aiTools = useAiTools(aiToolsBridge)
+  const isAdmin = user.role === 'admin'
+  const team = useTeam(teamBridge, isAdmin)
   const account: TSidebarAccount = {
     name: user.name,
     email: user.email,
@@ -76,7 +82,9 @@ export const SignedInApp = ({
           body: (
             <TodayPage
               firstName={user.name.split(' ')[0]}
+              pendingPeople={isAdmin ? team.pending : []}
               workspaceName={workspaceName}
+              onDecide={team.decide}
             />
           )
         }
@@ -90,6 +98,7 @@ export const SignedInApp = ({
               name={user.name}
               roleLabel={account.roleLabel}
               serverHost={serverHost}
+              team={isAdmin && teamBridge ? team : null}
               workspaceName={workspaceName}
               onCheckAiTools={aiTools.refresh}
               onSignOut={onSignOut}
@@ -107,7 +116,13 @@ export const SignedInApp = ({
   return (
     <AppShell
       sidebar={
-        <SalesSidebar account={account} active={route} onSignOut={onSignOut} />
+        <SalesSidebar
+          account={account}
+          active={route}
+          // For admins, Today's badge counts people waiting to join.
+          waiting={isAdmin ? team.pending.length : 0}
+          onSignOut={onSignOut}
+        />
       }
       title={page.title}
     >

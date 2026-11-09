@@ -49,17 +49,18 @@ export const createSetupService = (
       const [{ total }] = await tx.select({ total: count() }).from(user)
       if (total > 0) throw new SetupAlreadyDoneError()
 
-      // The user.create hook in auth.ts makes this first user an admin.
-      const created = await auth.api.signUpEmail({
+      // The user.create hook in auth.ts makes this first user an active admin.
+      await auth.api.signUpEmail({
         body: { name: input.name, email: input.email, password: input.password }
       })
       await tx.insert(workspace).values({ name: input.workspaceName })
 
-      if (!created.token) throw new Error('Setup did not start a session.')
-
+      const signedIn = await auth.api.signInEmail({
+        body: { email: input.email, password: input.password }
+      })
       return {
-        token: created.token,
-        user: sessionUserSchema.parse(created.user)
+        token: signedIn.token,
+        user: sessionUserSchema.parse(signedIn.user)
       }
     })
 })

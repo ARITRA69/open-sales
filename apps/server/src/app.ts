@@ -1,11 +1,28 @@
-import type { TApiError, THealthResponse } from '@open-sales/shared'
-import { setupRequestSchema } from '@open-sales/shared'
+import type {
+  TApiError,
+  THealthResponse,
+  TJoinLink,
+  TSessionUser
+} from '@open-sales/shared'
+import {
+  joinLinkSettingsSchema,
+  joinRequestSchema,
+  setupRequestSchema
+} from '@open-sales/shared'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import type { z } from 'zod'
 
+import { renderJoinPage } from './join-page'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
+import type { TJoinLinkRecord, TTeamService } from './team'
+import {
+  EmailTakenError,
+  JoinLinkInvalidError,
+  MemberNotFoundError
+} from './team'
 
 type TAppDeps = {
   version: string
@@ -14,8 +31,17 @@ type TAppDeps = {
   // Better Auth's request handler, for everything under /api/v1/auth
   // (AUTH_BASE_PATH in auth.ts).
   handleAuth: (request: Request) => Promise<Response>
+  // The signed-in person for a request's Bearer token, or null.
+  getSessionUser: (headers: Headers) => Promise<TSessionUser | null>
   setup: TSetupService
+  team: TTeamService
+  // Where people reach the server, for join links. Defaults to the request's.
+  publicUrl?: string
+  // The desktop app's link scheme, for the join page.
+  appScheme?: string
 }
+
+type TEnv = { Variables: { me: TSessionUser } }
 
 const sendError = (
   c: Context,
@@ -24,14 +50,43 @@ const sendError = (
   message: string
 ) => c.json<TApiError>({ error: { code, message } }, status)
 
-/** The Sales API. Every route lives under /api/v1. */
+/** Reads and checks a JSON body; on failure, answers 400 with the first problem. */
+const readBody = async <TSchema extends z.ZodType>(
+  c: Context,
+  schema: TSchema
+): Promise<
+  { ok: true; data: z.infer<TSchema> } | { ok: false; response: Response }
+> => {
+  const parsed = schema.safeParse(await c.req.json().catch(() => null))
+  if (parsed.success) return { ok: true, data: parsed.data }
+  const [firstIssue] = parsed.error.issues
+  return {
+    ok: false,
+    response: sendError(c, 400, 'invalid_request', firstIssue.message)
+  }
+}
+
+/** The Sales API under /api/v1, and the join page at /join/:token. */
 export const createApp = ({
   version,
   isDatabaseReachable,
   handleAuth,
-  setup
+  getSessionUser,
+  setup,
+  team,
+  publicUrl,
+  appScheme = 'open-sales'
 }: TAppDeps) => {
-  const api = new Hono().basePath('/api/v1')
+  const baseUrl = (c: Context) =>
+    (publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
+  const toJoinLink = (c: Context, record: TJoinLinkRecord): TJoinLink => ({
+    url: `${baseUrl(c)}/join/${record.token}`,
+    allowedDomain: record.allowedDomain,
+    role: record.role,
+    createdAt: record.createdAt.toISOString()
+  })
+
+  const api = new Hono<TEnv>()
 
   api.get('/health', async (c) => {
     const isUp = await isDatabaseReachable()
@@ -46,16 +101,11 @@ export const createApp = ({
   api.get('/setup', async (c) => c.json(await setup.getStatus()))
 
   api.post('/setup', async (c) => {
-    const parsed = setupRequestSchema.safeParse(
-      await c.req.json().catch(() => null)
-    )
-    if (!parsed.success) {
-      const [firstIssue] = parsed.error.issues
-      return sendError(c, 400, 'invalid_request', firstIssue.message)
-    }
+    const body = await readBody(c, setupRequestSchema)
+    if (!body.ok) return body.response
 
     try {
-      return c.json(await setup.run(parsed.data), 201)
+      return c.json(await setup.run(body.data), 201)
     } catch (error) {
       if (error instanceof SetupAlreadyDoneError) {
         return sendError(c, 409, 'already_set_up', error.message)
@@ -64,11 +114,127 @@ export const createApp = ({
     }
   })
 
-  // Accounts come from setup now and invites later, never open sign-up.
+  // Joining with the team's link. These are public: the link is the key.
+  api.get('/join/request', async (c) => {
+    const ticket = c.req.header('x-join-ticket')
+    const status = ticket ? await team.getJoinRequestStatus(ticket) : null
+    if (!status) {
+      return sendError(c, 404, 'not_found', 'That join request isn’t known.')
+    }
+    return c.json(status)
+  })
+
+  api.get('/join/:token', async (c) => {
+    const preview = await team.previewJoin(c.req.param('token'))
+    if (!preview) {
+      return sendError(
+        c,
+        404,
+        'invalid_link',
+        new JoinLinkInvalidError().message
+      )
+    }
+    return c.json(preview)
+  })
+
+  api.post('/join', async (c) => {
+    const body = await readBody(c, joinRequestSchema)
+    if (!body.ok) return body.response
+
+    try {
+      const joined = await team.join(body.data)
+      return c.json(joined, joined.status === 'active' ? 201 : 202)
+    } catch (error) {
+      if (error instanceof JoinLinkInvalidError) {
+        return sendError(c, 404, 'invalid_link', error.message)
+      }
+      if (error instanceof EmailTakenError) {
+        return sendError(c, 409, 'email_taken', error.message)
+      }
+      throw error
+    }
+  })
+
+  // Everything under /team is for admins.
+  api.use('/team/*', async (c, next) => {
+    const me = await getSessionUser(c.req.raw.headers)
+    if (!me) return sendError(c, 401, 'signed_out', 'Sign in again.')
+    if (me.role !== 'admin') {
+      return sendError(c, 403, 'forbidden', 'Only admins can do this.')
+    }
+    c.set('me', me)
+    await next()
+  })
+
+  api.get('/team/join-link', async (c) => {
+    const record = await team.getJoinLink()
+    return c.json({ joinLink: record ? toJoinLink(c, record) : null })
+  })
+
+  api.post('/team/join-link', async (c) => {
+    const body = await readBody(c, joinLinkSettingsSchema)
+    if (!body.ok) return body.response
+    const record = await team.createJoinLink(
+      c.get('me').id,
+      body.data.allowedDomain
+    )
+    return c.json({ joinLink: toJoinLink(c, record) }, 201)
+  })
+
+  api.patch('/team/join-link', async (c) => {
+    const body = await readBody(c, joinLinkSettingsSchema)
+    if (!body.ok) return body.response
+    const record = await team.updateJoinLink(body.data.allowedDomain)
+    if (!record) {
+      return sendError(c, 404, 'not_found', 'The join link is turned off.')
+    }
+    return c.json({ joinLink: toJoinLink(c, record) })
+  })
+
+  api.delete('/team/join-link', async (c) => {
+    await team.disableJoinLink()
+    return c.body(null, 204)
+  })
+
+  api.get('/team/members', async (c) =>
+    c.json({ members: await team.listMembers() })
+  )
+
+  api.post('/team/members/:id/:decision{approve|decline}', async (c) => {
+    const decide =
+      c.req.param('decision') === 'approve' ? team.approve : team.decline
+    try {
+      await decide(c.req.param('id'), c.get('me').id)
+      return c.body(null, 204)
+    } catch (error) {
+      if (error instanceof MemberNotFoundError) {
+        return sendError(c, 404, 'not_found', error.message)
+      }
+      throw error
+    }
+  })
+
+  // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>
-    sendError(c, 404, 'not_found', 'Ask your admin for an invite.')
+    sendError(c, 404, 'not_found', 'Ask your admin for the team’s join link.')
   )
   api.on(['GET', 'POST'], '/auth/*', (c) => handleAuth(c.req.raw))
 
-  return api
+  const app = new Hono()
+  app.route('/api/v1', api)
+
+  // The page a join link opens in a browser: it hands the link to the app.
+  app.get('/join/:token', async (c) => {
+    const token = c.req.param('token')
+    const preview = await team.previewJoin(token)
+    const html = renderJoinPage({
+      workspaceName: preview?.workspaceName ?? null,
+      isValid: Boolean(preview),
+      joinUrl: `${baseUrl(c)}/join/${token}`,
+      appScheme
+    })
+    return c.html(html, preview ? 200 : 404)
+  })
+
+  return app
 }

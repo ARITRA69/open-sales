@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -48,6 +49,18 @@ const makeBridge = (
     serverUrl: SERVER,
     workspaceName: 'Halden'
   })),
+  join: vi.fn(async () => ({
+    ok: true as const,
+    state: {
+      step: 'waiting-approval' as const,
+      serverUrl: SERVER,
+      workspaceName: 'Halden',
+      email: 'ravi@gmail.com',
+      declined: false
+    }
+  })),
+  cancelJoin: vi.fn(async () => ({ step: 'choose-server' as const })),
+  onStateChange: vi.fn(() => () => undefined),
   ...overrides
 })
 
@@ -61,8 +74,8 @@ describe('ConnectionGate', () => {
     const bridge = makeBridge({ step: 'choose-server' })
     render(<ConnectionGate bridge={bridge} />)
 
-    await screen.findByLabelText('Server address')
-    type('Server address', 'localhost:8787')
+    await screen.findByLabelText('Join link or server address')
+    type('Join link or server address', 'localhost:8787')
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(
@@ -179,6 +192,92 @@ describe('ConnectionGate', () => {
 
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeTruthy()
     expect(bridge.signOut).toHaveBeenCalled()
+    window.location.hash = ''
+  })
+
+  it('joins with the link, then waits for an admin', async () => {
+    const bridge = makeBridge({
+      step: 'join',
+      serverUrl: SERVER,
+      workspaceName: 'Halden'
+    })
+    render(<ConnectionGate bridge={bridge} />)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Join Halden' })
+    ).toBeTruthy()
+    type('Your name', 'Ravi Shah')
+    type('Work email', 'ravi@gmail.com')
+    type('Password', 'correct horse')
+    fireEvent.click(screen.getByRole('button', { name: 'Join' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Waiting for approval' })
+    ).toBeTruthy()
+    expect(bridge.join).toHaveBeenCalledWith({
+      name: 'Ravi Shah',
+      email: 'ravi@gmail.com',
+      password: 'correct horse'
+    })
+  })
+
+  it('moves on when a join link opens the app', async () => {
+    let pushState: (state: TConnectionState) => void = () => undefined
+    const bridge = makeBridge(
+      { step: 'choose-server' },
+      {
+        onStateChange: vi.fn((listener) => {
+          pushState = listener
+          return () => undefined
+        })
+      }
+    )
+    render(<ConnectionGate bridge={bridge} />)
+    await screen.findByLabelText('Join link or server address')
+
+    act(() =>
+      pushState({ step: 'join', serverUrl: SERVER, workspaceName: 'Halden' })
+    )
+    expect(
+      await screen.findByRole('heading', { name: 'Join Halden' })
+    ).toBeTruthy()
+  })
+
+  it('lets an admin approve a waiting person from Today', async () => {
+    window.location.hash = '#/today'
+    const ravi = {
+      id: 'ravi',
+      name: 'Ravi Shah',
+      email: 'ravi@gmail.com',
+      role: 'member' as const,
+      status: 'pending' as const,
+      joinedAt: '2026-11-09T11:00:00.000Z'
+    }
+    const decideMember = vi.fn(async () => ({ ok: true as const, data: null }))
+    render(
+      <ConnectionGate
+        bridge={makeBridge({
+          step: 'signed-in',
+          serverUrl: SERVER,
+          workspaceName: 'Halden',
+          user: ADMIN
+        })}
+        teamBridge={{
+          getJoinLink: vi.fn(async () => ({ ok: true as const, data: null })),
+          createJoinLink: vi.fn(),
+          updateJoinLink: vi.fn(),
+          disableJoinLink: vi.fn(),
+          listMembers: vi.fn(async () => ({ ok: true as const, data: [ravi] })),
+          decideMember
+        }}
+      />
+    )
+
+    expect(await screen.findByText('Waiting to join')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
+    await vi.waitFor(() =>
+      expect(decideMember).toHaveBeenCalledWith('ravi', 'approve')
+    )
     window.location.hash = ''
   })
 })

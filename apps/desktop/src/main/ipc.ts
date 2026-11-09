@@ -1,8 +1,17 @@
-import { setupRequestSchema, signInRequestSchema } from '@open-sales/shared'
+import {
+  joinFormSchema,
+  joinLinkSettingsSchema,
+  setupRequestSchema,
+  signInRequestSchema
+} from '@open-sales/shared'
 import { ipcMain } from 'electron'
 import { z } from 'zod'
 
-import { AI_TOOLS_CHANNELS, CONNECTION_CHANNELS } from '../preload/bridge-types'
+import {
+  AI_TOOLS_CHANNELS,
+  CONNECTION_CHANNELS,
+  TEAM_CHANNELS
+} from '../preload/bridge-types'
 import { detectAiTools, localMachine } from './ai-tools'
 import type { TConnection } from './connection'
 
@@ -38,6 +47,36 @@ export const registerConnectionIpc = (connection: TConnection) => {
   })
 
   ipcMain.handle(CONNECTION_CHANNELS.signOut, () => connection.signOut())
+
+  ipcMain.handle(CONNECTION_CHANNELS.join, (_event, input: unknown) => {
+    const parsed = joinFormSchema.safeParse(input)
+    return parsed.success ? connection.join(parsed.data) : INVALID
+  })
+
+  ipcMain.handle(CONNECTION_CHANNELS.cancelJoin, () => connection.cancelJoin())
+
+  // An admin's team tools. The server checks the role again on every call.
+  const { team } = connection
+  ipcMain.handle(TEAM_CHANNELS.getJoinLink, () => team.getJoinLink())
+  ipcMain.handle(TEAM_CHANNELS.createJoinLink, (_event, input: unknown) => {
+    const parsed = joinLinkSettingsSchema.safeParse(input)
+    return parsed.success ? team.createJoinLink(parsed.data) : INVALID
+  })
+  ipcMain.handle(TEAM_CHANNELS.updateJoinLink, (_event, input: unknown) => {
+    const parsed = joinLinkSettingsSchema.safeParse(input)
+    return parsed.success ? team.updateJoinLink(parsed.data) : INVALID
+  })
+  ipcMain.handle(TEAM_CHANNELS.disableJoinLink, () => team.disableJoinLink())
+  ipcMain.handle(TEAM_CHANNELS.listMembers, () => team.listMembers())
+  ipcMain.handle(
+    TEAM_CHANNELS.decideMember,
+    (_event, memberId: unknown, decision: unknown) => {
+      const parsed = z
+        .tuple([z.string().min(1).max(200), z.enum(['approve', 'decline'])])
+        .safeParse([memberId, decision])
+      return parsed.success ? team.decideMember(...parsed.data) : INVALID
+    }
+  )
 }
 
 /** Answers "which AI tools does this machine have?". It takes no input. */

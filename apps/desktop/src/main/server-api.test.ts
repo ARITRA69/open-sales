@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createServerApi,
   normalizeServerAddress,
+  parseJoinLink,
   ServerProblem
 } from './server-api'
 
@@ -156,4 +157,36 @@ describe('getSessionUser', () => {
       'Bearer token-1'
     )
   })
+})
+
+describe('parseJoinLink', () => {
+  it.each([
+    [
+      'https://sales.acme.com/join/abcdefgh12345678',
+      { serverUrl: 'https://sales.acme.com', joinToken: 'abcdefgh12345678' }
+    ],
+    [
+      '  http://localhost:8787/join/abc-def_12345678/  ',
+      { serverUrl: 'http://localhost:8787', joinToken: 'abc-def_12345678' }
+    ],
+    [
+      'https://acme.com/sales/join/abcdefgh12345678',
+      { serverUrl: 'https://acme.com/sales', joinToken: 'abcdefgh12345678' }
+    ],
+    [
+      `open-sales://join?link=${encodeURIComponent(
+        'https://sales.acme.com/join/abcdefgh12345678'
+      )}`,
+      { serverUrl: 'https://sales.acme.com', joinToken: 'abcdefgh12345678' }
+    ]
+  ])('reads %s', (link, expected) => {
+    expect(parseJoinLink(link)).toEqual(expected)
+  })
+
+  it.each(['sales.acme.com', 'https://sales.acme.com', 'https://x.com/join/'])(
+    'leaves %s to the server address check',
+    (text) => {
+      expect(parseJoinLink(text)).toBeNull()
+    }
+  )
 })

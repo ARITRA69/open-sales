@@ -5,6 +5,11 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8787),
   // Where people reach this server. Defaults to localhost and PORT.
   PUBLIC_URL: z.url().optional(),
+  // The desktop app's link scheme, for the join page's "Open the app".
+  APP_URL_SCHEME: z
+    .string()
+    .regex(/^[a-z][a-z0-9+.-]*$/)
+    .default('open-sales'),
   // Signs sessions. Leave unset and the server makes and keeps its own.
   AUTH_SECRET: z.string().min(32, 'Use at least 32 characters').optional()
 })

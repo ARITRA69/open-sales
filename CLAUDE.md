@@ -37,9 +37,12 @@ a person's approval.
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
 - **Two parts.** A desktop app (built) and a server (started: health check,
   first-run setup and sign-in; no sales data yet).
-  - Server: Sales API + Postgres, started with one Docker Compose command. It
-    has no web pages: the first person to connect from the desktop app creates
-    the admin account there.
+  - Server: Sales API + Postgres, started with one Docker Compose command. The
+    first person to connect from the desktop app creates the admin account
+    there. Its only web page is `/join/<token>`: what the team's join link
+    opens in a browser, with "Open the app" (`open-sales://join?link=…`; the
+    scheme is `urlScheme` in the brand config and `APP_URL_SCHEME` on the
+    server).
   - Desktop app: asks for the company's server address on first launch. It must
     stay a desktop app, because AI help runs through each person's own Claude
     Code or Codex installed on their machine. The app never pays for or proxies AI.
@@ -66,6 +69,13 @@ a person's approval.
     config file. The `TBrand` shape is in `packages/shared`, ready for the
     server's branding settings.
 - **Sign-in:** built-in email and password, plus optional SSO (OIDC).
+- **Joining a team:** one shared join link (Settings › Join link), not
+  per-person invites. People at the trusted email domain join at once;
+  everyone else is `pending` until an admin approves on Today or in Settings ›
+  Team. Only `active` users get a session. The app takes the link from the
+  browser page or pasted into its first box, and waits for approval by
+  polling with a ticket. Email (SMTP) isn't needed. Per-person invites with
+  higher roles come later.
 - **Server stack** (decided; Hono, Drizzle and Docker Compose are in place):
   - Hono on Bun for the API, mounted under `/api/v1`.
   - Zod schemas in `packages/shared` describe every request and response; the
@@ -77,9 +87,13 @@ a person's approval.
   - Better Auth (1.7) for email and password, OIDC SSO (later) and sessions,
     mounted at `/api/v1/auth` with the bearer plugin. Open sign-up is blocked
     in Hono (`/auth/sign-up/*` returns 404): accounts come from first-run setup
-    (`POST /api/v1/setup`) and, later, invites. A `user.create` hook makes the
-    first user admin; `role` can't be set by clients. The signing secret is
-    `AUTH_SECRET` if set, else generated once and kept in `instance_setting`.
+    (`POST /api/v1/setup`) and the join link (`POST /api/v1/join`). A
+    `user.create` hook makes the first user an active admin and everyone after
+    a pending member; a `session.create` hook refuses anyone not `active`.
+    Clients can't set `role` or `status`. `autoSignIn` is off: setup and
+    joining sign in explicitly. Admin routes live under `/api/v1/team`. The
+    signing secret is `AUTH_SECRET` if set, else generated once and kept in
+    `instance_setting`.
   - The desktop app's main process is the API client: it calls the server,
     stores the server address in userData and the session token encrypted
     with `safeStorage`. The renderer never sees the token; it asks the main

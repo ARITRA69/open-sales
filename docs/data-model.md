@@ -103,7 +103,31 @@ is in the first migration. Every table also has `created_at` and, if editable,
 
 Branding (product name, logo, colour) joins it with white labelling (P1).
 
-**`invite`**: Invite teammates (P0).
+**`user.status`** (built): `active`, `pending`, `declined`, `deactivated`.
+Only active people get a session (a Better Auth `session.create` hook). The
+first user is an active admin; everyone after starts as a pending member.
+
+**`join_link`** (built): the team's shared link.
+
+| Column           | Type        | Notes                                                  |
+| ---------------- | ----------- | ------------------------------------------------------ |
+| `id`             | uuid        |                                                        |
+| `token`          | text        | Kept as is so admins can copy the link again; unique.  |
+| `allowed_domain` | text        | People with an email here join without approval.       |
+| `role`           | text        | Always `member` for now (check constraint).            |
+| `created_by_id`  | text → user |                                                        |
+| `revoked_at`     | timestamptz | Set when reset or turned off. One live link at a time. |
+
+Indexes: unique `token`; `(created_at) where revoked_at is null` (the live
+link); `(created_by_id)`.
+
+**`join_request`** (built): someone who joined and waits for approval.
+
+`id`, `user_id` → user (cascade, unique), `join_link_id` → join_link,
+`ticket_hash` (SHA-256 of the ticket the app polls with; unique),
+`decided_at`, `decided_by_id` → user. Indexes on each foreign key.
+
+**`invite`** (P1): per-person invites with a role, for admins and managers.
 
 | Column          | Type        | Notes                                                 |
 | --------------- | ----------- | ----------------------------------------------------- |
@@ -501,7 +525,7 @@ null`.
 Migrations, in order. Each is additive.
 
 1. **`add-core-records`** (P0): extension `pg_trgm`; `workspace.currency`,
-   `workspace.time_zone`; `invite`; `pipeline`, `stage`, `lost_reason` (with
+   `workspace.time_zone`; `pipeline`, `stage`, `lost_reason` (with
    the default pipeline and stages as seed rows); `company`, `person`, `deal`,
    `deal_person`, `deal_stage_change`; `activity`, `activity_person`, `task`;
    `lead`; `proposal`; `change_log`; `import_job`. All the indexes above for

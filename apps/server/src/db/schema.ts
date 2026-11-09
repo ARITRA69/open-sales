@@ -2,9 +2,11 @@ import { sql } from 'drizzle-orm'
 import {
   boolean,
   check,
+  index,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid
 } from 'drizzle-orm/pg-core'
 
@@ -44,6 +46,8 @@ export const user = pgTable(
     emailVerified: boolean().notNull().default(false),
     image: text(),
     role: text().notNull().default('member'),
+    // Whether they can sign in. See USER_STATUSES in packages/shared.
+    status: text().notNull().default('active'),
     createdAt: createdAt(),
     updatedAt: updatedAt()
   },
@@ -51,6 +55,10 @@ export const user = pgTable(
     check(
       'user_role_check',
       sql`${table.role} in ('admin', 'manager', 'member')`
+    ),
+    check(
+      'user_status_check',
+      sql`${table.status} in ('active', 'pending', 'declined', 'deactivated')`
     )
   ]
 )
@@ -95,3 +103,63 @@ export const verification = pgTable('verification', {
   createdAt: createdAt(),
   updatedAt: updatedAt()
 })
+
+/*
+ * The team's join link: one shared link anyone on the team can use. Only one
+ * is live at a time (the rest have `revoked_at`). The token is kept as is, so
+ * an admin can copy the link again; it only lets someone ask to join, and
+ * only people at `allowed_domain` get in without approval.
+ */
+export const joinLink = pgTable(
+  'join_link',
+  {
+    id: uuid()
+      .primaryKey()
+      .$defaultFn(() => Bun.randomUUIDv7()),
+    token: text().notNull().unique(),
+    // People with an email here join straight away, e.g. "acme.com".
+    allowedDomain: text(),
+    role: text().notNull().default('member'),
+    createdById: text()
+      .notNull()
+      .references(() => user.id),
+    createdAt: createdAt(),
+    revokedAt: timestamp({ withTimezone: true })
+  },
+  (table) => [
+    check('join_link_role_check', sql`${table.role} = 'member'`),
+    index('join_link_created_by_idx').on(table.createdById),
+    index('join_link_live_idx')
+      .on(table.createdAt)
+      .where(sql`${table.revokedAt} is null`)
+  ]
+)
+
+/**
+ * Someone who joined with the link and waits for approval. The app holds the
+ * ticket (hashed here) to ask whether they've been let in.
+ */
+export const joinRequest = pgTable(
+  'join_request',
+  {
+    id: uuid()
+      .primaryKey()
+      .$defaultFn(() => Bun.randomUUIDv7()),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    joinLinkId: uuid()
+      .notNull()
+      .references(() => joinLink.id),
+    ticketHash: text().notNull(),
+    createdAt: createdAt(),
+    decidedAt: timestamp({ withTimezone: true }),
+    decidedById: text().references(() => user.id)
+  },
+  (table) => [
+    uniqueIndex('join_request_user_idx').on(table.userId),
+    uniqueIndex('join_request_ticket_idx').on(table.ticketHash),
+    index('join_request_link_idx').on(table.joinLinkId),
+    index('join_request_decided_by_idx').on(table.decidedById)
+  ]
+)

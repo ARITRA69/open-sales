@@ -14,11 +14,23 @@ const ADMIN = {
 }
 
 const makeStore = (
-  saved: { serverUrl?: string; token?: string } = {}
+  saved: {
+    serverUrl?: string
+    token?: string
+    joinTicket?: { ticket: string; email: string }
+  } = {}
 ): TConnectionStore => {
   let serverUrl = saved.serverUrl ?? null
   let token = saved.token ?? null
+  let joinTicket = saved.joinTicket ?? null
   return {
+    readJoinTicket: async () => joinTicket,
+    saveJoinTicket: async (value) => {
+      joinTicket = value
+    },
+    clearJoinTicket: async () => {
+      joinTicket = null
+    },
     readServerUrl: async () => serverUrl,
     saveServerUrl: async (url) => {
       serverUrl = url
@@ -33,6 +45,7 @@ const makeStore = (
     clearAll: async () => {
       token = null
       serverUrl = null
+      joinTicket = null
     }
   }
 }
@@ -45,8 +58,28 @@ const makeApi = (overrides: Partial<TServerApi> = {}): TServerApi => ({
   getSessionUser: async (_url, token) =>
     token === 'sign-in-token' || token === 'setup-token' ? ADMIN : null,
   signOut: async () => undefined,
+  previewJoin: async (_url, joinToken) =>
+    joinToken === JOIN_TOKEN ? { workspaceName: 'Halden' } : null,
+  join: async () => ({ status: 'pending', ticket: 'ticket-1' }),
+  getJoinRequestStatus: async () => 'pending',
+  team: {
+    getJoinLink: async () => null,
+    createJoinLink: async () => null,
+    updateJoinLink: async () => null,
+    disableJoinLink: async () => undefined,
+    listMembers: async () => [],
+    decideMember: async () => undefined
+  },
   ...overrides
 })
+
+const JOIN_TOKEN = 'abcdefgh12345678'
+const JOIN_LINK = `${SERVER}/join/${JOIN_TOKEN}`
+const RAVI = {
+  name: 'Ravi Shah',
+  email: 'Ravi@Gmail.com',
+  password: 'correct horse'
+}
 
 describe('connection', () => {
   it('starts by asking for a server', async () => {
@@ -148,5 +181,116 @@ describe('connection', () => {
 
     expect(state).toMatchObject({ step: 'sign-in' })
     await expect(store.readToken()).resolves.toBeNull()
+  })
+
+  describe('joining with the team link', () => {
+    it('takes a pasted join link in the server box', async () => {
+      const store = makeStore()
+      const connection = createConnection(makeApi(), store)
+
+      await expect(connection.chooseServer(JOIN_LINK)).resolves.toEqual({
+        ok: true,
+        state: { step: 'join', serverUrl: SERVER, workspaceName: 'Halden' }
+      })
+      await expect(store.readServerUrl()).resolves.toBe(SERVER)
+    })
+
+    it('opens the app’s own link from the join page', async () => {
+      const connection = createConnection(makeApi(), makeStore())
+      const appLink = `open-sales://join?link=${encodeURIComponent(JOIN_LINK)}`
+
+      const result = await connection.openJoinLink(appLink)
+      expect(result.ok && result.state.step).toBe('join')
+    })
+
+    it('says so when the link is dead', async () => {
+      const connection = createConnection(makeApi(), makeStore())
+
+      const result = await connection.chooseServer(
+        `${SERVER}/join/oldoldoldold`
+      )
+      expect(result).toEqual({
+        ok: false,
+        message:
+          'This join link has expired or was reset. Ask your admin for a new one.'
+      })
+    })
+
+    it('signs them straight in when the domain is trusted', async () => {
+      const store = makeStore()
+      const api = makeApi({
+        join: async () => ({
+          status: 'active',
+          token: 'sign-in-token',
+          user: ADMIN
+        })
+      })
+      const connection = createConnection(api, store)
+      await connection.chooseServer(JOIN_LINK)
+
+      const result = await connection.join(RAVI)
+      expect(result.ok && result.state.step).toBe('signed-in')
+      await expect(store.readToken()).resolves.toBe('sign-in-token')
+    })
+
+    it('waits for approval, then signs in by itself once approved', async () => {
+      const store = makeStore()
+      let requestStatus: 'pending' | 'approved' = 'pending'
+      const signIn = vi.fn(async () => ({
+        token: 'sign-in-token',
+        user: ADMIN
+      }))
+      const api = makeApi({
+        getJoinRequestStatus: async () => requestStatus,
+        signIn
+      })
+      const connection = createConnection(api, store)
+      await connection.chooseServer(JOIN_LINK)
+
+      await expect(connection.join(RAVI)).resolves.toEqual({
+        ok: true,
+        state: {
+          step: 'waiting-approval',
+          serverUrl: SERVER,
+          workspaceName: 'Halden',
+          email: 'ravi@gmail.com',
+          declined: false
+        }
+      })
+
+      requestStatus = 'approved'
+      const state = await connection.getState()
+      expect(state.step).toBe('signed-in')
+      expect(signIn).toHaveBeenCalledWith(SERVER, {
+        email: 'ravi@gmail.com',
+        password: RAVI.password
+      })
+      await expect(store.readJoinTicket()).resolves.toBeNull()
+    })
+
+    it('after a restart, sends an approved person to sign in', async () => {
+      const store = makeStore({
+        serverUrl: SERVER,
+        joinTicket: { ticket: 'ticket-1', email: 'ravi@gmail.com' }
+      })
+      const api = makeApi({ getJoinRequestStatus: async () => 'approved' })
+
+      await expect(createConnection(api, store).getState()).resolves.toEqual({
+        step: 'sign-in',
+        serverUrl: SERVER,
+        workspaceName: 'Halden'
+      })
+    })
+
+    it('shows when an admin declined', async () => {
+      const store = makeStore({
+        serverUrl: SERVER,
+        joinTicket: { ticket: 'ticket-1', email: 'ravi@gmail.com' }
+      })
+      const api = makeApi({ getJoinRequestStatus: async () => 'declined' })
+
+      const state = await createConnection(api, store).getState()
+      expect(state.step === 'waiting-approval' && state.declined).toBe(true)
+    })
   })
 })

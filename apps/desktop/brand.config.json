@@ -1,4 +1,5 @@
 {
   "productName": "Open Sales",
-  "appId": "io.github.aritra69.open-sales"
+  "appId": "io.github.aritra69.open-sales",
+  "urlScheme": "open-sales"
 }

@@ -1,4 +1,7 @@
 import type {
+  TJoinForm,
+  TJoinLinkSettings,
+  TJoinPreview,
   TSessionUser,
   TSetupRequest,
   TSetupStatus,
@@ -6,6 +9,11 @@ import type {
 } from '@open-sales/shared'
 import {
   healthResponseSchema,
+  joinLinkResponseSchema,
+  joinPreviewSchema,
+  joinRequestStatusSchema,
+  joinResponseSchema,
+  membersResponseSchema,
   sessionUserSchema,
   setupStatusSchema,
   signedInResponseSchema
@@ -48,6 +56,36 @@ export const normalizeServerAddress = (typed: string): string => {
 
   const path = url.pathname.replace(/\/+$/, '').replace(/\/api\/v1$/, '')
   return `${url.origin}${path}`
+}
+
+/**
+ * Reads a join link: the server's `https://sales.acme.com/join/<token>`, or
+ * the app's own `open-sales://join?link=…` that the join page opens. Null for
+ * anything else, such as a plain server address.
+ */
+export const parseJoinLink = (
+  text: string
+): { serverUrl: string; joinToken: string } | null => {
+  const trimmed = text.trim()
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    return null
+  }
+
+  if (url.protocol === `${brand.urlScheme}:`) {
+    const inner = url.searchParams.get('link')
+    return inner ? parseJoinLink(inner) : null
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+
+  const match = url.pathname.match(/^(.*)\/join\/([A-Za-z0-9_-]{8,})\/?$/)
+  if (!match) return null
+  return {
+    serverUrl: `${url.origin}${match[1].replace(/\/+$/, '')}`,
+    joinToken: match[2]
+  }
 }
 
 type TFetch = typeof fetch
@@ -188,6 +226,123 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     return body.data?.user ?? null
   }
 
+  /** What a join link leads to, or null if it's dead. */
+  const previewJoin = async (
+    serverUrl: string,
+    joinToken: string
+  ): Promise<TJoinPreview | null> => {
+    const response = await apiRequest(
+      serverUrl,
+      `/join/${encodeURIComponent(joinToken)}`
+    )
+    if (response.status === 404) return null
+    if (!response.ok) {
+      throw new ServerProblem(
+        await readErrorMessage(response, 'The join link didn’t work.')
+      )
+    }
+    return joinPreviewSchema.parse(await response.json())
+  }
+
+  const join = async (
+    serverUrl: string,
+    joinToken: string,
+    input: TJoinForm
+  ) => {
+    const response = await apiRequest(serverUrl, '/join', {
+      method: 'POST',
+      body: JSON.stringify({ ...input, token: joinToken })
+    })
+    if (!response.ok) {
+      throw new ServerProblem(
+        await readErrorMessage(response, 'Joining didn’t work. Try again.')
+      )
+    }
+    return joinResponseSchema.parse(await response.json())
+  }
+
+  /** Whether an admin has let them in yet; null if the server forgot them. */
+  const getJoinRequestStatus = async (serverUrl: string, ticket: string) => {
+    const response = await apiRequest(serverUrl, '/join/request', {
+      headers: { 'x-join-ticket': ticket }
+    })
+    if (response.status === 404) return null
+    if (!response.ok) {
+      throw new ServerProblem(
+        await readErrorMessage(response, 'Couldn’t check on your request.')
+      )
+    }
+    return joinRequestStatusSchema.parse(await response.json()).status
+  }
+
+  /** An admin's call under /team: a problem on failure, else the body (or null). */
+  const teamRequest = async (
+    serverUrl: string,
+    token: string,
+    path: string,
+    init: RequestInit = {}
+  ): Promise<unknown> => {
+    const response = await apiRequest(serverUrl, `/team${path}`, {
+      ...init,
+      token
+    })
+    if (!response.ok) {
+      throw new ServerProblem(
+        await readErrorMessage(response, 'That didn’t work. Try again.')
+      )
+    }
+    return response.status === 204 ? null : response.json()
+  }
+
+  const team = {
+    getJoinLink: async (serverUrl: string, token: string) =>
+      joinLinkResponseSchema.parse(
+        await teamRequest(serverUrl, token, '/join-link')
+      ).joinLink,
+    createJoinLink: async (
+      serverUrl: string,
+      token: string,
+      settings: TJoinLinkSettings
+    ) =>
+      joinLinkResponseSchema.parse(
+        await teamRequest(serverUrl, token, '/join-link', {
+          method: 'POST',
+          body: JSON.stringify(settings)
+        })
+      ).joinLink,
+    updateJoinLink: async (
+      serverUrl: string,
+      token: string,
+      settings: TJoinLinkSettings
+    ) =>
+      joinLinkResponseSchema.parse(
+        await teamRequest(serverUrl, token, '/join-link', {
+          method: 'PATCH',
+          body: JSON.stringify(settings)
+        })
+      ).joinLink,
+    disableJoinLink: async (serverUrl: string, token: string) => {
+      await teamRequest(serverUrl, token, '/join-link', { method: 'DELETE' })
+    },
+    listMembers: async (serverUrl: string, token: string) =>
+      membersResponseSchema.parse(
+        await teamRequest(serverUrl, token, '/members')
+      ).members,
+    decideMember: async (
+      serverUrl: string,
+      token: string,
+      memberId: string,
+      decision: 'approve' | 'decline'
+    ) => {
+      await teamRequest(
+        serverUrl,
+        token,
+        `/members/${encodeURIComponent(memberId)}/${decision}`,
+        { method: 'POST', body: '{}' }
+      )
+    }
+  }
+
   const signOut = async (serverUrl: string, token: string) => {
     await apiRequest(serverUrl, '/auth/sign-out', {
       method: 'POST',
@@ -202,7 +357,11 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     createAdmin,
     signIn,
     getSessionUser,
-    signOut
+    signOut,
+    previewJoin,
+    join,
+    getJoinRequestStatus,
+    team
   }
 }
 

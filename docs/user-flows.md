@@ -92,24 +92,34 @@ settings.
 
 ### 2. Invite the team
 
-**Who:** Admin · **Starts from:** Settings › Users and roles, or the Getting
-started list
+Built. One shared **join link** for the whole team, like a Slack invite.
 
-1. Admin clicks **Invite people**.
-2. Enters one or more emails and picks a role for each (Admin, Manager, Member).
-   Each role shows one line on what it can do.
-3. Clicks **Send invites**. Invites go out by SMTP; if SMTP isn't set up, the app
-   shows copyable invite links instead.
-4. The user list shows each invite as **Invited**, then **Active** once accepted,
-   with each person's AI tool status.
+**Who:** Admin · **Starts from:** Settings › Join link, or Today
+
+1. Admin opens Settings › Join link and presses **Turn on join link** (or it's
+   already on), then **Copy**, and posts the link where the team talks. It
+   looks like `https://sales.acme.com/join/<code>`.
+2. Optionally sets a **trusted email domain** (`acme.com`). People with an email
+   there join straight away; everyone else waits for approval. Empty means
+   everyone waits.
+3. When someone outside the domain joins, admins see them under **Waiting to
+   join** on Today (with a count on Today's badge) and in Settings › Team,
+   with **Approve** and **Decline**.
+4. **Reset link** makes a new link and stops the old one at once. **Turn off**
+   stops joining by link altogether.
+
+The teammate's side is flow 3. New people always join as Members; admins
+and managers will come from per-person invites (P1).
 
 **AI:** none.
 
 **Edge cases**
 
-- Email already in use: show it on the row; don't send.
-- Admin demotes the last admin: blocked, with a reason.
-- Invite expires: **Resend** on the row.
+- Link leaked: Reset link. Anyone outside the trusted domain still needed
+  approval.
+- Someone joins with an email that already has an account: "Sign in instead".
+- Declined people can't sign in; their screen says an admin didn't approve
+  them. An admin can still approve them later from Settings › Team.
 
 **Mobbin:** [Zoho CRM inviting teammates](https://mobbin.com/flows/b2a19530-f4ea-4898-b60d-b68eef5a097c?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (a setup checklist with "Invite your team" first), [Attio accepting an invitation](https://mobbin.com/flows/536bb27b-20d8-4e63-a6bd-7b1c66ac77cb?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp).
 
@@ -117,8 +127,13 @@ started list
 
 **Who:** All · **Starts from:** opening the desktop app for the first time
 
-1. **Server address.** The app asks for the company's server address (pre-filled
-   if they came from an invite link). Typing `sales.acme.com` is enough: local
+1. **Join link or server address.** Clicking the team's join link opens a page
+   on the server with **Open the app**, which opens the app on a **Join**
+   screen with the server filled in. Pasting the link into the app's first box
+   does the same. On Join they enter name, work email and password: at the
+   trusted domain they're in at once; otherwise they see **Waiting for
+   approval**, which moves on by itself when an admin approves. Without a
+   link, the app asks for the company's server address. Typing `sales.acme.com` is enough: local
    addresses get `http://`, others `https://`. The app checks it's one of our
    servers and that the server can reach its database, then remembers it.
 2. **Create admin or sign in.** A server with no accounts shows **Create the

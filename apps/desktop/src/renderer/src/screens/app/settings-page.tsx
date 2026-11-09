@@ -7,12 +7,14 @@ import { PageBody } from '@/components/sales/app-shell'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { Dot } from '@/components/ui/status'
+import type { TTeamControls } from '@/hooks/use-team'
 import { describeAiTool } from '@/lib/ai-tool-help'
 
 import type {
   TAiToolsStatus,
   TAiToolStatus
 } from '../../../../preload/bridge-types'
+import { TeamSection } from './team-section'
 
 type TSettingsPageProps = {
   name: string
@@ -23,6 +25,8 @@ type TSettingsPageProps = {
   // Null while checking, or where there's no way to check.
   aiTools: TAiToolsStatus | null
   onCheckAiTools: () => void
+  // Admins only: the join link and the team.
+  team?: TTeamControls | null
   onSignOut: () => void
 }
 
@@ -35,6 +39,7 @@ export const SettingsPage = ({
   serverHost,
   aiTools,
   onCheckAiTools,
+  team = null,
   onSignOut
 }: TSettingsPageProps) => (
   <PageBody narrow>
@@ -47,6 +52,7 @@ export const SettingsPage = ({
       <SettingsRow label="Email" value={email} />
       <SettingsRow label="Role" value={roleLabel} />
     </SettingsSection>
+    {team ? <TeamSection team={team} /> : null}
     <SettingsSection
       action={
         <Button

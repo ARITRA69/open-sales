@@ -28,9 +28,9 @@ export const ServerAddressScreen = ({
 
   return (
     <ConnectLayout
-      intro="Enter the address your admin gave you."
+      intro="Paste the join link your team shared, or enter your server’s address."
       step={{ current: 1, total: 2 }}
-      title="Connect to your server"
+      title="Connect to your team"
     >
       <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <Field
@@ -38,8 +38,8 @@ export const ServerAddressScreen = ({
           autoCapitalize="off"
           autoComplete="url"
           hint="Running it yourself? After docker compose up, use localhost:8787."
-          label="Server address"
-          placeholder="sales.yourcompany.com"
+          label="Join link or server address"
+          placeholder="https://sales.yourcompany.com/join/…"
           spellCheck={false}
           value={address}
           onChange={(event) => setAddress(event.target.value)}

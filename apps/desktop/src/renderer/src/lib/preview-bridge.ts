@@ -1,3 +1,5 @@
+import type { TJoinLink, TMember } from '@open-sales/shared'
+
 import type {
   TAiToolsStatus,
   TConnectionState,
@@ -30,6 +32,18 @@ const PREVIEW_STATES: Record<string, TConnectionState> = {
     serverUrl: SERVER_URL,
     workspaceName: 'Halden Capital',
     user: PREVIEW_USER
+  },
+  join: {
+    step: 'join',
+    serverUrl: SERVER_URL,
+    workspaceName: 'Halden Capital'
+  },
+  'waiting-approval': {
+    step: 'waiting-approval',
+    serverUrl: SERVER_URL,
+    workspaceName: 'Halden Capital',
+    email: 'ravi@gmail.com',
+    declined: false
   }
 }
 
@@ -38,7 +52,8 @@ const pause = () => new Promise((resolve) => setTimeout(resolve, 400))
 /**
  * A pretend server for the browser preview, where there's no Electron bridge.
  * Open the page with `?preview=sign-in` (or choose-server, create-admin,
- * server-unreachable, signed-in) to see that screen and click through.
+ * server-unreachable, join, waiting-approval, signed-in) to see that screen
+ * and click through.
  */
 export const createPreviewBridge = (
   search: string
@@ -59,7 +74,11 @@ export const createPreviewBridge = (
     forgetServer: async () => PREVIEW_STATES['choose-server'],
     createAdmin: () => ok(signedIn),
     signIn: () => ok(signedIn),
-    signOut: async () => PREVIEW_STATES['sign-in']
+    signOut: async () => PREVIEW_STATES['sign-in'],
+    // Pretends the email isn't at the trusted domain, so they wait.
+    join: () => ok(PREVIEW_STATES['waiting-approval']),
+    cancelJoin: async () => PREVIEW_STATES['choose-server'],
+    onStateChange: () => () => undefined
   }
 }
 
@@ -106,4 +125,74 @@ export const createPreviewAiTools = (
   const status =
     PREVIEW_AI_TOOLS[params.get('ai') ?? 'one'] ?? PREVIEW_AI_TOOLS.one
   return { getStatus: async () => status }
+}
+
+/** A pretend team for the same preview: a live link and one person waiting. */
+export const createPreviewTeam = (
+  search: string
+): TOpenSalesBridge['team'] | null => {
+  if (!new URLSearchParams(search).has('preview')) return null
+
+  let joinLink: TJoinLink | null = {
+    url: `${SERVER_URL}/join/Xk2mPq8vR4tLw9nB`,
+    allowedDomain: 'halden.com',
+    role: 'member',
+    createdAt: '2026-11-09T10:00:00.000Z'
+  }
+  let members: TMember[] = [
+    {
+      id: 'ravi',
+      name: 'Ravi Shah',
+      email: 'ravi@gmail.com',
+      role: 'member',
+      status: 'pending',
+      joinedAt: '2026-11-09T11:00:00.000Z'
+    },
+    { ...PREVIEW_USER, status: 'active', joinedAt: '2026-11-01T09:00:00.000Z' },
+    {
+      id: 'dan',
+      name: 'Dan Okafor',
+      email: 'dan@halden.com',
+      role: 'member',
+      status: 'active',
+      joinedAt: '2026-11-05T09:00:00.000Z'
+    }
+  ]
+  const done = async <TData>(data: TData) => {
+    await pause()
+    return { ok: true as const, data }
+  }
+
+  return {
+    getJoinLink: () => done(joinLink),
+    createJoinLink: ({ allowedDomain }) => {
+      joinLink = {
+        url: `${SERVER_URL}/join/${Math.random().toString(36).slice(2, 18)}`,
+        allowedDomain,
+        role: 'member',
+        createdAt: new Date().toISOString()
+      }
+      return done(joinLink)
+    },
+    updateJoinLink: ({ allowedDomain }) => {
+      joinLink = joinLink ? { ...joinLink, allowedDomain } : null
+      return done(joinLink)
+    },
+    disableJoinLink: () => {
+      joinLink = null
+      return done(null)
+    },
+    listMembers: () => done(members),
+    decideMember: (memberId, decision) => {
+      members = members.map((member) =>
+        member.id === memberId
+          ? {
+              ...member,
+              status: decision === 'approve' ? 'active' : 'declined'
+            }
+          : member
+      )
+      return done(null)
+    }
+  }
 }

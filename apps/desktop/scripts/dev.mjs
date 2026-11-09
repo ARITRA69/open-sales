@@ -6,7 +6,13 @@
  * this.
  */
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync
+} from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 
@@ -18,7 +24,9 @@ const packageDir = (name) => dirname(require.resolve(`${name}/package.json`))
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
 // The name and id come from the brand config, so a rebranded app runs as itself.
-const { productName, appId } = readJson(resolve(ROOT, 'brand.config.json'))
+const { productName, appId, urlScheme } = readJson(
+  resolve(ROOT, 'brand.config.json')
+)
 const ELECTRON_DIR = packageDir('electron')
 const { version: electronVersion } = readJson(
   resolve(ELECTRON_DIR, 'package.json')
@@ -28,6 +36,15 @@ const DEV_APP_ID = `${appId}.dev`
 const prepareNamedMacApp = () => {
   const appDir = resolve(ROOT, 'node_modules/.dev-app', electronVersion)
   const namedApp = resolve(appDir, `${productName}.app`)
+  const namedPlist = resolve(namedApp, 'Contents/Info.plist')
+
+  // Copies made before join links existed don't declare the link scheme.
+  if (
+    existsSync(namedApp) &&
+    !readFileSync(namedPlist, 'utf8').includes(`<string>${urlScheme}</string>`)
+  ) {
+    rmSync(namedApp, { recursive: true, force: true })
+  }
 
   if (!existsSync(namedApp)) {
     const partApp = resolve(appDir, `part-${process.pid}.app`)
@@ -44,6 +61,16 @@ const prepareNamedMacApp = () => {
     setPlistValue('CFBundleName', productName)
     setPlistValue('CFBundleDisplayName', productName)
     setPlistValue('CFBundleIdentifier', DEV_APP_ID)
+    // macOS only opens links for schemes an app declares here.
+    execFileSync('plutil', [
+      '-replace',
+      'CFBundleURLTypes',
+      '-json',
+      JSON.stringify([
+        { CFBundleURLName: DEV_APP_ID, CFBundleURLSchemes: [urlScheme] }
+      ]),
+      infoPlist
+    ])
     // Note: editing the plist breaks the copy's signature, so sign it again.
     execFileSync('codesign', ['--force', '--deep', '--sign', '-', partApp], {
       stdio: 'ignore'
