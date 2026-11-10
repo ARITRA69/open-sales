@@ -105,11 +105,9 @@ export const SignedInApp = ({
           body: (
             <SettingsPage
               aiTools={aiTools.status}
-              email={user.email}
-              name={user.name}
-              roleLabel={account.roleLabel}
               serverHost={serverHost}
               team={isAdmin && teamBridge ? team : null}
+              user={user}
               workspaceName={workspaceName}
               onCheckAiTools={aiTools.refresh}
               onSignOut={onSignOut}

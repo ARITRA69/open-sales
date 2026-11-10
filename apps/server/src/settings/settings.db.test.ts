@@ -2,7 +2,9 @@
  * Settings against a real Postgres: who may change what, saving stages and
  * lost reasons in one go, removing a stage that has deals, and never leaving
  * the workspace without an admin. Runs only with TEST_DATABASE_URL set, and
- * only on a database whose name says "test", because it empties it first:
+ * only on a database whose name says "test", because it empties it first.
+ * Give it a database of its own: it can't share one with tests running at
+ * the same time.
  *
  *   TEST_DATABASE_URL=postgres://open_sales:open-sales@localhost:5433/open_sales_test_settings \
  *     bunx vitest run src/settings
@@ -57,6 +59,8 @@ const admin = actor('admin')
 const manager = actor('manager')
 const ravi = actor('ravi')
 
+const EMPTY_EVERYTHING = sql`truncate company, person, deal, deal_person, deal_stage_change, change_log, stage, lost_reason, pipeline, session, "user" cascade`
+
 /** Makes the test database if it's missing; the server can't. */
 const ensureDatabase = async (url: string) => {
   const name = new URL(url).pathname.slice(1)
@@ -76,6 +80,13 @@ describe.skipIf(!DATABASE_URL)('settings (database)', () => {
   let close: () => Promise<void>
   let settings: TSettingsService
   let records: TRecordsService
+  // The pipeline as the migrations seeded it. These tests replace it with
+  // their own, and put this back when they finish.
+  let seeded: {
+    pipelines: (typeof pipeline.$inferSelect)[]
+    stages: (typeof stage.$inferSelect)[]
+    reasons: (typeof lostReason.$inferSelect)[]
+  } | null = null
 
   beforeAll(async () => {
     await ensureDatabase(DATABASE_URL!)
@@ -83,18 +94,28 @@ describe.skipIf(!DATABASE_URL)('settings (database)', () => {
     db = connection.db
     close = () => connection.sql.end()
     await runMigrations(db)
+    seeded = {
+      pipelines: await db.select().from(pipeline),
+      stages: await db.select().from(stage),
+      reasons: await db.select().from(lostReason)
+    }
     settings = createSettingsService(db)
     records = createRecordsService(db)
   })
 
   afterAll(async () => {
+    // Put back the pipeline the migrations made, for whatever runs next here.
+    if (seeded) {
+      await db.execute(EMPTY_EVERYTHING)
+      await db.insert(pipeline).values(seeded.pipelines)
+      await db.insert(stage).values(seeded.stages)
+      await db.insert(lostReason).values(seeded.reasons)
+    }
     await close?.()
   })
 
   beforeEach(async () => {
-    await db.execute(
-      sql`truncate company, person, deal, deal_person, deal_stage_change, change_log, stage, lost_reason, pipeline, session, "user" cascade`
-    )
+    await db.execute(EMPTY_EVERYTHING)
     await db.delete(workspace)
     await db.insert(workspace).values({ name: 'Halden', currency: 'USD' })
     await db.insert(user).values(
@@ -749,7 +770,7 @@ describe.skipIf(!DATABASE_URL)('settings (database)', () => {
 
     it('refuses every admin-only write from a member or a manager', async () => {
       const current = await read()
-      const writes = [
+      const writes = () => [
         send('PATCH', '/settings/workspace', { name: 'Mine now' }),
         send('PUT', '/settings/pipeline/stages', {
           revision: current.revision,
@@ -762,8 +783,8 @@ describe.skipIf(!DATABASE_URL)('settings (database)', () => {
         send('PATCH', `/team/members/${ravi.id}`, { role: 'admin' })
       ]
       for (const who of [manager, ravi]) {
-        for (const write of writes) {
-          const response = await appAs(who).request(write.clone())
+        for (const write of writes()) {
+          const response = await appAs(who).request(write)
           expect(response.status, write.url).toBe(403)
           expect((await bodyOf(response)).error.code).toBe('forbidden')
         }

@@ -11,16 +11,23 @@ import type {
   TJoinLink,
   TJoinLinkSettings,
   TListQueryInput,
+  TLostReasonsSave,
   TMember,
+  TMemberUpdate,
   TOwner,
   TPage,
   TPerson,
   TPersonCreate,
   TPersonUpdate,
   TPipeline,
+  TPipelineSettings,
+  TProfileUpdate,
   TSessionUser,
   TSetupRequest,
-  TSignInRequest
+  TSignInRequest,
+  TStagesSaveInput,
+  TWorkspaceSettings,
+  TWorkspaceUpdate
 } from '@open-sales/shared'
 
 /*
@@ -167,6 +174,8 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // Settings: the workspace, stages, lost reasons, roles and your own name.
+  settings: TSettingsBridge
 }
 
 /**
@@ -217,6 +226,45 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+/**
+ * Settings, as the signed-in person. Changing the workspace, the stages,
+ * the lost reasons or someone's role is for admins: anyone else gets the
+ * server's "Only admins can change this."
+ */
+export type TSettingsBridge = {
+  getWorkspace: () => Promise<TApiResult<TWorkspaceSettings>>
+  // Send what changed.
+  updateWorkspace: (
+    changes: TWorkspaceUpdate
+  ) => Promise<TApiResult<TWorkspaceSettings>>
+  // Your own name.
+  updateMe: (changes: TProfileUpdate) => Promise<TApiResult<TSessionUser>>
+  // The pipeline as an admin edits it. Send its `revision` back with a
+  // save: if someone saved in between, the answer has code `changed_since`.
+  getPipeline: () => Promise<TApiResult<TPipelineSettings>>
+  saveStages: (
+    input: TStagesSaveInput
+  ) => Promise<TApiResult<TPipelineSettings>>
+  saveLostReasons: (
+    input: TLostReasonsSave
+  ) => Promise<TApiResult<TPipelineSettings>>
+  // Someone's role, or whether they can sign in.
+  updateMember: (
+    memberId: string,
+    changes: TMemberUpdate
+  ) => Promise<TApiResult<TMember>>
+}
+
+export const SETTINGS_CHANNELS = {
+  getWorkspace: 'settings:get-workspace',
+  updateWorkspace: 'settings:update-workspace',
+  updateMe: 'settings:update-me',
+  getPipeline: 'settings:get-pipeline',
+  saveStages: 'settings:save-stages',
+  saveLostReasons: 'settings:save-lost-reasons',
+  updateMember: 'settings:update-member'
+} as const satisfies Record<keyof TSettingsBridge, string>
 
 declare global {
   interface Window {

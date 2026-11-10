@@ -151,7 +151,7 @@ export const stageInputSchema = z.object({
     .max(100, 'Win probability can’t be above 100'),
   // Null means a deal here never counts as stalled.
   stalledAfterDays: z
-    .number()
+    .number('Enter how many days, or leave it empty')
     .int('Use whole days')
     .min(1, 'Stalled after at least 1 day, or leave it empty')
     .max(3650, 'Keep it under 10 years')

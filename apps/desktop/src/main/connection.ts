@@ -306,7 +306,8 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
     // Leaving the Join or Waiting screen means choosing a server again.
     cancelJoin: forgetServer,
     team,
-    records
+    records,
+    withSession
   }
 }
 

@@ -5,6 +5,7 @@ import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
   RECORDS_CHANNELS,
+  SETTINGS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
 
@@ -62,6 +63,20 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  settings: {
+    getWorkspace: () => ipcRenderer.invoke(SETTINGS_CHANNELS.getWorkspace),
+    updateWorkspace: (changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateWorkspace, changes),
+    updateMe: (changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateMe, changes),
+    getPipeline: () => ipcRenderer.invoke(SETTINGS_CHANNELS.getPipeline),
+    saveStages: (input) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.saveStages, input),
+    saveLostReasons: (input) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.saveLostReasons, input),
+    updateMember: (memberId, changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateMember, memberId, changes)
   }
 }
 
