@@ -15,6 +15,7 @@ import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { BrowserPage } from './browser/browser-page'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
+import { McpPage } from './mcp/mcp-page'
 import { AccountsPage } from './records/accounts-page'
 import { PeoplePage } from './records/people-page'
 import { PipelinePage } from './records/pipeline-page'
@@ -28,7 +29,8 @@ const ROLE_LABELS: Record<Role, string> = {
 }
 
 // `components` is the developers' sheet of every UI part, at #/components.
-type TRoute = TSalesNavId | 'components'
+// `mcp` is Connect AI, which has no sidebar item of its own.
+type TRoute = TSalesNavId | 'components' | 'mcp'
 
 const ROUTES: readonly TRoute[] = [
   'today',
@@ -41,7 +43,8 @@ const ROUTES: readonly TRoute[] = [
   'playbooks',
   'settings',
   'components',
-  'browser'
+  'browser',
+  'mcp'
 ]
 
 type TSignedInAppProps = {
@@ -138,6 +141,8 @@ export const SignedInApp = ({
           : emptyPage(route)
       case 'browser':
         return { title: 'Browser', body: <BrowserPage /> }
+      case 'mcp':
+        return { title: 'Connect AI', body: <McpPage /> }
       default:
         return emptyPage(route)
     }
@@ -148,7 +153,7 @@ export const SignedInApp = ({
       sidebar={
         <SalesSidebar
           account={account}
-          active={route}
+          active={route === 'mcp' ? undefined : route}
           // For admins, Today's badge counts people waiting to join.
           waiting={isAdmin ? team.pending.length : 0}
           onSignOut={onSignOut}

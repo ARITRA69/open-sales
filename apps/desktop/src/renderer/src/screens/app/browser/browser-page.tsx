@@ -88,7 +88,7 @@ export const BrowserTabs = ({
 
 /**
  * The in-app browser: `#/browser` for the tabs, `#/browser/connect` for
- * connecting an AI tool to it.
+ * what AI may do in it. Connecting an AI tool is the app's own page, `#/mcp`.
  */
 export const BrowserPage = () => {
   const bridge = getBrowserBridge()

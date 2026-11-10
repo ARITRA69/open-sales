@@ -21,6 +21,7 @@ import {
   registerConnectionIpc,
   registerRecordsIpc
 } from './ipc'
+import { registerMcp } from './mcp/register-mcp'
 import { createServerApi } from './server-api'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
@@ -148,7 +149,8 @@ void app.whenReady().then(() => {
   }
   // Finds the person's own Claude Code or Codex, which the AI help runs on.
   registerAiToolsIpc()
-  registerBrowser(app.getPath('userData'), safeStorage)
+  const mcp = registerMcp(app.getPath('userData'))
+  registerBrowser(app.getPath('userData'), safeStorage, mcp)
 
   createMainWindow()
 

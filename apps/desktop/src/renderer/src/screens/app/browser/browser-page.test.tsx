@@ -1,5 +1,11 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor
+} from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type {
@@ -7,6 +13,7 @@ import type {
   TBrowserState,
   TBrowserTab
 } from '../../../../../preload/bridge-types'
+import { BrowserConnectPage } from './browser-connect-page'
 import { BrowserTabs } from './browser-page'
 
 afterEach(cleanup)
@@ -191,9 +198,13 @@ describe('the Browser page', () => {
   it('starts empty, with a way to open a tab and to connect AI', () => {
     const bridge = show({})
     expect(screen.getByText('No tabs open')).toBeTruthy()
+    // Connecting is the app's own page; the browser keeps only its rules.
+    for (const link of screen.getAllByRole('link', { name: 'Connect AI' })) {
+      expect(link.getAttribute('href')).toBe('#/mcp')
+    }
     expect(
       screen
-        .getAllByRole('link', { name: 'Connect AI' })[0]
+        .getByRole('link', { name: 'What AI may do here' })
         .getAttribute('href')
     ).toBe('#/browser/connect')
 
@@ -204,5 +215,62 @@ describe('the Browser page', () => {
   it('never places a live page while it has none to show', () => {
     const bridge = show({ tabs: [tab({ id: 't1' })], activeTabId: 't1' })
     expect(bridge.setBounds).not.toHaveBeenCalled()
+  })
+})
+
+describe('Browser › AI in the browser', () => {
+  const showRules = (
+    info: Awaited<ReturnType<TBrowserBridge['getConnectInfo']>>
+  ) => {
+    const bridge = makeBridge()
+    vi.mocked(bridge.getConnectInfo).mockResolvedValue(info)
+    render(<BrowserConnectPage bridge={bridge} />)
+    return bridge
+  }
+
+  it('holds the browser’s own rules and sites, and sends connecting to its page', async () => {
+    showRules({
+      sites: [{ site: 'northwind.io', rule: 'always' }],
+      canRememberSites: true
+    })
+
+    expect(
+      screen.getByRole('heading', { name: 'AI in the browser' })
+    ).toBeTruthy()
+    expect(screen.getByText('What happens when AI browses')).toBeTruthy()
+    expect(await screen.findByText('northwind.io')).toBeTruthy()
+    expect(screen.getByText('Always allowed')).toBeTruthy()
+    expect(
+      screen.getByRole('link', { name: 'Connect AI' }).getAttribute('href')
+    ).toBe('#/mcp')
+
+    // Nothing about connecting a tool is left here.
+    expect(screen.queryByText(/mcp add/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copy command' })).toBeNull()
+    expect(screen.queryByText(/connected since/)).toBeNull()
+  })
+
+  it('forgets a site, so the person is asked again', async () => {
+    const bridge = showRules({
+      sites: [{ site: 'linkedin.com', rule: 'blocked' }],
+      canRememberSites: true
+    })
+    await screen.findByText('linkedin.com')
+    vi.mocked(bridge.getConnectInfo).mockResolvedValue({
+      sites: [],
+      canRememberSites: true
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+
+    await waitFor(() =>
+      expect(bridge.forgetSite).toHaveBeenCalledWith('linkedin.com')
+    )
+    expect(await screen.findByText(/None yet/)).toBeTruthy()
+  })
+
+  it('says “always” won’t last where there’s no keychain', async () => {
+    showRules({ sites: [], canRememberSites: false })
+    expect(await screen.findByText(/no keychain/)).toBeTruthy()
   })
 })

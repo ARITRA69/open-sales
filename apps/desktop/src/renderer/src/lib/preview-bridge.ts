@@ -197,3 +197,4 @@ export const createPreviewTeam = (
   }
 }
 export { createPreviewBrowser } from './preview-browser'
+export { createPreviewMcp } from './preview-mcp'

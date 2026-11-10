@@ -234,14 +234,6 @@ export const createPreviewBrowser = (search: string): TBrowserBridge | null => {
       return shown?.url ? pictureOf(shown) : null
     },
     getConnectInfo: async () => ({
-      serverName: 'open-sales',
-      commands: {
-        'claude-code':
-          "claude mcp add --scope user open-sales -e ELECTRON_RUN_AS_NODE=1 -- '/Applications/Open Sales.app/Contents/MacOS/Open Sales' '/Applications/Open Sales.app/Contents/Resources/stdio-relay.mjs' '/Users/asha/Library/Application Support/Open Sales/mcp-connection.json' 'Open Sales'",
-        codex:
-          "codex mcp add open-sales --env ELECTRON_RUN_AS_NODE=1 -- '/Applications/Open Sales.app/Contents/MacOS/Open Sales' '/Applications/Open Sales.app/Contents/Resources/stdio-relay.mjs' '/Users/asha/Library/Application Support/Open Sales/mcp-connection.json' 'Open Sales'"
-      },
-      connected: ['Claude Code'],
       sites: [...allowed].map(([site, rule]) => ({ site, rule })),
       canRememberSites: true
     }),

@@ -36,17 +36,53 @@ export const defineTool = <TInput extends z.ZodObject>(tool: TTool<TInput>) =>
 /** A problem meant for the AI tool to read and act on, not a crash. */
 export type TToolFailure = { isToolFailure: true; message: string }
 
+/** The tools of one part of the app, such as the browser, named for people. */
+export type TToolGroup = {
+  // Such as "Browser".
+  title: string
+  // One line on what these tools are for.
+  about: string
+  // A page of the app that says more about them, such as `#/browser/connect`.
+  more?: { label: string; href: string }
+}
+
 export const createToolRegistry = () => {
   const tools = new Map<string, TTool>()
+  // Which group each tool was added under. None for a tool added by itself.
+  const groupOf = new Map<string, TToolGroup>()
+
+  const add = (...added: TTool[]) => {
+    for (const tool of added) {
+      if (tools.has(tool.name)) {
+        throw new Error(`Two tools are called ${tool.name}`)
+      }
+      tools.set(tool.name, tool)
+    }
+  }
 
   return {
-    add: (...added: TTool[]) => {
-      for (const tool of added) {
-        if (tools.has(tool.name)) {
-          throw new Error(`Two tools are called ${tool.name}`)
-        }
-        tools.set(tool.name, tool)
+    add,
+
+    /** Adds one part of the app's tools, which the app lists together. */
+    addGroup: (group: TToolGroup, ...added: TTool[]) => {
+      add(...added)
+      for (const tool of added) groupOf.set(tool.name, group)
+    },
+
+    /**
+     * The tools by group, in the order they were added, for the app's own
+     * Connect AI page. `group` is null for tools added by themselves.
+     */
+    groups: () => {
+      const byGroup = new Map<TToolGroup | null, TTool[]>()
+      for (const tool of tools.values()) {
+        const group = groupOf.get(tool.name) ?? null
+        byGroup.set(group, [...(byGroup.get(group) ?? []), tool])
       }
+      return [...byGroup].map(([group, grouped]) => ({
+        group,
+        tools: grouped
+      }))
     },
 
     has: (name: string) => tools.has(name),

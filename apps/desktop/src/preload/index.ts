@@ -5,6 +5,7 @@ import {
   AI_TOOLS_CHANNELS,
   BROWSER_CHANNELS,
   CONNECTION_CHANNELS,
+  MCP_CHANNELS,
   RECORDS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
@@ -87,6 +88,9 @@ const openSalesBridge: TOpenSalesBridge = {
     captureStill: () => ipcRenderer.invoke(BROWSER_CHANNELS.captureStill),
     getConnectInfo: () => ipcRenderer.invoke(BROWSER_CHANNELS.getConnectInfo),
     forgetSite: (site) => ipcRenderer.invoke(BROWSER_CHANNELS.forgetSite, site)
+  },
+  mcp: {
+    getInfo: () => ipcRenderer.invoke(MCP_CHANNELS.getInfo)
   }
 }
 

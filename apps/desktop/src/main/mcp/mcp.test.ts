@@ -185,11 +185,76 @@ describe('createMcpHandler', () => {
     })
   })
 
+  it('says what each part of the app has added by the time a tool connects', async () => {
+    const said = ['About the browser.']
+    const handler = createMcpHandler({
+      serverInfo: { name: 'open-sales', title: 'Open Sales', version: '0.1.0' },
+      instructions: () => said.join('\n\n'),
+      tools: createToolRegistry()
+    })
+    // Added after the server was made, as the browser's are.
+    said.push('About records.')
+
+    const { response } = await handler.handle(rpc('initialize', {}))
+    expect(response).toMatchObject({
+      result: { instructions: 'About the browser.\n\nAbout records.' }
+    })
+  })
+
   it('names the tools people know', () => {
     expect(clientLabel('claude-code')).toBe('Claude Code')
     expect(clientLabel('codex-mcp-client')).toBe('Codex')
     expect(clientLabel('<b>My Agent</b>')).toBe('bMy Agentb')
     expect(clientLabel(undefined)).toBe('AI')
+  })
+})
+
+describe('createToolRegistry', () => {
+  const tool = (name: string) =>
+    defineTool({
+      name,
+      title: name,
+      description: 'Does it.',
+      input: z.object({}),
+      run: async () => ({ text: name })
+    })
+
+  it('keeps each part of the app’s tools together, and offers them all', async () => {
+    const tools = createToolRegistry()
+    const browser = { title: 'Browser', about: 'Web pages.' }
+    const records = { title: 'Records', about: 'Accounts and deals.' }
+    tools.addGroup(browser, tool('browser_open'), tool('browser_read'))
+    tools.add(tool('ping'))
+    tools.addGroup(records, tool('records_find'))
+
+    expect(
+      tools.groups().map(({ group, tools: grouped }) => ({
+        group,
+        names: grouped.map((each) => each.name)
+      }))
+    ).toEqual([
+      { group: browser, names: ['browser_open', 'browser_read'] },
+      { group: null, names: ['ping'] },
+      { group: records, names: ['records_find'] }
+    ])
+    // A group is only for the app's own page: AI gets one flat list.
+    expect(tools.list().map((each) => each.name)).toEqual([
+      'browser_open',
+      'browser_read',
+      'ping',
+      'records_find'
+    ])
+    expect(
+      await tools.call('records_find', {}, { client: 'Codex' })
+    ).toMatchObject({ isError: false })
+  })
+
+  it('refuses a second tool with a name already taken, in any group', () => {
+    const tools = createToolRegistry()
+    tools.addGroup({ title: 'Browser', about: '' }, tool('browser_open'))
+    expect(() =>
+      tools.addGroup({ title: 'Records', about: '' }, tool('browser_open'))
+    ).toThrow('Two tools are called browser_open')
   })
 })
 

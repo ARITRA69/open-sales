@@ -169,6 +169,8 @@ export type TOpenSalesBridge = {
   }
   // The in-app browser: the person's tabs, and what their AI tool may do.
   browser: TBrowserBridge
+  // The app's own MCP server, which the person's AI tool connects to.
+  mcp: TMcpBridge
 }
 
 /**
@@ -317,14 +319,8 @@ export type TBrowserSite = {
   rule: 'always' | 'once' | 'blocked'
 }
 
-/** What Browser › Connect AI shows. */
+/** What Browser › AI in the browser shows. Connecting a tool is `TMcpInfo`. */
 export type TBrowserConnectInfo = {
-  // The name the AI tool lists this app's tools under.
-  serverName: string
-  // The command to run once in a terminal, per tool.
-  commands: Record<TAiToolId, string>
-  // Tools that have connected since the app opened, such as "Claude Code".
-  connected: string[]
   sites: TBrowserSite[]
   // False where there's no keychain: "always" then lasts until the app quits.
   canRememberSites: boolean
@@ -367,3 +363,49 @@ export const BROWSER_CHANNELS = {
   getConnectInfo: 'browser:get-connect-info',
   forgetSite: 'browser:forget-site'
 } as const satisfies Record<keyof TBrowserBridge, string>
+
+/*
+ * The app's MCP server: how the person's own AI tool (Claude Code or Codex)
+ * reaches what the app offers it. It runs on this computer only. The page
+ * never gets its address or secret: the relay reads those from a file.
+ */
+
+/** One thing the server lets an AI tool do. */
+export type TMcpTool = {
+  // What the AI tool calls it, such as `browser_open`.
+  name: string
+  title: string
+  // One line, as the AI tool is told it.
+  description: string
+  // It only looks; it changes nothing.
+  readOnly: boolean
+}
+
+/** The tools of one part of the app, such as the browser. */
+export type TMcpToolGroup = {
+  title: string
+  // One line on what these tools are for.
+  about: string
+  // Where the app says more about them, such as the browser's own rules.
+  more?: { label: string; href: string }
+  tools: TMcpTool[]
+}
+
+/** What the Connect AI page shows. */
+export type TMcpInfo = {
+  // The name the AI tool lists this app's tools under.
+  serverName: string
+  // The command to run once in a terminal, per tool.
+  commands: Record<TAiToolId, string>
+  // Tools that have connected since the app opened, such as "Claude Code".
+  connected: string[]
+  toolGroups: TMcpToolGroup[]
+}
+
+export type TMcpBridge = {
+  getInfo: () => Promise<TMcpInfo>
+}
+
+export const MCP_CHANNELS = {
+  getInfo: 'mcp:get-info'
+} as const satisfies Record<keyof TMcpBridge, string>

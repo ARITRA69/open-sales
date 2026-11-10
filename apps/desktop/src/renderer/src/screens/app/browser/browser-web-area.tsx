@@ -111,8 +111,11 @@ export const BrowserWebArea = ({
               <p className="m-0 text-body-sm text-muted-foreground">
                 Your own Claude Code or Codex can use this browser too, in tabs
                 you give it.{' '}
-                <Button href="#/browser/connect" variant="link">
+                <Button href="#/mcp" variant="link">
                   Connect AI
+                </Button>{' '}
+                <Button href="#/browser/connect" variant="link">
+                  What AI may do here
                 </Button>
               </p>
             </section>

@@ -115,12 +115,7 @@ export const BrowserTabStrip = ({
         onClick={onNewTab}
       />
     </div>
-    <Button
-      href="#/browser/connect"
-      leadIcon={Plug01Icon}
-      size="sm"
-      variant="ghost"
-    >
+    <Button href="#/mcp" leadIcon={Plug01Icon} size="sm" variant="ghost">
       Connect AI
     </Button>
   </div>

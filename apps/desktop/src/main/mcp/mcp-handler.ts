@@ -67,8 +67,9 @@ export const clientLabel = (name: unknown): string => {
 
 type THandlerOptions = {
   serverInfo: { name: string; title: string; version: string }
-  // Said to the AI tool once, when it connects.
-  instructions: string
+  // Said to the AI tool once, when it connects. A function is asked each
+  // time, for when parts of the app add their own after the server is made.
+  instructions: string | (() => string)
   tools: TToolRegistry
   // A tool has connected, so the app can say so.
   onConnect?: (client: string) => void
@@ -117,7 +118,8 @@ export const createMcpHandler = ({
         protocolVersion: protocolVersion ?? LATEST_VERSION,
         capabilities: { tools: {} },
         serverInfo,
-        instructions
+        instructions:
+          typeof instructions === 'function' ? instructions() : instructions
       })
     }
   }
