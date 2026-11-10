@@ -90,6 +90,13 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   on `libphonenumber-js`) check and display them. Flags are small SVGs from
   `country-flag-icons` (`components/ui/country-flag.tsx`), loaded only when
   shown; emoji flags would show as letters on Windows.
+- `components/ui/date-field.tsx`: a date you type or pick from a calendar
+  (`components/ui/calendar.tsx`), in place of the browser's own date box. It
+  shows "30 Nov 2026" and hands back `2026-11-30`, which is how the server
+  stores plain dates. Typed dates follow the computer's custom (30/11/2026 or
+  11/30/2026; `parseTypedDate` in `lib/dates.ts`), as does the first day of
+  the week. The month's name opens the list of months; the arrow keys, Page
+  Up and Page Down walk the days.
 - `screens/components-sheet`: every component on one page, at `#/components`
   once signed in, and the browser preview's default page.
 - Styles: `tokens.css` is the only place a colour value is written. Motion and

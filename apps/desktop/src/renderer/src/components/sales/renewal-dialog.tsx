@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link01Icon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
+import { DateField } from '@/components/ui/date-field'
 import { Dialog } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Icon } from '@/components/ui/icon'
@@ -93,11 +94,10 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
               setRenewalValue(changeEvent.target.value)
             }
           />
-          <Field
+          <DateField
             label="Close date"
-            type="date"
             value={closeDate}
-            onChange={(changeEvent) => setCloseDate(changeEvent.target.value)}
+            onChange={setCloseDate}
           />
           <Field
             kind="select"

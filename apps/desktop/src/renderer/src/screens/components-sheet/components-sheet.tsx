@@ -31,6 +31,7 @@ import {
   RadioGroup,
   Switch
 } from '@/components/ui/controls'
+import { DateField } from '@/components/ui/date-field'
 import { ConfirmDialog, Dialog } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { FilterToolbar, type TFilter } from '@/components/ui/filter-menu'
@@ -190,6 +191,7 @@ export const ComponentsSheet = ({
   const [plan, setPlan] = useState('monthly')
   const [stage, setStage] = useState('Trial')
   const [owner, setOwner] = useState('Asha Menon')
+  const [closeDate, setCloseDate] = useState('2026-11-30')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Record<string, string[]>>({})
   const [isWaitingOpen, setIsWaitingOpen] = useState(true)
@@ -310,6 +312,12 @@ export const ComponentsSheet = ({
               onValueChange={setOwner}
             />
             <Field readOnly label="Created by" value="Asha Menon" />
+            <DateField
+              hint="Type it, or pick from the calendar."
+              label="Expected close"
+              value={closeDate}
+              onChange={setCloseDate}
+            />
             <div className="flex flex-col justify-end">
               <Field kind="search" placeholder="Search accounts" shortcut="/" />
             </div>

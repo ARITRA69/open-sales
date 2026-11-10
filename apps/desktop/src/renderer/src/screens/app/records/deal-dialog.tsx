@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { TDeal, TOwner, TPipeline, TSessionUser } from '@open-sales/shared'
 import { canReassign } from '@open-sales/shared'
 
+import { DateField } from '@/components/ui/date-field'
 import { Field } from '@/components/ui/field'
 import type { TRecordsBridge } from '@/hooks/use-records'
 import { moneyInputValue, parseMoney } from '@/lib/money'
@@ -155,13 +156,12 @@ export const DealDialog = ({
           value={form.value}
           onChange={(event) => set('value')(event.target.value)}
         />
-        <Field
+        <DateField
           label={
             stage && stage.kind !== 'open' ? 'Closed on' : 'Expected close'
           }
-          type="date"
           value={form.closeDate}
-          onChange={(event) => set('closeDate')(event.target.value)}
+          onChange={set('closeDate')}
         />
         <OwnerField
           canChoose={mayChooseOwner}
