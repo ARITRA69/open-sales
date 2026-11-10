@@ -199,6 +199,12 @@ export type TOpenSalesBridge = {
     undo: (id: string) => Promise<TProposalResult>
     sendToOwner: (id: string) => Promise<TProposalResult>
   }
+  // The Pipeline page's own calls: a new deal with the people on it.
+  pipeline: {
+    createDeal: (
+      input: import('@open-sales/shared').TDealCreateWithPeople
+    ) => Promise<TApiResult<TDeal>>
+  }
 }
 
 /**
@@ -319,6 +325,9 @@ export const PROPOSALS_CHANNELS = {
   undo: 'proposals:undo',
   sendToOwner: 'proposals:send-to-owner'
 } as const satisfies Record<keyof TOpenSalesBridge['proposals'], string>
+export const PIPELINE_CHANNELS = {
+  createDeal: 'pipeline:create-deal'
+} as const satisfies Record<keyof TOpenSalesBridge['pipeline'], string>
 
 declare global {
   interface Window {
