@@ -7,8 +7,15 @@ import type * as schema from '../db/schema'
 import type { TFieldChange } from '../db/schema'
 import { changeLog, user } from '../db/schema'
 
-/** The person making a request: who they are and what they may do. */
-export type TActor = TSessionUser
+/**
+ * The person making a request: who they are and what they may do. When an
+ * approved AI proposal makes the change, `via` and `proposalId` say so in the
+ * change log (see ../proposals).
+ */
+export type TActor = TSessionUser & {
+  via?: 'app' | 'ai_proposal'
+  proposalId?: string
+}
 
 /** A transaction, or the database itself: anything that runs queries. */
 export type TQueries = PgDatabase<PostgresJsQueryResultHKT, typeof schema>
@@ -115,7 +122,8 @@ export const logChanges = async (
     entries.map((entry) => ({
       ...entry,
       actorId: actor.id,
-      via: 'app' as const
+      via: actor.via ?? ('app' as const),
+      proposalId: actor.proposalId ?? null
     }))
   )
 }

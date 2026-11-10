@@ -29,6 +29,13 @@
       "when": 1794244426239,
       "tag": "0003_add-core-records",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794300791965,
+      "tag": "0004_add-proposals",
+      "breakpoints": true
     }
   ]
 }

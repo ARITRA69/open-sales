@@ -528,7 +528,9 @@ export const changeLog = pgTable(
     // Text, since user ids aren't uuids.
     recordId: text().notNull(),
     action: changeAction().notNull(),
-    changes: jsonb().$type<TFieldChange[]>().notNull().default([])
+    changes: jsonb().$type<TFieldChange[]>().notNull().default([]),
+    // Set when an approved proposal made the change: "AI, approved by Asha".
+    proposalId: uuid().references(() => proposal.id)
   },
   (table) => [
     // Field changes on a record's timeline.
@@ -539,6 +541,94 @@ export const changeLog = pgTable(
     ),
     index('change_log_actor_idx').on(table.actorId, table.id.desc()),
     // The audit log by date: tiny, and fine for append-only rows.
-    index('change_log_occurred_idx').using('brin', table.occurredAt)
+    index('change_log_occurred_idx').using('brin', table.occurredAt),
+    index('change_log_proposal_idx')
+      .on(table.proposalId)
+      .where(sql`${table.proposalId} is not null`)
+  ]
+)
+
+// proposals
+
+export const proposalKind = pgEnum('proposal_kind', [
+  'update',
+  'create',
+  'archive',
+  'email_draft'
+])
+export const proposalStatus = pgEnum('proposal_status', [
+  'pending',
+  'approved',
+  'declined',
+  'out_of_date',
+  'undone'
+])
+export const proposalTargetType = pgEnum('proposal_target_type', [
+  'company',
+  'person',
+  'deal',
+  'task',
+  'activity'
+])
+export const aiEngine = pgEnum('ai_engine', ['claude-code', 'codex'])
+
+/** The email, note or record a proposal came from. */
+export type TProposalSourceRef = { type: string; id: string; label?: string }
+
+/**
+ * A change AI wants to make, waiting for a person to say yes: the heart of
+ * approve-first AI. See "The proposal lifecycle" in docs/user-flows.md.
+ */
+export const proposal = pgTable(
+  'proposal',
+  {
+    id: id(),
+    kind: proposalKind().notNull(),
+    status: proposalStatus().notNull().default('pending'),
+    targetType: proposalTargetType().notNull(),
+    // Null for a new record, until approving it makes one.
+    targetId: uuid(),
+    // The target's version when proposed: the "Changed since" check.
+    baseVersion: integer(),
+    // Each field's old and new value. A new record's fields have no old one.
+    changes: jsonb().$type<TFieldChange[]>().notNull().default([]),
+    title: text().notNull(),
+    // The one-line reason shown on the card.
+    why: text(),
+    sources: jsonb().$type<TProposalSourceRef[]>().notNull().default([]),
+    // Whose AI made it.
+    requestedById: text()
+      .notNull()
+      .references(() => user.id),
+    // Who decides: the requester, or the owner on "send to owner".
+    approverId: text()
+      .notNull()
+      .references(() => user.id),
+    engine: aiEngine().notNull(),
+    decidedById: text().references(() => user.id),
+    decidedAt: timestamp({ withTimezone: true }),
+    declineReason: text(),
+    // Set on approve: until when it can be undone.
+    undoUntil: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    // "Waiting for you" and the sidebar count: the busiest query in the app.
+    // Out-of-date proposals wait for the person too.
+    index('proposal_waiting_idx')
+      .on(table.approverId, table.createdAt.desc(), table.id)
+      .where(sql`${table.status} in ('pending', 'out_of_date')`),
+    // What waits on a record.
+    index('proposal_target_idx')
+      .on(table.targetType, table.targetId)
+      .where(sql`${table.status} in ('pending', 'out_of_date')`),
+    // "What my AI did".
+    index('proposal_requested_by_idx').on(
+      table.requestedById,
+      table.createdAt.desc()
+    ),
+    // Clearing out old declined proposals.
+    index('proposal_status_idx').on(table.status, table.createdAt)
   ]
 )
