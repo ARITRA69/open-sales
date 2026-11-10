@@ -21,6 +21,7 @@ import {
   registerRecordsIpc
 } from './ipc'
 import { createServerApi } from './server-api'
+import { registerTimelineIpc } from './timeline-ipc'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
 
@@ -129,6 +130,7 @@ void app.whenReady().then(() => {
   )
   registerConnectionIpc(connection)
   registerRecordsIpc(connection)
+  registerTimelineIpc(connection)
 
   openJoinLink = async (link) => {
     const result = await connection.openJoinLink(link)

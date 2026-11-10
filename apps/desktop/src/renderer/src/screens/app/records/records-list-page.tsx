@@ -37,14 +37,18 @@ type TRecordsListPageProps = {
   emptyTitle: string
   emptyBody: string
   onAdd: () => void
-  onOpen: (rowId: string) => void
+  // Where a row's own page is, like `#/accounts/<id>`.
+  rowHref: (rowId: string) => string
   onLoadMore: () => void
   onRetry: () => void
   // The dialog, when one is open.
   children?: ReactNode
 }
 
-/** Accounts and People: a searchable, paged table with three views. */
+/**
+ * Accounts and People: a searchable, paged table with three views. A row
+ * opens that record's own page.
+ */
 export const RecordsListPage = ({
   title,
   subtitle,
@@ -62,7 +66,7 @@ export const RecordsListPage = ({
   emptyTitle,
   emptyBody,
   onAdd,
-  onOpen,
+  rowHref,
   onLoadMore,
   onRetry,
   children
@@ -114,11 +118,11 @@ export const RecordsListPage = ({
         emptyBody={emptyBody}
         emptyTitle={emptyTitle}
         label={title}
+        rowHref={(row) => rowHref(row.id)}
         rows={rows}
         selectable={false}
         state={tableState}
         onEmptyAction={onAdd}
-        onRowClick={(row) => onOpen(row.id)}
       />
       {state === 'error' && problem ? (
         <div className="flex items-center gap-3">

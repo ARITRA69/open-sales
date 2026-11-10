@@ -5,7 +5,8 @@ import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
   RECORDS_CHANNELS,
-  TEAM_CHANNELS
+  TEAM_CHANNELS,
+  TIMELINE_CHANNELS
 } from './bridge-types'
 
 const openSalesBridge: TOpenSalesBridge = {
@@ -62,6 +63,28 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  timeline: {
+    read: (record, query) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.read, record, query),
+    createActivity: (input) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.createActivity, input),
+    updateActivity: (id, input) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.updateActivity, id, input),
+    archiveActivity: (id) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.archiveActivity, id),
+    listTasks: (query) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.listTasks, query),
+    createTask: (input) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.createTask, input),
+    updateTask: (id, input) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.updateTask, id, input),
+    setTaskDone: (id, done, version) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.setTaskDone, id, done, version),
+    archiveTask: (id, version) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.archiveTask, id, version),
+    listPeople: (record) =>
+      ipcRenderer.invoke(TIMELINE_CHANNELS.listPeople, record)
   }
 }
 

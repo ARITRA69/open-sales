@@ -1,14 +1,15 @@
 import { useState } from 'react'
 
-import type { TPerson } from '@open-sales/shared'
 import { formatPhone } from '@open-sales/shared'
 
 import type { TTableColumn } from '@/components/ui/table'
+import { useHashPath } from '@/hooks/use-hash-route'
 import type { TRecordsBridge } from '@/hooks/use-records'
 import { useRecordList, useSettled } from '@/hooks/use-records'
 import { getInitials } from '@/lib/initials'
 
 import { PersonDialog } from './person-dialog'
+import { PersonPage } from './person-page'
 import { RecordsListPage, viewQuery, type TListView } from './records-list-page'
 
 const COLUMNS: TTableColumn[] = [
@@ -18,13 +19,26 @@ const COLUMNS: TTableColumn[] = [
   { key: 'phone', label: 'Phone', type: 'muted' }
 ]
 
-/** The people at the team's accounts, A–Z. */
+/**
+ * People: the list at `#/people`, and one person's own page at
+ * `#/people/<id>`.
+ */
 export const PeoplePage = ({ bridge }: { bridge: TRecordsBridge }) => {
+  const [id] = useHashPath()
+  return id ? (
+    <PersonPage key={id} bridge={bridge} id={id} />
+  ) : (
+    <PeopleList bridge={bridge} />
+  )
+}
+
+/** The people at the team's accounts, A–Z. */
+const PeopleList = ({ bridge }: { bridge: TRecordsBridge }) => {
   const [view, setView] = useState<TListView>(0)
   const [search, setSearch] = useState('')
   const settledSearch = useSettled(search)
   const list = useRecordList(bridge, 'people', viewQuery(view, settledSearch))
-  const [open, setOpen] = useState<TPerson | 'new' | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
 
   return (
     <RecordsListPage
@@ -34,6 +48,7 @@ export const PeoplePage = ({ bridge }: { bridge: TRecordsBridge }) => {
       hasMore={list.hasMore}
       noun="person"
       problem={list.problem}
+      rowHref={(id) => `#/people/${id}`}
       rows={list.items.map((person) => ({
         id: person.id,
         name: {
@@ -51,23 +66,19 @@ export const PeoplePage = ({ bridge }: { bridge: TRecordsBridge }) => {
       title="People"
       view={view}
       views={['Everyone', 'At my accounts', 'Archived']}
-      onAdd={() => setOpen('new')}
+      onAdd={() => setIsAdding(true)}
       onLoadMore={list.loadMore}
-      onOpen={(id) =>
-        setOpen(list.items.find((person) => person.id === id) ?? null)
-      }
       onRetry={list.reload}
       onSearchChange={setSearch}
       onViewChange={setView}
     >
-      {open ? (
+      {isAdding ? (
         <PersonDialog
-          key={open === 'new' ? 'new' : open.id}
           bridge={bridge}
-          person={open === 'new' ? null : open}
-          onClose={() => setOpen(null)}
+          person={null}
+          onClose={() => setIsAdding(false)}
           onSaved={() => {
-            setOpen(null)
+            setIsAdding(false)
             list.reload()
           }}
         />

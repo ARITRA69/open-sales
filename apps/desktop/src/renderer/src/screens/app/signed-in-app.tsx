@@ -15,6 +15,7 @@ import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
 import { AccountsPage } from './records/accounts-page'
+import { DealRoute } from './records/deal-page'
 import { PeoplePage } from './records/people-page'
 import { PipelinePage } from './records/pipeline-page'
 import { SettingsPage } from './settings-page'
@@ -27,7 +28,7 @@ const ROLE_LABELS: Record<Role, string> = {
 }
 
 // `components` is the developers' sheet of every UI part, at #/components.
-type TRoute = TSalesNavId | 'components'
+type TRoute = TSalesNavId | 'components' | 'deals'
 
 const ROUTES: readonly TRoute[] = [
   'today',
@@ -39,7 +40,8 @@ const ROUTES: readonly TRoute[] = [
   'reports',
   'playbooks',
   'settings',
-  'components'
+  'components',
+  'deals'
 ]
 
 type TSignedInAppProps = {
@@ -134,6 +136,14 @@ export const SignedInApp = ({
               body: <PipelinePage bridge={recordsBridge} me={user} />
             }
           : emptyPage(route)
+      // One deal's own page, `#/deals/<id>`. The list of deals is Pipeline.
+      case 'deals':
+        return recordsBridge
+          ? {
+              title: 'Deal',
+              body: <DealRoute bridge={recordsBridge} me={user} />
+            }
+          : emptyPage('pipeline')
       default:
         return emptyPage(route)
     }
@@ -144,7 +154,7 @@ export const SignedInApp = ({
       sidebar={
         <SalesSidebar
           account={account}
-          active={route}
+          active={route === 'deals' ? 'pipeline' : route}
           // For admins, Today's badge counts people waiting to join.
           waiting={isAdmin ? team.pending.length : 0}
           onSignOut={onSignOut}

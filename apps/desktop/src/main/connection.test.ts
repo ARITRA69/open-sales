@@ -90,6 +90,7 @@ const makeApi = (overrides: Partial<TServerApi> = {}): TServerApi => ({
     getBoard: async () => ({ columns: [] }),
     listUsers: async () => []
   },
+  signedInRequest: async () => null,
   ...overrides
 })
 

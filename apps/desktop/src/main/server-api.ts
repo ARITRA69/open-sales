@@ -516,7 +516,8 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     join,
     getJoinRequestStatus,
     team,
-    records
+    records,
+    signedInRequest
   }
 }
 
