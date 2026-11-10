@@ -5,7 +5,7 @@ import { Link01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { DateField } from '@/components/ui/date-field'
 import { Dialog } from '@/components/ui/dialog'
-import { Field } from '@/components/ui/field'
+import { Field, type TSelectOption } from '@/components/ui/field'
 import { Icon } from '@/components/ui/icon'
 import { Banner } from '@/components/ui/kit'
 import { cn } from '@/lib/utils'
@@ -19,12 +19,20 @@ const WONT_RENEW_REASONS = [
   'Company closed or merged'
 ]
 
+// The last choice: a reason that isn't on the list, in the person's words.
+const OTHER_REASON = 'Something else'
+
 export type TRenewalItem = {
   account: string
+  // In whole units of the currency: 36000 is $36,000.
   value: number
   // yyyy-mm-dd, the day the contract ends.
   endDate: string
   owner: string
+  // ISO 4217. Named beside the value when given.
+  currency?: string
+  // The contract as it stands, like "5 Dec 2025 to 5 Dec 2026 (12 months)".
+  term?: string
 }
 
 export type TRenewalResult =
@@ -33,20 +41,55 @@ export type TRenewalResult =
 
 type TRenewalFormProps = {
   item: TRenewalItem
+  // The pipeline's stages a renewal can start in. The first is picked.
+  stages?: (TSelectOption | string)[]
+  // The reasons offered for "won't renew".
+  reasons?: string[]
+  // While the answer is being saved: the main button shows a spinner.
+  busy?: boolean
+  // Why the last try didn't save, in people's words.
+  problem?: string | null
   onClose: () => void
   onDone: (renewalResult: TRenewalResult) => void
 }
 
-const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
+const stageValue = (stage: TSelectOption | string) =>
+  typeof stage === 'string' ? stage : stage.value
+
+/** 36000 → "36,000": grouped for reading, and still an amount when read back. */
+const amountText = (value: number) =>
+  value.toLocaleString('en-US', { maximumFractionDigits: 2 })
+
+const Problem = ({ problem }: { problem?: string | null }) =>
+  problem ? (
+    <p className="m-0 text-sm text-destructive" role="alert">
+      {problem}
+    </p>
+  ) : null
+
+const StartRenewalDialog = ({
+  item,
+  stages,
+  busy = false,
+  problem,
+  onClose,
+  onDone
+}: TRenewalFormProps) => {
+  // With the app's own stages the first is picked; the sample ones start
+  // where the design did.
+  const stageOptions = stages ?? RENEWAL_STAGE_OPTIONS
   const [renewalValue, setRenewalValue] = useState(
-    `$${item.value.toLocaleString('en-US')}`
+    item.currency ? amountText(item.value) : `$${amountText(item.value)}`
   )
   const [closeDate, setCloseDate] = useState(item.endDate)
-  const [stage, setStage] = useState('Proposal')
+  const [stage, setStage] = useState(
+    stages ? (stages[0] ? stageValue(stages[0]) : '') : 'Proposal'
+  )
 
   return (
     <Dialog
       open
+      description={item.term ? `Their contract runs ${item.term}.` : undefined}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -54,6 +97,7 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
           </Button>
           <Button
             disabled={!closeDate}
+            loading={busy}
             onClick={() =>
               onDone({
                 mode: 'start',
@@ -88,7 +132,8 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
         </Banner>
         <div className="grid grid-cols-2 gap-3">
           <Field
-            label="Value"
+            inputMode="decimal"
+            label={item.currency ? `Value (${item.currency})` : 'Value'}
             value={renewalValue}
             onChange={(changeEvent) =>
               setRenewalValue(changeEvent.target.value)
@@ -102,19 +147,31 @@ const StartRenewalDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
           <Field
             kind="select"
             label="Stage"
-            options={RENEWAL_STAGE_OPTIONS}
+            options={stageOptions}
             value={stage}
             onValueChange={setStage}
           />
           <Field readOnly label="Owner" value={item.owner} />
         </div>
+        <Problem problem={problem} />
       </div>
     </Dialog>
   )
 }
 
-const WontRenewDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
+const WontRenewDialog = ({
+  item,
+  reasons = WONT_RENEW_REASONS,
+  busy = false,
+  problem,
+  onClose,
+  onDone
+}: TRenewalFormProps) => {
   const [reason, setReason] = useState<string | null>(null)
+  const [otherReason, setOtherReason] = useState('')
+
+  const isOther = reason === OTHER_REASON
+  const chosen = isOther ? otherReason.trim() : reason
 
   return (
     <Dialog
@@ -126,8 +183,9 @@ const WontRenewDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
             Cancel
           </Button>
           <Button
-            disabled={!reason}
-            onClick={() => reason && onDone({ mode: 'wont', reason })}
+            disabled={!chosen}
+            loading={busy}
+            onClick={() => chosen && onDone({ mode: 'wont', reason: chosen })}
           >
             Mark as won&apos;t renew
           </Button>
@@ -139,7 +197,7 @@ const WontRenewDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
       }}
     >
       <div className="flex flex-col gap-1.5">
-        {WONT_RENEW_REASONS.map((reasonLabel) => (
+        {[...reasons, OTHER_REASON].map((reasonLabel) => (
           <button
             key={reasonLabel}
             aria-pressed={reason === reasonLabel}
@@ -155,6 +213,17 @@ const WontRenewDialog = ({ item, onClose, onDone }: TRenewalFormProps) => {
             {reasonLabel}
           </button>
         ))}
+        {isOther ? (
+          <Field
+            autoFocus
+            aria-label="The reason"
+            maxLength={500}
+            placeholder="What did they say?"
+            value={otherReason}
+            onChange={(changeEvent) => setOtherReason(changeEvent.target.value)}
+          />
+        ) : null}
+        <Problem problem={problem} />
       </div>
     </Dialog>
   )

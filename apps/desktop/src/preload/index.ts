@@ -5,6 +5,7 @@ import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
   RECORDS_CHANNELS,
+  RENEWALS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
 
@@ -62,6 +63,19 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  renewals: {
+    list: (query) => ipcRenderer.invoke(RENEWALS_CHANNELS.list, query),
+    listCandidates: (query) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.listCandidates, query),
+    createContract: (input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.createContract, input),
+    startRenewal: (contractId, input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.startRenewal, contractId, input),
+    endContract: (contractId, input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.endContract, contractId, input),
+    reopenContract: (contractId, version) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.reopenContract, contractId, version)
   }
 }
 

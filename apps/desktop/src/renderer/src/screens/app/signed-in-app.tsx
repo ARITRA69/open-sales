@@ -17,6 +17,7 @@ import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
 import { AccountsPage } from './records/accounts-page'
 import { PeoplePage } from './records/people-page'
 import { PipelinePage } from './records/pipeline-page'
+import { RenewalsPage } from './renewals/renewals-page'
 import { SettingsPage } from './settings-page'
 import { TodayPage } from './today-page'
 
@@ -134,6 +135,11 @@ export const SignedInApp = ({
               body: <PipelinePage bridge={recordsBridge} me={user} />
             }
           : emptyPage(route)
+      case 'renewals':
+        return {
+          title: 'Renewals',
+          body: <RenewalsPage recordsBridge={recordsBridge} />
+        }
       default:
         return emptyPage(route)
     }
