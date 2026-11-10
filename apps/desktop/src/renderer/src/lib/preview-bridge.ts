@@ -5,6 +5,7 @@ import type {
   TConnectionState,
   TOpenSalesBridge
 } from '../../../preload/bridge-types'
+import { sharePreviewMembers } from './preview-settings'
 
 const SERVER_URL = 'http://localhost:8787'
 const PREVIEW_USER = {
@@ -158,6 +159,10 @@ export const createPreviewTeam = (
       joinedAt: '2026-11-05T09:00:00.000Z'
     }
   ]
+  sharePreviewMembers(
+    () => members,
+    (next) => (members = next)
+  )
   const done = async <TData>(data: TData) => {
     await pause()
     return { ok: true as const, data }

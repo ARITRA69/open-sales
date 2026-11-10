@@ -134,3 +134,9 @@ export const canSeePlaybook = (
   playbook.isPublished ||
   canWritePlaybooks(role) ||
   userId === playbook.authorId
+
+/**
+ * Only admins run the workspace: its name and currency, pipeline stages,
+ * lost reasons, and who's on the team with which role.
+ */
+export const canManageWorkspace = (role: Role): boolean => role === 'admin'

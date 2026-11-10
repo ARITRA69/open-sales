@@ -87,7 +87,9 @@ export const useTeam = (bridge: TTeamBridge | null, isAdmin: boolean) => {
       if (!bridge) return
       take(await bridge.decideMember(memberId, decision))
       await loadMembers()
-    }
+    },
+    // Looks at the team again, after a role or status changed elsewhere.
+    reload: loadMembers
   }
 }
 

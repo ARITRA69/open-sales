@@ -11,6 +11,7 @@ import {
   RECORDS_CHANNELS,
   RENEWALS_CHANNELS,
   REPORTS_CHANNELS,
+  SETTINGS_CHANNELS,
   TEAM_CHANNELS,
   TIMELINE_CHANNELS
 } from './bridge-types'
@@ -151,6 +152,20 @@ const openSalesBridge: TOpenSalesBridge = {
       ipcRenderer.invoke(PLAYBOOKS_CHANNELS.update, id, input),
     setState: (id, action, version) =>
       ipcRenderer.invoke(PLAYBOOKS_CHANNELS.setState, id, action, version)
+  },
+  settings: {
+    getWorkspace: () => ipcRenderer.invoke(SETTINGS_CHANNELS.getWorkspace),
+    updateWorkspace: (changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateWorkspace, changes),
+    updateMe: (changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateMe, changes),
+    getPipeline: () => ipcRenderer.invoke(SETTINGS_CHANNELS.getPipeline),
+    saveStages: (input) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.saveStages, input),
+    saveLostReasons: (input) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.saveLostReasons, input),
+    updateMember: (memberId, changes) =>
+      ipcRenderer.invoke(SETTINGS_CHANNELS.updateMember, memberId, changes)
   }
 }
 

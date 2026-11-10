@@ -1,20 +1,17 @@
 import { useState, type FormEvent } from 'react'
 
-import type { Role, TMember } from '@open-sales/shared'
+import type { TMember, TMemberUpdate } from '@open-sales/shared'
 import { joinLinkSettingsSchema } from '@open-sales/shared'
 
 import { Avatar } from '@/components/ui/bits'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
-import { Tag } from '@/components/ui/status'
 import type { TTeamControls } from '@/hooks/use-team'
 import { getInitials } from '@/lib/initials'
 
-const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Admin',
-  manager: 'Manager',
-  member: 'Member'
-}
+import type { TSettingsBridge } from './settings/settings-bridge'
+import { Problem } from './settings/settings-parts'
+import { TeamList } from './settings/team-list'
 
 /** A waiting person, with Approve and Decline. Used on Today and in Settings. */
 export const PendingPersonRow = ({
@@ -45,49 +42,86 @@ export const PendingPersonRow = ({
   </li>
 )
 
-/** Settings › Join link and Team: who can join, and who has. Admins only. */
-export const TeamSection = ({ team }: { team: TTeamControls }) => (
-  <>
-    <JoinLinkCard team={team} />
-    <section className="flex flex-col gap-2">
-      <h2 className="m-0 text-sm font-semibold">Team</h2>
-      {team.members ? (
-        <ul className="m-0 flex list-none flex-col rounded-card bg-muted px-3 py-0.5">
-          {team.members.map((member) =>
-            member.status === 'pending' ? (
+type TTeamSectionProps = {
+  team: TTeamControls
+  // The signed-in admin's id: their own row has no Deactivate.
+  meId: string
+  // Changes roles and who can sign in. Without it the list is read-only.
+  bridge?: TSettingsBridge | null
+}
+
+/**
+ * Settings › Team: the join link, people waiting to join, and everyone in
+ * the workspace with their role. Admins only.
+ */
+export const TeamSection = ({
+  team,
+  meId,
+  bridge = null
+}: TTeamSectionProps) => {
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
+  const waiting = team.pending
+  const everyoneElse =
+    team.members?.filter((member) => member.status !== 'pending') ?? []
+
+  const handleUpdate = async (member: TMember, changes: TMemberUpdate) => {
+    if (!bridge) return
+    setBusyId(member.id)
+    const result = await bridge.updateMember(member.id, changes)
+    setProblem(result.ok ? null : result.message)
+    // The list is the server's: look again rather than guess.
+    await team.reload()
+    setBusyId(null)
+  }
+
+  const handleApprove = async (memberId: string) => {
+    setBusyId(memberId)
+    await team.decide(memberId, 'approve')
+    setBusyId(null)
+  }
+
+  return (
+    <>
+      <JoinLinkCard team={team} />
+      {waiting.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="m-0 text-sm font-semibold">Waiting to join</h2>
+          <ul className="m-0 flex list-none flex-col rounded-card bg-accent-soft px-3 py-0.5">
+            {waiting.map((member) => (
               <PendingPersonRow
                 key={member.id}
                 member={member}
                 onDecide={team.decide}
               />
-            ) : (
-              <MemberRow key={member.id} member={member} />
-            )
-          )}
-        </ul>
-      ) : (
-        <p className="m-0 text-sm text-muted-foreground">Loading…</p>
-      )}
-    </section>
-  </>
-)
-
-const MemberRow = ({ member }: { member: TMember }) => (
-  <li className="flex min-h-11 items-center gap-2.5 border-b border-border py-1.5 last:border-b-0">
-    <Avatar initials={getInitials(member.name)} size={24} />
-    <span className="flex min-w-0 flex-1 flex-col">
-      <span className="truncate text-sm font-semibold">{member.name}</span>
-      <span className="truncate text-body-sm text-muted-foreground">
-        {member.email}
-      </span>
-    </span>
-    {member.status === 'declined' ? <Tag>Declined</Tag> : null}
-    {member.status === 'deactivated' ? <Tag>Turned off</Tag> : null}
-    <span className="w-20 flex-none text-right text-body-sm text-muted-foreground">
-      {ROLE_LABELS[member.role]}
-    </span>
-  </li>
-)
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <section className="flex flex-col gap-2">
+        <div className="flex flex-col">
+          <h2 className="m-0 text-sm font-semibold">People</h2>
+          <p className="m-0 text-body-sm text-muted-foreground">
+            Members change the accounts they own. Managers change everything.
+            Admins also run these settings.
+          </p>
+        </div>
+        {problem ? <Problem>{problem}</Problem> : null}
+        {team.members ? (
+          <TeamList
+            busyId={busyId}
+            meId={meId}
+            members={everyoneElse}
+            onApprove={handleApprove}
+            onUpdate={handleUpdate}
+          />
+        ) : (
+          <p className="m-0 text-sm text-muted-foreground">Loading…</p>
+        )}
+      </section>
+    </>
+  )
+}
 
 const JoinLinkCard = ({ team }: { team: TTeamControls }) => {
   const { joinLink } = team

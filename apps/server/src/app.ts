@@ -25,6 +25,8 @@ import { addRecordRoutes } from './records/routes'
 import type { TContractService } from './renewals/contracts'
 import { addContractRoutes } from './renewals/routes'
 import { addReportRoutes, type TReportsService } from './reports/routes'
+import type { TSettingsService } from './settings/routes'
+import { addSettingsRoutes } from './settings/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -55,6 +57,8 @@ type TAppDeps = {
   leads?: TLeadsService
   // Reports over the same records. Optional for the same reason.
   reports?: TReportsService
+  // Workspace, pipeline stages, lost reasons and roles. Optional like records.
+  settings?: TSettingsService
   // Where people reach the server, for join links. Defaults to the request's.
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
@@ -77,6 +81,7 @@ export const createApp = ({
   proposals,
   leads,
   reports,
+  settings,
   publicUrl,
   appScheme = 'open-sales',
   contracts,
@@ -226,6 +231,7 @@ export const createApp = ({
   if (contracts) addContractRoutes(api, contracts, getSessionUser)
   if (reports) addReportRoutes(api, reports, getSessionUser)
   if (playbooks) addPlaybookRoutes(api, playbooks, getSessionUser)
+  if (settings) addSettingsRoutes(api, settings, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

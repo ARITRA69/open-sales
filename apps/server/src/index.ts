@@ -13,6 +13,7 @@ import { createRecordsService } from './records/routes'
 import { createContractService } from './renewals/contracts'
 import { createReportsService } from './reports/routes'
 import { resolveAuthSecret } from './secret'
+import { createSettingsService } from './settings/routes'
 import { createSetupService } from './setup'
 import { createTeamService } from './team'
 
@@ -50,6 +51,7 @@ const app = createApp({
   proposals: createProposalsService(db),
   leads: createLeadsService(db),
   reports: createReportsService(db),
+  settings: createSettingsService(db),
   publicUrl: env.PUBLIC_URL,
   appScheme: env.APP_URL_SCHEME,
   contracts: createContractService(db),

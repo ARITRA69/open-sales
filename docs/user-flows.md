@@ -112,6 +112,15 @@ Built. One shared **join link** for the whole team, like a Slack invite.
 The teammate's side is flow 3. New people always join as Members; admins
 and managers will come from per-person invites (P1).
 
+**Built (Settings › Team):** the join link and approvals as above, plus
+everyone in the workspace with their role and status. An admin changes a
+role (Member, Manager, Admin) from the pill on the person's row, and
+**Deactivate** (after a confirmation) signs the person out everywhere and
+stops them signing in until **Reactivate**. A declined person has
+**Approve** on their row. The server keeps at least one active admin and
+stops an admin deactivating themselves, so the only admin's row has neither
+a role pill nor Deactivate.
+
 **AI:** none.
 
 **Edge cases**
@@ -169,6 +178,11 @@ and managers will come from per-person invites (P1).
 **Built (sign-in slice):** steps 1 and 2, plus Sign out from the account menu
 at the bottom of the sidebar. Steps 3 to 6 come later.
 
+**Built (Settings › My settings):** what steps 3 and 4 set can be changed
+later here: your name (the photo comes later), and the AI tool status with
+**Check again** and how to fix each tool. The first-launch steps themselves
+aren't built.
+
 **Mobbin:** [Attio onboarding](https://mobbin.com/flows/33785144-9ef2-4b1a-8a1c-27c13ce0e1c6?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (profile step, "Sync your email and calendar" with a sharing choice, and "Continue without sync").
 
 ### 4. Import a spreadsheet
@@ -225,6 +239,19 @@ and spots likely duplicates. It suggests; the person confirms.
 
 - Removing a stage with deals in it: ask where those deals should move.
 - Won and Lost are fixed: they can be renamed but not removed.
+
+**Built:** Settings › Pipeline stages (`#/settings/pipeline`), admins only.
+The whole list is edited as a draft and saved with one **Save** (one
+transaction on the server); **Discard changes** puts it back. Drag a stage
+by its grip, or focus the grip and press the up and down arrows. Goal and
+exit criteria open under each stage. Removing a stage with deals asks which
+remaining stage they move to; nothing moves until Save, and **Undo** brings
+the stage back before then. At least one stage stays before Won and Lost.
+If another admin saved first, Save is refused and **Load the latest**
+replaces the draft. Lost reasons have their own section (add, rename,
+reorder, archive, restore), saved the same way. Not built: live updates to
+everyone's pipeline (other people see the new stages when their page next
+loads).
 
 **Mobbin:** [Rox adding a stage](https://mobbin.com/flows/b8f72044-a053-4d8f-8987-9aca0aafb212?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (objective, activities, exit criteria), [Pipedrive pipeline editing](https://mobbin.com/flows/7af3e990-8b92-4728-bcfa-88b2679473c3?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (probability and "rotting in days" per stage).
 
