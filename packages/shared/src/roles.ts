@@ -32,3 +32,6 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/** The forecast report is for managers and admins. */
+export const canSeeForecast = canChangeAnything
