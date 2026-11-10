@@ -311,7 +311,8 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
     request: (path: string, init?: RequestInit) =>
       withSession((serverUrl, token) =>
         api.signedInRequest(serverUrl, token, path, init)
-      )
+      ),
+    withSession
   }
 }
 

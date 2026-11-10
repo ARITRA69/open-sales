@@ -257,6 +257,16 @@ and spots likely duplicates. It suggests; the person confirms.
 - The AI tool is off: proposals already made still show; new questions explain
   how to turn it on (flow 19).
 
+**Built:** the greeting, the ask box and its suggested prompts (they hand the
+question to the Ask panel with an `open-sales:ask` event; the panel answers
+once it's wired), **Waiting to join**, **Waiting for you** with the sidebar
+count, approving several at once, and the calm empty state. **Follow-ups due**
+and **Deals needing a nudge** are built but stay hidden until tasks and the
+idle rule feed them; the browser preview shows samples. Meetings today, the
+manager view and the Getting started list come later. Until live updates
+exist, Today looks for new proposals every 20 seconds and when the window
+comes back into focus.
+
 **Mobbin:** [Attio home](https://mobbin.com/flows/82eb7e3e-47a1-47c7-abb4-e133f5de31b4?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (greeting, ask box, "Prep for next meeting", meetings and tasks), [Fireflies home](https://mobbin.com/flows/65275e70-7b71-4bc8-9d23-83586b90dc82?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (daily digest and meeting prep cards).
 
 ### 7. Review an AI proposal
@@ -281,6 +291,26 @@ on a record
 - **No permission:** a Member tries to approve a change to an account they don't
   own. The server refuses; the card offers **Send to owner** (flow 18).
 - **Undo window passed:** the change can be reverted by hand from the history.
+
+**Built:** on Today, and in the API under `/api/v1/proposals` (create, list,
+approve, decline, undo, send to owner) for changes to accounts, people and
+deals, new ones, and archiving. Nothing makes proposals yet: that's the MCP
+bridge. Step 3's timeline line needs the record pages; the change log already
+says `ai_proposal`, who approved and which proposal. How it settled:
+
+- **Edit** changes the proposed values only, never other fields. AI can't
+  propose a new owner.
+- **Undo** lasts 5 minutes. It puts back what the approval changed, including
+  what followed from it (a close date set by closing a deal), and is refused
+  if those fields were changed again; other people's changes to other fields
+  are kept. A person's decline can't be undone.
+- **Changed since** compares versions, so a change to any field counts. The
+  card shows the fields as they are now and offers **Apply anyway** or
+  **Dismiss**. An AI re-check that makes it pending again comes with the MCP
+  bridge.
+- **No permission** shows when the server refuses the approval; **Send to
+  owner** hands the decision to the record's owner (flow 18).
+- Tasks, notes and email drafts as proposals come with those features.
 
 ### 8. Log a call from notes
 
@@ -514,6 +544,12 @@ records read-only._
 **Built (record pages):** step 1, on account, person and deal pages. Anyone
 can still add notes, calls and tasks to a record they don't own: writing down
 what happened isn't changing the account. Steps 2 and 3 wait for proposals.
+
+**Built (Today's part):** step 3. A proposal whose requester can no longer
+approve it can be sent to the record's owner, who sees it in **Waiting for
+you** with "Suggested by Asha". Step 2 isn't: the server still refuses a
+proposal the person couldn't make by hand, so only a record that changed
+hands after the AI proposed gets this far.
 
 ### 19. When the AI tool isn't available
 
