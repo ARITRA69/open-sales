@@ -194,13 +194,20 @@ bun run dev:server   # the server with hot reload (starts Docker and Postgres)
 docker compose up -d # the server and Postgres, as self-hosters run them
 bun run typecheck    # also: lint, test, build; each runs in every package
 bun run --cwd apps/server test:db  # server tests against Postgres
+bun run --cwd apps/server db:seed  # pretend data for an empty dev database
 bun run format
 ```
 
-`test:db` runs the tests that need a real database
-(`src/records/records.db.test.ts`) against `open_sales_test` in the dev
-Postgres, which it creates and empties; the normal `test` skips them, so the
-pre-push hook stays quick. The server answers at
+`test:db` runs the tests that need a real database (every
+`src/**/*.db.test.ts`, one file at a time) against `open_sales_test` in the
+dev Postgres, which it creates and empties; the normal `test` skips them, so
+the pre-push hook stays quick.
+
+`db:seed` (`apps/server/scripts/seed.ts`) fills the dev database with made-up
+accounts, people, deals, notes, calls, tasks, contracts, leads and proposals,
+plus three teammates who can't sign in. It needs the admin account to exist
+(create it in the app first) and does nothing if the database already has
+accounts. It writes through the services, then moves dates into the past. The server answers at
 `http://localhost:8787/api/v1/health`. Postgres listens
 on `localhost:5433` (not 5432, which another project may use). Settings come
 from `.env` beside `docker-compose.yml`; see `.env.example`.
