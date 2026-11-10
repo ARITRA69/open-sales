@@ -445,6 +445,17 @@ tool", from the last email).
 - The company already exists with another owner: convert links the person to
   that account and notifies its owner instead of taking it over.
 
+**Built:** the inbox (All / Mine / Unassigned, a status filter, search),
+adding a lead by hand, assigning (managers; a member can take a lead nobody
+has), Mark qualified, Disqualify with a reason and Reopen, and Convert.
+Convert shows the account it found (by someone there already having the
+email, then the email's domain, then the name) before anything is made, and
+links to the account and deal afterwards. A member may add the person to
+someone else's account but not a deal. Not built yet: the AI's fit note
+(shown when a lead has one, but nothing writes it), telling the account's
+owner (the app asks the person converting to let them know), round-robin
+assignment, imports and the web form.
+
 ---
 
 ## Meetings, renewals and playbooks

@@ -14,6 +14,8 @@ import { Hono } from 'hono'
 import type { TEnv } from './http'
 import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
+import type { TLeadsService } from './leads/leads'
+import { addLeadRoutes } from './leads/routes'
 import { addProposalRoutes } from './proposals/routes'
 import type { TProposalsService } from './proposals/service'
 import type { TRecordsService } from './records/routes'
@@ -44,6 +46,8 @@ type TAppDeps = {
   records?: TRecordsService
   // AI's proposed changes, and people's decisions on them.
   proposals?: TProposalsService
+  // The Leads inbox. Optional, like records.
+  leads?: TLeadsService
   // Where people reach the server, for join links. Defaults to the request's.
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
@@ -60,6 +64,7 @@ export const createApp = ({
   team,
   records,
   proposals,
+  leads,
   publicUrl,
   appScheme = 'open-sales'
 }: TAppDeps) => {
@@ -203,6 +208,7 @@ export const createApp = ({
   if (records) addRecordRoutes(api, records, getSessionUser)
   if (records) addTimelineRoutes(api, records.timeline, getSessionUser)
   if (proposals) addProposalRoutes(api, proposals, getSessionUser)
+  if (leads) addLeadRoutes(api, leads, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

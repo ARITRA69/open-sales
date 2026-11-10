@@ -14,6 +14,7 @@ import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
+import { LeadsPage } from './leads/leads-page'
 import { AccountsPage } from './records/accounts-page'
 import { DealRoute } from './records/deal-page'
 import { PeoplePage } from './records/people-page'
@@ -57,6 +58,8 @@ type TSignedInAppProps = {
   recordsBridge?: TOpenSalesBridge['records'] | null
   // AI's proposals. Found on `window.openSales` unless a test passes one.
   proposalsBridge?: TOpenSalesBridge['proposals'] | null
+  // The Leads inbox. Left out, the page uses the app's own.
+  leadsBridge?: TOpenSalesBridge['leads'] | null
   onSignOut: () => void
 }
 
@@ -74,6 +77,7 @@ export const SignedInApp = ({
   teamBridge = null,
   recordsBridge = null,
   proposalsBridge,
+  leadsBridge,
   onSignOut
 }: TSignedInAppProps) => {
   const route = useHashRoute(ROUTES, 'today')
@@ -153,6 +157,17 @@ export const SignedInApp = ({
               body: <DealRoute bridge={recordsBridge} me={user} />
             }
           : emptyPage('pipeline')
+      case 'leads':
+        return {
+          title: 'Leads',
+          body: (
+            <LeadsPage
+              bridge={leadsBridge}
+              me={user}
+              recordsBridge={recordsBridge}
+            />
+          )
+        }
       default:
         return emptyPage(route)
     }

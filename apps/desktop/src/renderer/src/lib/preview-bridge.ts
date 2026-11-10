@@ -199,3 +199,6 @@ export const createPreviewTeam = (
 export { createPreviewTimeline } from './preview-timeline'
 
 export * from './preview-today'
+
+// Pretend leads, for #/leads in the preview.
+export { createPreviewLeads } from './preview-leads'

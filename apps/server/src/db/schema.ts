@@ -504,7 +504,8 @@ export const changeRecordType = pgEnum('change_record_type', [
   'user',
   'workspace',
   'task',
-  'activity'
+  'activity',
+  'lead'
 ])
 export const changeAction = pgEnum('change_action', [
   'create',
@@ -751,5 +752,59 @@ export const task = pgTable(
     index('task_company_idx').on(table.companyId),
     index('task_deal_idx').on(table.dealId),
     index('task_person_idx').on(table.personId)
+  ]
+)
+
+// leads
+
+export const leadStatus = pgEnum('lead_status', [
+  'new',
+  'qualified',
+  'disqualified',
+  'converted'
+])
+
+/**
+ * The Leads inbox: people who've shown interest, until someone converts them
+ * into a company, a person and perhaps a deal, or turns them away.
+ */
+export const lead = pgTable(
+  'lead',
+  {
+    id: id(),
+    name: text().notNull(),
+    // Stored lower case, like a person's.
+    email: text(),
+    phone: text(),
+    companyName: text(),
+    title: text(),
+    // What they wrote.
+    message: text(),
+    // manual, import, web_form, email
+    source: text().notNull().default('manual'),
+    status: leadStatus().notNull().default('new'),
+    // Null until someone is given it, or takes it by working it.
+    ownerId: text().references(() => user.id),
+    // The AI's note on fit.
+    fitNote: text(),
+    disqualifiedReason: text(),
+    // Set on convert. Plain ids, as the data model has them: a purged
+    // record leaves the lead's history standing.
+    convertedCompanyId: uuid(),
+    convertedPersonId: uuid(),
+    convertedDealId: uuid(),
+    // The original row or form post.
+    raw: jsonb().$type<Record<string, unknown>>(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    // The inbox: new leads, newest first.
+    index('lead_inbox_idx').on(table.status, table.createdAt.desc(), table.id),
+    // "My leads".
+    index('lead_owner_status_idx').on(table.ownerId, table.status),
+    // Matching to existing people on convert.
+    index('lead_email_idx').on(table.email)
   ]
 )

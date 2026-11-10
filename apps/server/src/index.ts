@@ -6,6 +6,7 @@ import { createAuth } from './auth'
 import { createDatabase } from './db/client'
 import { runMigrations } from './db/migrate'
 import { readEnv } from './env'
+import { createLeadsService } from './leads/leads'
 import { createProposalsService } from './proposals/service'
 import { createRecordsService } from './records/routes'
 import { resolveAuthSecret } from './secret'
@@ -44,6 +45,7 @@ const app = createApp({
   team: createTeamService(db, auth),
   records: createRecordsService(db),
   proposals: createProposalsService(db),
+  leads: createLeadsService(db),
   publicUrl: env.PUBLIC_URL,
   appScheme: env.APP_URL_SCHEME
 })
