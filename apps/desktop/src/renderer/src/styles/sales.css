@@ -65,3 +65,41 @@
     transition: none;
   }
 }
+
+/* The browser: a bar that sweeps while a page loads, and a dot that
+   breathes while AI is working in a tab. */
+@keyframes sales-browser-loading {
+  from {
+    translate: -100% 0;
+  }
+
+  to {
+    translate: 250% 0;
+  }
+}
+
+@keyframes sales-browser-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.sales-browser-loading {
+  width: 40%;
+  animation: sales-browser-loading 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.sales-browser-pulse {
+  animation: sales-browser-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-browser-loading {
+    width: 100%;
+    animation: none;
+  }
+
+  .sales-browser-pulse {
+    animation: none;
+  }
+}

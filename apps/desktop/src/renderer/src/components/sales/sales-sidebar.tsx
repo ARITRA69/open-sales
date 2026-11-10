@@ -2,6 +2,7 @@ import {
   BookOpen01Icon,
   Building06Icon,
   ChartBarLineIcon,
+  Globe02Icon,
   InboxIcon,
   KanbanIcon,
   RefreshIcon,
@@ -16,6 +17,7 @@ import { Icon, type TIcon } from '@/components/ui/icon'
 import { Menu } from '@/components/ui/menu'
 import { useBrand } from '@/hooks/use-brand'
 import { cn } from '@/lib/utils'
+import { BrowserNavStatus } from '@/screens/app/browser/browser-nav-status'
 
 export type TSalesNavId =
   | 'today'
@@ -27,6 +29,7 @@ export type TSalesNavId =
   | 'reports'
   | 'playbooks'
   | 'settings'
+  | 'browser'
 
 type TSalesNavItem = {
   id: TSalesNavId
@@ -58,7 +61,8 @@ const SALES_NAV_ITEMS: TSalesNavItem[] = [
     label: 'Playbooks',
     icon: BookOpen01Icon,
     href: '#/playbooks'
-  }
+  },
+  { id: 'browser', label: 'Browser', icon: Globe02Icon, href: '#/browser' }
 ]
 
 const NAV_LINK_CLASS =
@@ -88,6 +92,8 @@ const SalesNavLink = ({ item, isActive, waitingCount }: TSalesNavLinkProps) => (
         {waitingCount}
       </span>
     ) : null}
+    {/* What's waiting on the person in the browser, or that AI is at work. */}
+    {item.id === 'browser' ? <BrowserNavStatus /> : null}
   </Link>
 )
 

@@ -13,6 +13,7 @@ import brand from '../../brand.config.json'
 import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
 import { CONNECTION_CHANNELS } from '../preload/bridge-types'
+import { registerBrowser } from './browser/register-browser'
 import { createConnection } from './connection'
 import { createConnectionStore } from './connection-store'
 import {
@@ -21,6 +22,7 @@ import {
   registerRecordsIpc
 } from './ipc'
 import { registerLeadsIpc } from './leads-ipc'
+import { registerMcp } from './mcp/register-mcp'
 import { registerPipelineIpc } from './pipeline-ipc'
 import { registerPlaybooksIpc } from './playbooks-ipc'
 import { registerProposalsIpc } from './proposals-ipc'
@@ -163,6 +165,8 @@ void app.whenReady().then(() => {
   }
   // Finds the person's own Claude Code or Codex, which the AI help runs on.
   registerAiToolsIpc()
+  const mcp = registerMcp(app.getPath('userData'))
+  registerBrowser(app.getPath('userData'), safeStorage, mcp)
 
   createMainWindow()
 

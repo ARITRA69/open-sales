@@ -208,3 +208,5 @@ export * from './preview-today'
 // Pretend leads, for #/leads in the preview.
 export { createPreviewLeads } from './preview-leads'
 export { createPreviewReports } from './preview-reports'
+export { createPreviewBrowser } from './preview-browser'
+export { createPreviewMcp } from './preview-mcp'

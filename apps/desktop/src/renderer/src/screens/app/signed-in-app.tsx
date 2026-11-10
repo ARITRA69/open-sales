@@ -13,8 +13,10 @@ import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
+import { BrowserPage } from './browser/browser-page'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
 import { LeadsPage } from './leads/leads-page'
+import { McpPage } from './mcp/mcp-page'
 import { PlaybooksPage } from './playbooks/playbooks-page'
 import { AccountsPage } from './records/accounts-page'
 import { DealRoute } from './records/deal-page'
@@ -33,7 +35,9 @@ const ROLE_LABELS: Record<Role, string> = {
 }
 
 // `components` is the developers' sheet of every UI part, at #/components.
-type TRoute = TSalesNavId | 'components' | 'deals'
+// `deals` is one deal's page and `mcp` is Connect AI: neither has a sidebar
+// item of its own.
+type TRoute = TSalesNavId | 'components' | 'deals' | 'mcp'
 
 const ROUTES: readonly TRoute[] = [
   'today',
@@ -46,7 +50,9 @@ const ROUTES: readonly TRoute[] = [
   'playbooks',
   'settings',
   'components',
-  'deals'
+  'deals',
+  'browser',
+  'mcp'
 ]
 
 type TSignedInAppProps = {
@@ -184,6 +190,10 @@ export const SignedInApp = ({
           title: 'Playbooks',
           body: <PlaybooksPage aiTools={aiTools.status} me={user} />
         }
+      case 'browser':
+        return { title: 'Browser', body: <BrowserPage /> }
+      case 'mcp':
+        return { title: 'Connect AI', body: <McpPage /> }
       default:
         return emptyPage(route)
     }
@@ -194,7 +204,10 @@ export const SignedInApp = ({
       sidebar={
         <SalesSidebar
           account={account}
-          active={route === 'deals' ? 'pipeline' : route}
+          // A deal's page lights up Pipeline; Connect AI lights up nothing.
+          active={
+            route === 'deals' ? 'pipeline' : route === 'mcp' ? undefined : route
+          }
           // Today's badge: proposals waiting for this person and, for
           // admins, people waiting to join.
           waiting={today.waitingCount + (isAdmin ? team.pending.length : 0)}
