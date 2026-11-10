@@ -3,7 +3,7 @@ import {
   archiveRequestSchema,
   companyCreateSchema,
   companyUpdateSchema,
-  dealCreateSchema,
+  dealCreateWithPeopleSchema,
   dealListQuerySchema,
   dealUpdateSchema,
   listQuerySchema,
@@ -185,8 +185,18 @@ export const addRecordRoutes = (
   })
   addResource('/deals', records.deals, {
     list: dealListQuerySchema,
-    create: dealCreateSchema,
+    create: dealCreateWithPeopleSchema,
     update: dealUpdateSchema
+  })
+  // Who's on a deal: the people named when it was made.
+  api.get('/deals/:id/people', (c) => {
+    const id = c.req.param('id')
+    if (!isRecordId(id)) {
+      return sendError(c, 404, 'not_found', 'That record doesn’t exist.')
+    }
+    return answer(c, async () => ({
+      people: await records.deals.people(c.get('me'), id)
+    }))
   })
 
   api.get('/users', (c) =>

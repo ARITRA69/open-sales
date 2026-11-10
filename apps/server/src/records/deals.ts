@@ -1,8 +1,9 @@
 import type {
   TBoard,
   TDeal,
-  TDealCreate,
+  TDealCreateWithPeople,
   TDealListQuery,
+  TDealPerson,
   TDealUpdate,
   TPage,
   TPipeline
@@ -11,7 +12,7 @@ import {
   canEditCompany,
   canEditDeal,
   canReassign,
-  dealCreateSchema,
+  dealCreateWithPeopleSchema,
   dealUpdateSchema
 } from '@open-sales/shared'
 import type { SQL } from 'drizzle-orm'
@@ -22,6 +23,7 @@ import {
   desc,
   eq,
   ilike,
+  inArray,
   isNotNull,
   isNull,
   lt,
@@ -32,8 +34,10 @@ import type { TDatabase } from '../db/client'
 import {
   company,
   deal,
+  dealPerson,
   dealStageChange,
   lostReason,
+  person,
   pipeline,
   stage,
   user,
@@ -177,9 +181,38 @@ type TStageInput = {
 }
 
 /**
+ * The people named on a new deal, once each: they must work at the deal's
+ * company and still be in use.
+ */
+const findDealPeople = async (
+  tx: TQueries,
+  companyId: string,
+  personIds: string[] | undefined
+) => {
+  const ids = [...new Set(personIds ?? [])]
+  if (ids.length === 0) return []
+  const found = ids.every(isRecordId)
+    ? await tx
+        .select({ id: person.id })
+        .from(person)
+        .where(
+          and(
+            inArray(person.id, ids),
+            eq(person.companyId, companyId),
+            isNull(person.archivedAt)
+          )
+        )
+    : []
+  if (found.length !== ids.length) {
+    throw new InvalidChangeError('Choose people who work at this company.')
+  }
+  return ids
+}
+
+/**
  * What entering a stage changes: the copied status, when it entered, when
- * it closed. Closing sets the close date to today unless one was sent, and
- * a Lost stage needs a reason.
+ * it closed. A closed deal always has a close date: the one sent, or today.
+ * A Lost stage needs a reason.
  */
 const enterStage = async (
   tx: TQueries,
@@ -207,9 +240,9 @@ const enterStage = async (
     stageEnteredAt: new Date(),
     closedAt: isClosing ? (wasClosed ? before?.closedAt : new Date()) : null,
     closeDate:
-      input.closeDate !== undefined
+      input.closeDate !== undefined && (input.closeDate !== null || !isClosing)
         ? input.closeDate
-        : isClosing && !wasClosed
+        : isClosing && !(wasClosed && before?.closeDate)
           ? today
           : (before?.closeDate ?? null),
     lostReasonId,
@@ -287,10 +320,14 @@ export const createDealService = (db: TDatabase) => {
 
     /**
      * On a company the person may change. The owner defaults to the
-     * company's; the stage to the default pipeline's first.
+     * company's; the stage to the default pipeline's first. `personIds`
+     * puts people from that company on the deal.
      */
-    create: async (me: TActor, input: TDealCreate): Promise<TDeal> => {
-      const data = dealCreateSchema.parse(input)
+    create: async (
+      me: TActor,
+      input: TDealCreateWithPeople
+    ): Promise<TDeal> => {
+      const { personIds, ...data } = dealCreateWithPeopleSchema.parse(input)
       const id = await db.transaction(async (tx) => {
         const [ofCompany] = isRecordId(data.companyId)
           ? await tx
@@ -315,6 +352,7 @@ export const createDealService = (db: TDatabase) => {
           )
         }
         await assertCanOwn(tx, ownerId)
+        const people = await findDealPeople(tx, ofCompany.id, personIds)
 
         const settings = await readWorkspace(tx)
         const target = await findStage(tx, data.stageId)
@@ -334,6 +372,13 @@ export const createDealService = (db: TDatabase) => {
           toStageId: target.id,
           changedById: me.id
         })
+        if (people.length > 0) {
+          await tx
+            .insert(dealPerson)
+            .values(
+              people.map((personId) => ({ dealId: created.id, personId }))
+            )
+        }
         const {
           stageEnteredAt: _entered,
           closedAt: _closed,
@@ -344,12 +389,38 @@ export const createDealService = (db: TDatabase) => {
             recordType: 'deal',
             recordId: created.id,
             action: 'create',
-            changes: diffFields({}, logged)
+            changes: [
+              ...diffFields({}, logged),
+              ...(people.length > 0
+                ? [{ field: 'personIds', from: null, to: people }]
+                : [])
+            ]
           }
         ])
         return created.id
       })
       return getOne(me, id)
+    },
+
+    /** Who's on a deal, A–Z. Everyone signed in can read it. */
+    people: async (_me: TActor, id: string): Promise<TDealPerson[]> => {
+      const [found] = await db
+        .select({ id: deal.id })
+        .from(deal)
+        .where(eq(deal.id, id))
+      if (!found) throw NOT_FOUND()
+      return db
+        .select({
+          id: person.id,
+          name: person.name,
+          title: person.title,
+          email: person.email,
+          role: dealPerson.role
+        })
+        .from(dealPerson)
+        .innerJoin(person, eq(person.id, dealPerson.personId))
+        .where(and(eq(dealPerson.dealId, id), isNull(person.archivedAt)))
+        .orderBy(asc(person.name), asc(person.id))
     },
 
     /** Changes what's sent. Changing `stageId` moves the deal. */
@@ -394,6 +465,8 @@ export const createDealService = (db: TDatabase) => {
             ...patch,
             ...(await enterStage(tx, target, data, row, settings.today))
           }
+        } else if (row.status !== 'open' && data.closeDate === null) {
+          throw new InvalidChangeError('A closed deal needs the day it closed.')
         } else if (row.status === 'lost') {
           // Changing the reason on a lost deal.
           if (data.lostReasonId) await assertLostReason(tx, data.lostReasonId)
