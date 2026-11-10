@@ -502,7 +502,9 @@ export const changeRecordType = pgEnum('change_record_type', [
   'stage',
   'lost_reason',
   'user',
-  'workspace'
+  'workspace',
+  'task',
+  'activity'
 ])
 export const changeAction = pgEnum('change_action', [
   'create',
@@ -540,5 +542,124 @@ export const changeLog = pgTable(
     index('change_log_actor_idx').on(table.actorId, table.id.desc()),
     // The audit log by date: tiny, and fine for append-only rows.
     index('change_log_occurred_idx').using('brin', table.occurredAt)
+  ]
+)
+
+// timeline
+
+export const activityType = pgEnum('activity_type', [
+  'note',
+  'call',
+  'meeting',
+  'email'
+])
+export const activitySource = pgEnum('activity_source', [
+  'manual',
+  'ai',
+  'email_sync',
+  'calendar_sync',
+  'import'
+])
+export const taskSource = pgEnum('task_source', ['manual', 'ai'])
+
+/** What only some kinds of activity have, such as how a call went. */
+export type TActivityData = { outcome?: string }
+
+/** Notes, calls, meetings and emails, in one stream. */
+export const activity = pgTable(
+  'activity',
+  {
+    id: id(),
+    type: activityType().notNull(),
+    // When it happened, or starts. Future values are "upcoming".
+    occurredAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    // Meetings.
+    endsAt: timestamp({ withTimezone: true }),
+    // The timeline it belongs to. Null only for emails not yet matched.
+    companyId: uuid().references(() => company.id),
+    // Also shown on this deal.
+    dealId: uuid().references(() => deal.id),
+    // Who wrote or logged it; null for synced emails.
+    authorId: text().references(() => user.id),
+    source: activitySource().notNull().default('manual'),
+    // Subject, meeting name, call summary.
+    title: text(),
+    // Note text, call notes; for emails, the plain-text body.
+    body: text(),
+    data: jsonb().$type<TActivityData>().notNull().default({}),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    // A company's timeline (and its upcoming items, read the other way).
+    index('activity_company_idx')
+      .on(table.companyId, table.occurredAt.desc(), table.id)
+      .where(sql`${table.archivedAt} is null`),
+    // A deal's timeline.
+    index('activity_deal_idx')
+      .on(table.dealId, table.occurredAt.desc(), table.id)
+      .where(sql`${table.dealId} is not null and ${table.archivedAt} is null`),
+    // Activity reports per person.
+    index('activity_author_idx').on(table.authorId, table.occurredAt.desc())
+  ]
+)
+
+/** Who an activity involved: the people on a call, a note's subject. */
+export const activityPerson = pgTable(
+  'activity_person',
+  {
+    activityId: uuid()
+      .notNull()
+      .references(() => activity.id, { onDelete: 'cascade' }),
+    personId: uuid()
+      .notNull()
+      .references(() => person.id, { onDelete: 'cascade' })
+  },
+  (table) => [
+    primaryKey({ columns: [table.activityId, table.personId] }),
+    // A person's timeline and "last contacted".
+    index('activity_person_person_idx').on(table.personId, table.activityId)
+  ]
+)
+
+export const task = pgTable(
+  'task',
+  {
+    id: id(),
+    title: text().notNull(),
+    notes: text(),
+    // Null means no date.
+    dueOn: date({ mode: 'string' }),
+    assigneeId: text()
+      .notNull()
+      .references(() => user.id),
+    createdById: text()
+      .notNull()
+      .references(() => user.id),
+    // What it's about. Any may be null.
+    companyId: uuid().references(() => company.id),
+    dealId: uuid().references(() => deal.id),
+    personId: uuid().references(() => person.id),
+    completedAt: timestamp({ withTimezone: true }),
+    source: taskSource().notNull().default('manual'),
+    // The proposal that created it. The reference joins it when the
+    // proposal table exists.
+    proposalId: uuid(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    // Today's follow-ups, due and overdue.
+    index('task_assignee_due_idx')
+      .on(table.assigneeId, table.dueOn, table.id)
+      .where(sql`${table.completedAt} is null and ${table.archivedAt} is null`),
+    // Not partial, so they also serve the foreign keys and finished tasks
+    // on a record's timeline.
+    index('task_company_idx').on(table.companyId),
+    index('task_deal_idx').on(table.dealId),
+    index('task_person_idx').on(table.personId)
   ]
 )
