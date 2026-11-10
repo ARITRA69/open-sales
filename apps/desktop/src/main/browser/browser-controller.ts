@@ -36,10 +36,16 @@ export type TTabPage = {
   // Connects AI's controls to the page, or lets go of them. False when
   // something else holds the page (DevTools, say).
   setAiMode: (on: boolean) => Promise<boolean>
-  screenshot: () => Promise<{ data: string; mimeType: string } | null>
+  // A picture of the page as it is now, with `masks` painted over.
+  screenshot: (
+    masks?: TMask[]
+  ) => Promise<{ data: string; mimeType: string } | null>
   download: (url: string) => void
   close: () => void
 }
+
+/** A part of the page to paint over, as fractions of its width and height. */
+export type TMask = { x: number; y: number; width: number; height: number }
 
 /** What makes and shows pages. */
 export type TTabHost = {
@@ -107,6 +113,11 @@ export type TAiTab = {
   // haven't answered when the call gives up waiting, `whenAllowedLater` runs
   // once they say yes.
   requireSite: (url: string, whenAllowedLater?: () => void) => Promise<void>
+  // Connects AI's controls to the page, once it has one. Calls that start
+  // from an empty tab and go somewhere use this after the page arrives.
+  ready: () => Promise<void>
+  // Why the page isn't showing, if it failed to load or crashed.
+  problem: () => string | null
   // Whether the person has allowed AI on the site this address belongs to.
   isSiteAllowed: (url: string) => boolean
   // Things the page did that AI should be told, such as a box it showed.
@@ -272,12 +283,16 @@ export const createBrowserController = ({
       case 'open-in-default-browser':
         if (isWebUrl(tab.page.url())) host.openInDefaultBrowser(tab.page.url())
         break
-      case 'let-ai-use':
+      case 'let-ai-use': {
         tab.control = 'ai'
         tab.aiName = null
-        // Handing a tab over is a yes to AI working again.
+        // Handing a tab over is a yes to AI working again, and to the page
+        // it's on: asking about that site straight after would be noise.
         approvals.resume()
+        const site = siteOf(tab.page.url())
+        if (site) approvals.allowOnce(tabId, site)
         break
+      }
       case 'stop-ai':
         stopAi(tabId)
         return
@@ -513,7 +528,9 @@ export const createBrowserController = ({
     aiName: string,
     tabId: string,
     run: (tab: TAiTab) => Promise<TResult>,
-    { needsSite = true }: { needsSite?: boolean } = {}
+    // False for a call that takes the tab somewhere itself: it asks about
+    // the site it's going to, and the tab may still be empty.
+    { needsPage = true }: { needsPage?: boolean } = {}
   ): Promise<TResult> => {
     refusePaused(aiName)
     const tab = aiTabOrThrow(tabId)
@@ -529,10 +546,30 @@ export const createBrowserController = ({
         if (tab.isClosed) throw new ToolError(`Tab ${tabId} was closed.`)
         if (tab.epoch !== epoch) throw new StoppedError()
       }
+      // A page that has never gone anywhere can't be driven: commands sent
+      // to it wait for ever. So AI's controls connect once there is a page.
+      const ready = async () => {
+        if (tab.isArmed) return
+        if (!isWebUrl(tab.page.url())) {
+          throw new ToolError(
+            `Tab ${tabId} is empty. Take it somewhere first with browser_navigate.`
+          )
+        }
+        if (!(await tab.page.setAiMode(true))) {
+          throw new ToolError(
+            'AI can’t use this tab while its developer tools are open.'
+          )
+        }
+        check()
+        await armPage(aiTab)
+        tab.isArmed = true
+      }
       const aiTab: TAiTab = {
         id: tab.id,
         page: tab.page,
         cdp: tab.page.cdp,
+        ready,
+        problem: () => tab.problem,
         get refs() {
           return tab.refs
         },
@@ -557,16 +594,9 @@ export const createBrowserController = ({
       tab.working += 1
       emit()
       try {
-        if (needsSite) await aiTab.requireSite(tab.page.url())
-        if (!tab.isArmed) {
-          if (!(await tab.page.setAiMode(true))) {
-            throw new ToolError(
-              'AI can’t use this tab while its developer tools are open.'
-            )
-          }
-          check()
-          await armPage(aiTab)
-          tab.isArmed = true
+        if (needsPage) {
+          await aiTab.requireSite(tab.page.url())
+          await ready()
         }
         check()
         const result = await run(aiTab)
@@ -614,9 +644,11 @@ export const createBrowserController = ({
         async (aiTab) => {
           await aiTab.requireSite(url, () => load(tab, url))
           load(tab, url)
-          return tab.page.whenLoaded(LOAD_WAIT_MS)
+          const loadState = await tab.page.whenLoaded(LOAD_WAIT_MS)
+          if (isWebUrl(tab.page.url())) await aiTab.ready()
+          return loadState
         },
-        { needsSite: false }
+        { needsPage: false }
       )
       return { tabId: tab.id, loadState }
     } catch (error) {

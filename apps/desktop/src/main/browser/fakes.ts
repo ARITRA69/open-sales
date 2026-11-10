@@ -1,5 +1,5 @@
 import type { TApprovalStore } from './approvals'
-import type { TTabHost, TTabPage } from './browser-controller'
+import type { TMask, TTabHost, TTabPage } from './browser-controller'
 import type { TCdp } from './cdp'
 
 /* Pretend pages, hosts and stores for the tests. No Electron needed. */
@@ -46,6 +46,7 @@ export const fakePage = (answers: TCdpAnswers = {}) => {
   let url = ''
   const loaded: string[] = []
   const done: string[] = []
+  const masked: TMask[][] = []
   const protocol = fakeCdp(answers)
   let isAiMode = false
   const page: TTabPage = {
@@ -70,7 +71,10 @@ export const fakePage = (answers: TCdpAnswers = {}) => {
       else protocol.cut()
       return true
     },
-    screenshot: async () => ({ data: 'aGk=', mimeType: 'image/jpeg' }),
+    screenshot: async (masks = []) => {
+      masked.push(masks)
+      return { data: 'aGk=', mimeType: 'image/jpeg' }
+    },
     download: (downloadUrl) => done.push(`download ${downloadUrl}`),
     close: () => done.push('close')
   }
@@ -79,6 +83,7 @@ export const fakePage = (answers: TCdpAnswers = {}) => {
     protocol,
     loaded,
     done,
+    masked,
     isAiMode: () => isAiMode,
     // The page moved by itself, as after a click.
     moveTo: (next: string) => {

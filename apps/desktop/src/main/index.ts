@@ -13,6 +13,7 @@ import brand from '../../brand.config.json'
 import windowsIconPath from '../../build/icon.ico?asset'
 import macIconPath from '../../build/icon.png?asset'
 import { CONNECTION_CHANNELS } from '../preload/bridge-types'
+import { registerBrowser } from './browser/register-browser'
 import { createConnection } from './connection'
 import { createConnectionStore } from './connection-store'
 import {
@@ -147,6 +148,7 @@ void app.whenReady().then(() => {
   }
   // Finds the person's own Claude Code or Codex, which the AI help runs on.
   registerAiToolsIpc()
+  registerBrowser(app.getPath('userData'), safeStorage)
 
   createMainWindow()
 

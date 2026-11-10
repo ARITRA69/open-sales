@@ -21,14 +21,9 @@ export type TDebugger = {
   detach: () => void
   isAttached: () => boolean
   sendCommand: (method: string, params?: object) => Promise<unknown>
-  on: (
-    event: 'message' | 'detach',
-    listener: (...args: never[]) => void
-  ) => unknown
-  removeListener: (
-    event: 'message' | 'detach',
-    listener: (...args: never[]) => void
-  ) => unknown
+  // Electron's own signatures differ per event; these two are all that's used.
+  on: (event: never, listener: never) => unknown
+  removeListener: (event: never, listener: never) => unknown
 }
 
 const COMMAND_TIMEOUT_MS = 8000
@@ -46,8 +41,8 @@ export const createCdp = (
   const unhook = () => {
     // Whoever connects next sets the page up again from scratch.
     listeners.clear()
-    target.removeListener('message', handleMessage as never)
-    target.removeListener('detach', handleDetach as never)
+    target.removeListener('message' as never, handleMessage as never)
+    target.removeListener('detach' as never, handleDetach as never)
   }
   function handleDetach() {
     unhook()
@@ -104,8 +99,8 @@ export const createCdp = (
       } catch {
         return false
       }
-      target.on('message', handleMessage as never)
-      target.on('detach', handleDetach as never)
+      target.on('message' as never, handleMessage as never)
+      target.on('detach' as never, handleDetach as never)
       return true
     },
     detach: () => {

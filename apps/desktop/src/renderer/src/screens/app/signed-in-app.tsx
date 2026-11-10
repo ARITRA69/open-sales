@@ -13,6 +13,7 @@ import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
+import { BrowserPage } from './browser/browser-page'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
 import { AccountsPage } from './records/accounts-page'
 import { PeoplePage } from './records/people-page'
@@ -39,7 +40,8 @@ const ROUTES: readonly TRoute[] = [
   'reports',
   'playbooks',
   'settings',
-  'components'
+  'components',
+  'browser'
 ]
 
 type TSignedInAppProps = {
@@ -134,6 +136,8 @@ export const SignedInApp = ({
               body: <PipelinePage bridge={recordsBridge} me={user} />
             }
           : emptyPage(route)
+      case 'browser':
+        return { title: 'Browser', body: <BrowserPage /> }
       default:
         return emptyPage(route)
     }

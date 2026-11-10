@@ -98,31 +98,33 @@ const centreOf = async (cdp: TCdp, backendNodeId: number) => {
   }
 }
 
-const IS_SAME_TARGET = `function (hit) {
-  if (this === hit || this.contains(hit)) return true
+// Asks the page what is at a point, as a click would find it, and whether
+// that is the element (or part of it, or the link or button wrapped round
+// it). It looks inside open shadow roots too.
+const IS_ON_TOP = `function (x, y) {
+  let hit = document.elementFromPoint(x, y)
+  while (hit && hit.shadowRoot) {
+    const inner = hit.shadowRoot.elementFromPoint(x, y)
+    if (!inner || inner === hit) break
+    hit = inner
+  }
+  if (!hit) return false
+  for (let node = hit; node; node = node.parentNode || node.host) {
+    if (node === this) return true
+  }
   return hit.contains(this) && hit.matches('a, button, label, summary, [role=button], [role=link]')
 }`
 
 /** Whether a click at this point would land on the element, not something over it. */
 const isOnTop = async (
   cdp: TCdp,
-  contextId: number,
   objectId: string,
   point: { x: number; y: number }
 ) => {
   try {
-    const hit = await cdp.send<{ backendNodeId: number }>(
-      'DOM.getNodeForLocation',
-      {
-        x: Math.round(point.x),
-        y: Math.round(point.y),
-        includeUserAgentShadowDOM: true,
-        ignorePointerEventsNone: true
-      }
-    )
-    const hitObjectId = await resolve(cdp, hit.backendNodeId, contextId)
-    return await ask<boolean>(cdp, objectId, IS_SAME_TARGET, [
-      { objectId: hitObjectId }
+    return await ask<boolean>(cdp, objectId, IS_ON_TOP, [
+      { value: point.x },
+      { value: point.y }
     ])
   } catch {
     return false
@@ -134,7 +136,6 @@ const FIRST_LABEL = `function () { return this.labels && this.labels.length ? th
 /** Where to click for this element, or why it can't be clicked. */
 const clickPointOf = async (
   cdp: TCdp,
-  contextId: number,
   backendNodeId: number,
   objectId: string
 ) => {
@@ -142,7 +143,7 @@ const clickPointOf = async (
     .send('DOM.scrollIntoViewIfNeeded', { backendNodeId })
     .catch(() => undefined)
   const point = await centreOf(cdp, backendNodeId)
-  if (point && (await isOnTop(cdp, contextId, objectId, point))) return point
+  if (point && (await isOnTop(cdp, objectId, point))) return point
 
   // A hidden checkbox or radio is clicked through the label that shows it.
   const label = await cdp.send<{ result: { objectId?: string } }>(
@@ -156,10 +157,7 @@ const clickPointOf = async (
       { objectId: labelObjectId }
     )
     const labelPoint = await centreOf(cdp, node.backendNodeId)
-    if (
-      labelPoint &&
-      (await isOnTop(cdp, contextId, labelObjectId, labelPoint))
-    ) {
+    if (labelPoint && (await isOnTop(cdp, labelObjectId, labelPoint))) {
       return labelPoint
     }
   }
@@ -189,7 +187,7 @@ export const clickElement = async (tab: TAiTab, ref: string) => {
     throw new ToolError(PROTECTED_FORM_REASON)
   }
 
-  const point = await clickPointOf(cdp, contextId, backendNodeId, objectId)
+  const point = await clickPointOf(cdp, backendNodeId, objectId)
   tab.check()
   const at = { x: point.x, y: point.y, button: 'left', clickCount: 1 }
   await cdp.send('Input.dispatchMouseEvent', {

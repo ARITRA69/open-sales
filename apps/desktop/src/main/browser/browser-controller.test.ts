@@ -127,10 +127,13 @@ describe('whose tab it is', () => {
     ).toBe(refusal.replace('t1', 't99'))
   })
 
-  it('lets AI use a tab once the person hands it over', async () => {
-    const { controller } = setUp(['a.com'])
+  it('lets AI use a tab once the person hands it over, on the site it shows', async () => {
+    const { controller, page } = setUp()
     controller.openTab('https://a.com')
     controller.actOnTab('t1', 'let-ai-use')
+    // Handing it over was the yes for this page. Anywhere else still asks.
+    expect(controller.getState().questions).toEqual([])
+    page('t1').moveTo('https://a.com')
 
     expect(
       await controller.withAiTab('Codex', 't1', async (tab) => tab.page.url())
@@ -139,6 +142,25 @@ describe('whose tab it is', () => {
       control: 'ai',
       aiName: 'Codex'
     })
+
+    page('t1').moveTo('https://b.com')
+    void controller.withAiTab('Codex', 't1', async () => 'read')
+    await flush()
+    expect(controller.getState().questions[0]).toMatchObject({ site: 'b.com' })
+  })
+
+  it('tells AI an empty tab has nothing to read, without touching it', async () => {
+    const { controller, page } = setUp()
+    controller.openTab()
+    controller.actOnTab('t1', 'let-ai-use')
+
+    expect(
+      await messageOf(() =>
+        controller.withAiTab('AI', 't1', async () => 'read')
+      )
+    ).toContain('Tab t1 is empty')
+    // A page that has never loaded would leave the call waiting for ever.
+    expect(page('t1').isAiMode()).toBe(false)
   })
 
   it('marks a tab AI opened, and leaves the person’s page in front', async () => {

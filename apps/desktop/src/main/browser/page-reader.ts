@@ -1,4 +1,4 @@
-import type { TRefs } from './browser-controller'
+import type { TMask, TRefs } from './browser-controller'
 import type { TCdp } from './cdp'
 import { oneLine } from './fence'
 import {
@@ -224,11 +224,8 @@ export const describeField = async (
 // Asking about every field one at a time is slow on a page with hundreds.
 const MAX_FIELDS_CHECKED = 80
 
-/** The page's things to click and type into, with references. */
-export const readSnapshot = async (cdp: TCdp, refs: TRefs) => {
-  const { nodes } = await cdp.send<{ nodes: TAxNode[] }>(
-    'Accessibility.getFullAXTree'
-  )
+/** The fields on the page AI may not type into, by node. */
+const findProtectedFields = async (cdp: TCdp, nodes: TAxNode[]) => {
   const fields = nodes
     .filter(
       (node) =>
@@ -251,7 +248,48 @@ export const readSnapshot = async (cdp: TCdp, refs: TRefs) => {
       }
     })
   )
-  return buildSnapshot(nodes, refs, protectedNodes)
+  return protectedNodes
+}
+
+/** The page's things to click and type into, with references. */
+export const readSnapshot = async (cdp: TCdp, refs: TRefs) => {
+  const { nodes } = await cdp.send<{ nodes: TAxNode[] }>(
+    'Accessibility.getFullAXTree'
+  )
+  return buildSnapshot(nodes, refs, await findProtectedFields(cdp, nodes))
+}
+
+/**
+ * Where the protected fields are on screen, so a picture of the page can be
+ * painted over them: a card number someone typed is not for AI to read off
+ * a screenshot either.
+ */
+export const protectedFieldMasks = async (cdp: TCdp): Promise<TMask[]> => {
+  const { nodes } = await cdp.send<{ nodes: TAxNode[] }>(
+    'Accessibility.getFullAXTree'
+  )
+  const { cssVisualViewport: viewport } = await cdp.send<{
+    cssVisualViewport: { clientWidth: number; clientHeight: number }
+  }>('Page.getLayoutMetrics')
+  const masks: TMask[] = []
+  for (const backendNodeId of await findProtectedFields(cdp, nodes)) {
+    const { quads } = await cdp
+      .send<{ quads: number[][] }>('DOM.getContentQuads', { backendNodeId })
+      .catch(() => ({ quads: [] as number[][] }))
+    for (const quad of quads) {
+      const xs = [quad[0], quad[2], quad[4], quad[6]]
+      const ys = [quad[1], quad[3], quad[5], quad[7]]
+      const left = Math.min(...xs)
+      const top = Math.min(...ys)
+      masks.push({
+        x: left / viewport.clientWidth,
+        y: top / viewport.clientHeight,
+        width: (Math.max(...xs) - left) / viewport.clientWidth,
+        height: (Math.max(...ys) - top) / viewport.clientHeight
+      })
+    }
+  }
+  return masks
 }
 
 /**

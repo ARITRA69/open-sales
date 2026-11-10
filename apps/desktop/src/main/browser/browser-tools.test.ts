@@ -108,7 +108,11 @@ const flat = (attributes: Record<string, string>) =>
   Object.entries(attributes).flat()
 
 const setUp = (
-  options: { focusLandsOn?: number; swapTypeOnFocus?: boolean } = {}
+  options: {
+    focusLandsOn?: number
+    swapTypeOnFocus?: boolean
+    isCovered?: boolean
+  } = {}
 ) => {
   let focused: number | null = null
   let hasSwapped = false
@@ -145,7 +149,6 @@ const setUp = (
     'DOM.getContentQuads': () => ({
       quads: [[10, 10, 110, 10, 110, 40, 10, 40]]
     }),
-    'DOM.getNodeForLocation': () => ({ backendNodeId: 11 }),
     'DOM.focus': ((params: { backendNodeId: number }) => {
       focused = options.focusLandsOn ?? params.backendNodeId
       if (options.swapTypeOnFocus) hasSwapped = true
@@ -184,7 +187,9 @@ const setUp = (
         }
       }
       if (source.includes('this.labels')) return { result: {} }
-      if (source.includes('hit.contains')) return { result: { value: true } }
+      if (source.includes('elementFromPoint')) {
+        return { result: { value: !options.isCovered } }
+      }
       if (source.includes('return element === this'))
         return { result: { value: focused === id } }
       if (source.includes('this.options')) {
@@ -352,6 +357,39 @@ describe('acting', () => {
       ['mouseMoved', 'mousePressed', 'mouseReleased']
     )
     expect(mouse[1].params).toMatchObject({ x: 60, y: 25, button: 'left' })
+  })
+
+  it('won’t click through something that covers the element', async () => {
+    const context = setUp({ isCovered: true })
+    await context.open()
+    const { text, isError } = await context.call('browser_click', {
+      tabId: 't1',
+      ref: await refOf(context, 'Pricing')
+    })
+
+    expect(isError).toBe(true)
+    expect(text).toContain('Something else is on top')
+    expect(context.page('t1').protocol.methods()).not.toContain(
+      'Input.dispatchMouseEvent'
+    )
+  })
+
+  it('paints over password and card fields in a picture of the page', async () => {
+    const context = setUp()
+    await context.open()
+    const { isError, text } = await context.call('browser_screenshot', {
+      tabId: 't1'
+    })
+
+    expect(isError).toBe(false)
+    expect(text).toContain('[image]')
+    // One box each for the password and the card number, none for the rest.
+    expect(context.page('t1').masked).toEqual([
+      [
+        { x: 0.01, y: 0.0125, width: 0.1, height: 0.0375 },
+        { x: 0.01, y: 0.0125, width: 0.1, height: 0.0375 }
+      ]
+    ])
   })
 
   it('types into an ordinary field', async () => {
