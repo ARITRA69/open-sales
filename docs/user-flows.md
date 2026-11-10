@@ -354,6 +354,15 @@ emails or notes meet a stage's exit criteria.
   the account owner; otherwise **Send to owner**.
 - Required custom fields missing when moving stage: ask for them inline.
 
+**Built:** the side panel (from **New deal** and each column's **+**, stage
+filled in), with **Save** and **Save and add another**; people are picked
+from the chosen account. Drag between stages, the idle marker, a list view
+with sortable columns, and filters by owner, stage and close month. A Member
+only sees accounts they own in the panel; an account passed in that they
+don't own shows "Owned by …" rather than **Send to owner**, which waits for
+proposals. Not yet: starting from an account's page, AI pre-fill, and custom
+fields.
+
 **Mobbin:** [Attio deals](https://mobbin.com/flows/82eb7e3e-47a1-47c7-abb4-e133f5de31b4?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (board with "+ New deal" per column), [Apollo creating a deal](https://mobbin.com/flows/9e3e41d6-7e8a-496b-8166-5af26491336a?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (side panel with "Save and create another"), [Outseta adding a deal](https://mobbin.com/flows/3b14957f-0fcd-42a7-b7c4-14097c48a6e1?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp).
 
 ### 11. Close a deal as won or lost
@@ -365,6 +374,11 @@ those columns
    renewal date.
 2. **Lost:** pick a reason from the admin's list, with an optional note.
 3. The deal leaves the open pipeline and counts in reports.
+
+**Built:** both dialogs, opened by dropping a card on **Won** or **Lost**
+(cancelling puts the card back) and from a row's menu in the list. Won
+starts the close date on today. Not yet: the renewal date (it comes with
+contracts) and the AI's suggested reason.
 
 **AI:** suggests the lost reason from the deal's history ("Chose a cheaper
 tool", from the last email).
@@ -437,6 +451,11 @@ Today's manager view
 **Edge cases**
 
 - Reassigning moves ownership only; history and activity stay.
+
+**Built:** step 1 on the Pipeline: owner (Everyone, My deals or one person),
+stage and close month filters, with each column's count and value following
+them. Idle deals are marked on cards and rows; the rule is shared
+(`packages/shared/src/stalled.ts`) for Today's **Deals needing a nudge**.
 
 ### 16. Write and run a playbook
 

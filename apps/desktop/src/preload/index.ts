@@ -4,6 +4,7 @@ import type { TConnectionState, TOpenSalesBridge } from './bridge-types'
 import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
+  PIPELINE_CHANNELS,
   RECORDS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
@@ -62,6 +63,10 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  pipeline: {
+    createDeal: (input) =>
+      ipcRenderer.invoke(PIPELINE_CHANNELS.createDeal, input)
   }
 }
 

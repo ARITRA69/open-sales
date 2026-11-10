@@ -164,13 +164,24 @@ const PEOPLE: TPerson[] = [
   person('rosa', 'Rosa Diaz', 'IT Lead', 'orbit', 9)
 ]
 
+const todayOfMonth = () => String(new Date().getDate()).padStart(2, '0')
+
+/** The last day of a month some months from now, as "2026-11-30". */
+const monthEnd = (monthsAhead: number) => {
+  const now = new Date()
+  const end = new Date(now.getFullYear(), now.getMonth() + monthsAhead + 1, 0)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`
+}
+
 const deal = (
   id: string,
   name: string,
   companyId: string,
   stageId: string,
   valueMinor: number | null,
-  days: number
+  days: number,
+  closeDate: string | null = null
 ): TDeal => {
   const at = COMPANIES.find((c) => c.id === companyId) ?? COMPANIES[0]
   return {
@@ -183,7 +194,7 @@ const deal = (
     status: 'open',
     valueMinor,
     currency: 'USD',
-    closeDate: null,
+    closeDate,
     nextStep: null,
     stageEnteredAt: daysAgo(days),
     closedAt: null,
@@ -193,12 +204,45 @@ const deal = (
 }
 
 const DEALS: TDeal[] = [
-  deal('d1', 'Platform rollout', 'halden', 'proposal', 4_800_000, 16),
-  deal('d2', 'Analytics add-on', 'halden', 'qualified', 1_200_000, 3),
-  deal('d3', 'Store pilot', 'lumen', 'discovery', 2_500_000, 8),
-  deal('d4', 'Fleet tracking', 'northwind', 'negotiation', 9_000_000, 5),
+  deal(
+    'd1',
+    'Platform rollout',
+    'halden',
+    'proposal',
+    4_800_000,
+    16,
+    monthEnd(0)
+  ),
+  deal(
+    'd2',
+    'Analytics add-on',
+    'halden',
+    'qualified',
+    1_200_000,
+    3,
+    monthEnd(2)
+  ),
+  deal('d3', 'Store pilot', 'lumen', 'discovery', 2_500_000, 8, monthEnd(1)),
+  deal(
+    'd4',
+    'Fleet tracking',
+    'northwind',
+    'negotiation',
+    9_000_000,
+    5,
+    monthEnd(0)
+  ),
+  // No value or close date yet, and idle past its stage's limit.
   deal('d5', 'Clinic scheduling', 'orbit', 'qualified', null, 20),
-  deal('d6', 'District licence', 'pinecrest', 'discovery', 1_800_000, 2)
+  deal(
+    'd6',
+    'District licence',
+    'pinecrest',
+    'discovery',
+    1_800_000,
+    2,
+    monthEnd(1)
+  )
 ]
 
 const pause = () => new Promise((resolve) => setTimeout(resolve, 300))
@@ -269,6 +313,10 @@ export const createPreviewRecords = (
         fields.stageEnteredAt = new Date().toISOString()
         fields.closedAt =
           target.kind === 'open' ? null : new Date().toISOString()
+        // Like the server: a closed deal always has the day it closed.
+        if (target.kind !== 'open' && !fields.closeDate) {
+          fields.closeDate = monthEnd(0).slice(0, 8) + todayOfMonth()
+        }
         if (target.kind !== 'lost') {
           fields.lostReasonId = null
           fields.lostNote = null

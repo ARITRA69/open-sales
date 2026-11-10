@@ -167,6 +167,12 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // The Pipeline page's own calls: a new deal with the people on it.
+  pipeline: {
+    createDeal: (
+      input: import('@open-sales/shared').TDealCreateWithPeople
+    ) => Promise<TApiResult<TDeal>>
+  }
 }
 
 /**
@@ -217,6 +223,10 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+export const PIPELINE_CHANNELS = {
+  createDeal: 'pipeline:create-deal'
+} as const satisfies Record<keyof TOpenSalesBridge['pipeline'], string>
 
 declare global {
   interface Window {
