@@ -16,6 +16,8 @@ import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
 import type { TRecordsService } from './records/routes'
 import { addRecordRoutes } from './records/routes'
+import type { TSettingsService } from './settings/routes'
+import { addSettingsRoutes } from './settings/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -39,6 +41,8 @@ type TAppDeps = {
   // Companies, people, deals and the pipeline. Optional so tests of other
   // routes needn't build one.
   records?: TRecordsService
+  // Workspace, pipeline stages, lost reasons and roles. Optional like records.
+  settings?: TSettingsService
   // Where people reach the server, for join links. Defaults to the request's.
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
@@ -54,6 +58,7 @@ export const createApp = ({
   setup,
   team,
   records,
+  settings,
   publicUrl,
   appScheme = 'open-sales'
 }: TAppDeps) => {
@@ -195,6 +200,7 @@ export const createApp = ({
   })
 
   if (records) addRecordRoutes(api, records, getSessionUser)
+  if (settings) addSettingsRoutes(api, settings, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

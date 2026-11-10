@@ -116,3 +116,22 @@ export type TMember = z.infer<typeof memberSchema>
 export const membersResponseSchema = z.object({
   members: z.array(memberSchema)
 })
+
+/**
+ * PATCH /api/v1/team/members/:id. Change someone's role, or whether they can
+ * sign in. Admins only; the workspace always keeps one active admin.
+ */
+export const memberUpdateSchema = z
+  .object({
+    role: z.enum(ROLES),
+    status: z.enum(['active', 'deactivated'])
+  })
+  .partial()
+  .refine(
+    (changes) => changes.role !== undefined || changes.status !== undefined,
+    'Nothing to change'
+  )
+
+export type TMemberUpdate = z.infer<typeof memberUpdateSchema>
+
+export const memberResponseSchema = z.object({ member: memberSchema })

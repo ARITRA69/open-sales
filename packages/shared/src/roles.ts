@@ -32,3 +32,9 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/**
+ * Only admins run the workspace: its name and currency, pipeline stages,
+ * lost reasons, and who's on the team with which role.
+ */
+export const canManageWorkspace = (role: Role): boolean => role === 'admin'
