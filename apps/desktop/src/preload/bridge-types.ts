@@ -10,6 +10,14 @@ import type {
   TJoinForm,
   TJoinLink,
   TJoinLinkSettings,
+  TLead,
+  TLeadAssign,
+  TLeadConvert,
+  TLeadConverted,
+  TLeadCreate,
+  TLeadDisqualify,
+  TLeadListQueryInput,
+  TLeadMatch,
   TListQueryInput,
   TMember,
   TOwner,
@@ -167,6 +175,27 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // The Leads inbox. Changes send the version they were made against, like
+  // records; convert also answers `match_changed` (look at the match again).
+  leads: {
+    list: (query?: TLeadListQueryInput) => Promise<TApiResult<TPage<TLead>>>
+    get: (id: string) => Promise<TApiResult<TLead>>
+    create: (input: TLeadCreate) => Promise<TApiResult<TLead>>
+    // To a teammate, or (null) back to nobody.
+    assign: (id: string, input: TLeadAssign) => Promise<TApiResult<TLead>>
+    qualify: (id: string, version: number) => Promise<TApiResult<TLead>>
+    disqualify: (
+      id: string,
+      input: TLeadDisqualify
+    ) => Promise<TApiResult<TLead>>
+    reopen: (id: string, version: number) => Promise<TApiResult<TLead>>
+    // What converting would do: the account and person it already matches.
+    match: (id: string, companyName?: string) => Promise<TApiResult<TLeadMatch>>
+    convert: (
+      id: string,
+      input: TLeadConvert
+    ) => Promise<TApiResult<TLeadConverted>>
+  }
 }
 
 /**
@@ -217,6 +246,18 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+export const LEADS_CHANNELS = {
+  list: 'leads:list',
+  get: 'leads:get',
+  create: 'leads:create',
+  assign: 'leads:assign',
+  qualify: 'leads:qualify',
+  disqualify: 'leads:disqualify',
+  reopen: 'leads:reopen',
+  match: 'leads:match',
+  convert: 'leads:convert'
+} as const satisfies Record<keyof TOpenSalesBridge['leads'], string>
 
 declare global {
   interface Window {

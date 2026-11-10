@@ -4,6 +4,7 @@ import type { TConnectionState, TOpenSalesBridge } from './bridge-types'
 import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
+  LEADS_CHANNELS,
   RECORDS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
@@ -62,6 +63,22 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  leads: {
+    list: (query) => ipcRenderer.invoke(LEADS_CHANNELS.list, query),
+    get: (id) => ipcRenderer.invoke(LEADS_CHANNELS.get, id),
+    create: (input) => ipcRenderer.invoke(LEADS_CHANNELS.create, input),
+    assign: (id, input) => ipcRenderer.invoke(LEADS_CHANNELS.assign, id, input),
+    qualify: (id, version) =>
+      ipcRenderer.invoke(LEADS_CHANNELS.qualify, id, version),
+    disqualify: (id, input) =>
+      ipcRenderer.invoke(LEADS_CHANNELS.disqualify, id, input),
+    reopen: (id, version) =>
+      ipcRenderer.invoke(LEADS_CHANNELS.reopen, id, version),
+    match: (id, companyName) =>
+      ipcRenderer.invoke(LEADS_CHANNELS.match, id, companyName),
+    convert: (id, input) =>
+      ipcRenderer.invoke(LEADS_CHANNELS.convert, id, input)
   }
 }
 
