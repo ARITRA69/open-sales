@@ -16,6 +16,8 @@ import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
 import type { TLeadsService } from './leads/leads'
 import { addLeadRoutes } from './leads/routes'
+import { addPlaybookRoutes } from './playbooks/routes'
+import type { TPlaybookService } from './playbooks/service'
 import { addProposalRoutes } from './proposals/routes'
 import type { TProposalsService } from './proposals/service'
 import type { TRecordsService } from './records/routes'
@@ -59,6 +61,8 @@ type TAppDeps = {
   appScheme?: string
   // Contracts and their renewals. Optional, like `records`.
   contracts?: TContractService
+  // Playbooks. Optional, like `records`.
+  playbooks?: TPlaybookService
 }
 
 /** The Sales API under /api/v1, and the join page at /join/:token. */
@@ -75,7 +79,8 @@ export const createApp = ({
   reports,
   publicUrl,
   appScheme = 'open-sales',
-  contracts
+  contracts,
+  playbooks
 }: TAppDeps) => {
   const baseUrl = (c: Context) =>
     (publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
@@ -220,6 +225,7 @@ export const createApp = ({
   if (leads) addLeadRoutes(api, leads, getSessionUser)
   if (contracts) addContractRoutes(api, contracts, getSessionUser)
   if (reports) addReportRoutes(api, reports, getSessionUser)
+  if (playbooks) addPlaybookRoutes(api, playbooks, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

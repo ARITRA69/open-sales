@@ -15,6 +15,7 @@ import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
 import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
 import { LeadsPage } from './leads/leads-page'
+import { PlaybooksPage } from './playbooks/playbooks-page'
 import { AccountsPage } from './records/accounts-page'
 import { DealRoute } from './records/deal-page'
 import { PeoplePage } from './records/people-page'
@@ -179,6 +180,11 @@ export const SignedInApp = ({
         return {
           title: 'Reports',
           body: <ReportsPage me={user} recordsBridge={recordsBridge} />
+        }
+      case 'playbooks':
+        return {
+          title: 'Playbooks',
+          body: <PlaybooksPage aiTools={aiTools.status} me={user} />
         }
       default:
         return emptyPage(route)

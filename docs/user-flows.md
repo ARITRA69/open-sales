@@ -548,6 +548,14 @@ playbook**, or a record › **Run playbook**
 
 **AI:** helps write the steps; runs the playbook on the person's own AI tool.
 
+**Built:** the library and the editor (Playbooks, `#/playbooks/<id>`): name,
+description, steps, blanks, what it may change, Save as draft, Publish,
+versions, and the four starters. A blank has a short name, and its answer goes
+where the steps say `{Name}`. **Try it** and the `RunPlaybookMenu` button hand
+the steps to the Ask panel with the answers filled in; nothing runs them yet,
+and the button isn't on record pages yet. Not built: Try it on a sample deal,
+AI help with writing the steps, and how often a playbook is used.
+
 ### 17. Ask about a report
 
 **Who:** All · **Starts from:** Reports

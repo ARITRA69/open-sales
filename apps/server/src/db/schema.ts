@@ -513,7 +513,8 @@ export const changeRecordType = pgEnum('change_record_type', [
   'task',
   'activity',
   'lead',
-  'contract'
+  'contract',
+  'playbook'
 ])
 export const changeAction = pgEnum('change_action', [
   'create',
@@ -862,5 +863,75 @@ export const contract = pgTable(
     index('contract_company_idx').on(table.companyId),
     // A won deal starts one contract.
     uniqueIndex('contract_deal_idx').on(table.dealId)
+  ]
+)
+
+// playbooks
+
+/** What a playbook asks before it runs. See playbookBlankSchema in packages/shared. */
+export type TPlaybookBlankRow = {
+  name: string
+  question: string
+  options: string[]
+}
+
+/**
+ * A shared AI instruction the team runs on a record. What the AI is told
+ * lives in `playbook_version`; this row says which version is in use and
+ * whether the team can see it. The starters have no author.
+ */
+export const playbook = pgTable(
+  'playbook',
+  {
+    id: id(),
+    name: text().notNull(),
+    // One line saying what it does.
+    description: text(),
+    // Null for the starters that ship with the product.
+    authorId: text().references(() => user.id),
+    // The newest version. Null only for the moment between making the
+    // playbook and its first version, inside one transaction.
+    currentVersionId: uuid().references((): AnyPgColumn => playbookVersion.id),
+    // Null while it's a draft, which only its author, managers and admins see.
+    publishedAt: timestamp({ withTimezone: true }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    archivedAt: archivedAt()
+  },
+  (table) => [
+    // The library, A–Z.
+    index('playbook_name_idx')
+      .on(table.name, table.id)
+      .where(sql`${table.archivedAt} is null`),
+    index('playbook_current_version_idx').on(table.currentVersionId)
+  ]
+)
+
+/** One saved edit of a playbook. Never changed, so a run can say which it used. */
+export const playbookVersion = pgTable(
+  'playbook_version',
+  {
+    id: id(),
+    playbookId: uuid()
+      .notNull()
+      .references(() => playbook.id),
+    // 1, 2, 3… within the playbook.
+    version: integer().notNull(),
+    // Plain words, with `{Name}` where a blank's answer goes.
+    steps: text().notNull(),
+    blanks: jsonb().$type<TPlaybookBlankRow[]>().notNull().default([]),
+    // From PLAYBOOK_CHANGES in packages/shared: fields, tasks, email_drafts.
+    allowedChanges: jsonb().$type<string[]>().notNull().default([]),
+    // Null for the starters.
+    createdById: text().references(() => user.id),
+    createdAt: createdAt()
+  },
+  (table) => [
+    // Also serves the foreign key.
+    uniqueIndex('playbook_version_playbook_version_idx').on(
+      table.playbookId,
+      table.version
+    )
   ]
 )

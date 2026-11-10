@@ -6,6 +6,7 @@ import {
   CONNECTION_CHANNELS,
   LEADS_CHANNELS,
   PIPELINE_CHANNELS,
+  PLAYBOOKS_CHANNELS,
   PROPOSALS_CHANNELS,
   RECORDS_CHANNELS,
   RENEWALS_CHANNELS,
@@ -141,6 +142,15 @@ const openSalesBridge: TOpenSalesBridge = {
       ipcRenderer.invoke(REPORTS_CHANNELS.getWonLost, query),
     getForecast: (query) =>
       ipcRenderer.invoke(REPORTS_CHANNELS.getForecast, query)
+  },
+  playbooks: {
+    list: (query) => ipcRenderer.invoke(PLAYBOOKS_CHANNELS.list, query),
+    get: (id) => ipcRenderer.invoke(PLAYBOOKS_CHANNELS.get, id),
+    create: (input) => ipcRenderer.invoke(PLAYBOOKS_CHANNELS.create, input),
+    update: (id, input) =>
+      ipcRenderer.invoke(PLAYBOOKS_CHANNELS.update, id, input),
+    setState: (id, action, version) =>
+      ipcRenderer.invoke(PLAYBOOKS_CHANNELS.setState, id, action, version)
   }
 }
 

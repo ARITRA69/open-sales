@@ -38,6 +38,11 @@ import type {
   TPersonUpdate,
   TPipeline,
   TPipelineReport,
+  TPlaybook,
+  TPlaybookAction,
+  TPlaybookCreate,
+  TPlaybookListQueryInput,
+  TPlaybookUpdate,
   TProposal,
   TProposalApprove,
   TProposalCreate,
@@ -284,6 +289,27 @@ export type TOpenSalesBridge = {
       query?: TForecastQueryInput
     ) => Promise<TApiResult<TForecastReport>>
   }
+  // Playbooks. Everyone reads published ones; managers and admins also see
+  // drafts and may write. The server decides.
+  playbooks: {
+    list: (
+      query?: TPlaybookListQueryInput
+    ) => Promise<TApiResult<TPage<TPlaybook>>>
+    get: (id: string) => Promise<TApiResult<TPlaybook>>
+    // Makes a draft.
+    create: (input: TPlaybookCreate) => Promise<TApiResult<TPlaybook>>
+    // Send the `version` you saw, as with records.
+    update: (
+      id: string,
+      input: TPlaybookUpdate
+    ) => Promise<TApiResult<TPlaybook>>
+    // Publish, unpublish, archive or restore.
+    setState: (
+      id: string,
+      action: TPlaybookAction,
+      version: number
+    ) => Promise<TApiResult<TPlaybook>>
+  }
 }
 
 /**
@@ -431,6 +457,13 @@ export const REPORTS_CHANNELS = {
   getWonLost: 'reports:get-won-lost',
   getForecast: 'reports:get-forecast'
 } as const satisfies Record<keyof TOpenSalesBridge['reports'], string>
+export const PLAYBOOKS_CHANNELS = {
+  list: 'playbooks:list',
+  get: 'playbooks:get',
+  create: 'playbooks:create',
+  update: 'playbooks:update',
+  setState: 'playbooks:set-state'
+} as const satisfies Record<keyof TOpenSalesBridge['playbooks'], string>
 
 declare global {
   interface Window {

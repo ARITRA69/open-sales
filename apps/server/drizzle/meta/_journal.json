@@ -57,6 +57,13 @@
       "when": 1794303745735,
       "tag": "0007_add-renewals",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794303823484,
+      "tag": "0008_add-playbooks",
+      "breakpoints": true
     }
   ]
 }
