@@ -1,10 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type {
-  TBrowserState,
-  TConnectionState,
-  TOpenSalesBridge
-} from './bridge-types'
+import type { TConnectionState, TOpenSalesBridge } from './bridge-types'
 import {
   AI_TOOLS_CHANNELS,
   BROWSER_CHANNELS,
@@ -71,7 +67,8 @@ const openSalesBridge: TOpenSalesBridge = {
   browser: {
     getState: () => ipcRenderer.invoke(BROWSER_CHANNELS.getState),
     onStateChange: (listener) => {
-      const handle = (_event: unknown, state: TBrowserState) => listener(state)
+      const handle = (_event: unknown, state: Parameters<typeof listener>[0]) =>
+        listener(state)
       ipcRenderer.on(BROWSER_CHANNELS.onStateChange, handle)
       return () =>
         ipcRenderer.removeListener(BROWSER_CHANNELS.onStateChange, handle)
