@@ -82,6 +82,15 @@ bunx electron scripts/make-app-icon.mjs   # redraws build/icon.*
   variants. Menus, selects and popovers share `components/ui/popup.ts`; text
   that changes uses `AnimatedLabel`. Tests run with motion animations skipped
   (`src/renderer/src/test-setup.ts`).
+- AI screens are built from shadcn's AI Elements
+  (ui.shadcn.com/docs/ai-elements): patterns to copy, not a package. Their
+  building blocks are in the kit, restyled to our tokens and built on the
+  kit's `Button`: `message`, `bubble`, `message-scroller` (on
+  `@shadcn/react`), `trace`, `input-group`, `item` and `collapsible`. Don't
+  `shadcn add` them: that would overwrite the kit's `button.tsx` and
+  `input.tsx`. The Ask AI panel (`components/sales/ask`) is their Chat,
+  Prompt Input and Suggestion, with the tool's steps as a Trace and each
+  proposal as a Confirmation (an `Item`).
 - `components/ui/phone-field.tsx`: phone numbers with a country picker
   (flag, name and dialling code, searchable). Typing a number that starts
   with + picks the country by itself. It hands back E.164
