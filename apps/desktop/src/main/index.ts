@@ -23,6 +23,7 @@ import {
 import { registerLeadsIpc } from './leads-ipc'
 import { registerPipelineIpc } from './pipeline-ipc'
 import { registerProposalsIpc } from './proposals-ipc'
+import { registerRenewalsIpc } from './renewals-ipc'
 import { createServerApi } from './server-api'
 import { registerTimelineIpc } from './timeline-ipc'
 
@@ -137,6 +138,7 @@ void app.whenReady().then(() => {
   registerProposalsIpc(connection)
   registerPipelineIpc(connection)
   registerLeadsIpc(connection)
+  registerRenewalsIpc(connection)
 
   openJoinLink = async (link) => {
     const result = await connection.openJoinLink(link)

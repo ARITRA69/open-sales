@@ -6,6 +6,12 @@ import type {
   TCompany,
   TCompanyCreate,
   TCompanyUpdate,
+  TContract,
+  TContractCandidate,
+  TContractCandidateQueryInput,
+  TContractCreate,
+  TContractEnd,
+  TContractListQueryInput,
   TDeal,
   TDealCreate,
   TDealListQueryInput,
@@ -34,6 +40,7 @@ import type {
   TProposalCreate,
   TProposalListQueryInput,
   TProposalPage,
+  TRenewalStart,
   TSessionUser,
   TSetupRequest,
   TSignInRequest,
@@ -234,6 +241,32 @@ export type TOpenSalesBridge = {
       input: TLeadConvert
     ) => Promise<TApiResult<TLeadConverted>>
   }
+  // Contracts and their renewals, as the signed-in person.
+  renewals: {
+    // Contracts by renewal date: due in the next 30, 60 or 90 days, or closed.
+    list: (
+      query?: TContractListQueryInput
+    ) => Promise<TApiResult<TPage<TContract>>>
+    // Won deals nobody has added a contract for yet.
+    listCandidates: (
+      query?: TContractCandidateQueryInput
+    ) => Promise<TApiResult<TPage<TContractCandidate>>>
+    createContract: (input: TContractCreate) => Promise<TApiResult<TContract>>
+    // Makes the renewal deal: the answer's `renewalDeal` is the new deal.
+    startRenewal: (
+      contractId: string,
+      input: TRenewalStart
+    ) => Promise<TApiResult<TContract>>
+    // "Won't renew", with the reason.
+    endContract: (
+      contractId: string,
+      input: TContractEnd
+    ) => Promise<TApiResult<TContract>>
+    reopenContract: (
+      contractId: string,
+      version: number
+    ) => Promise<TApiResult<TContract>>
+  }
 }
 
 /**
@@ -368,6 +401,14 @@ export const LEADS_CHANNELS = {
   match: 'leads:match',
   convert: 'leads:convert'
 } as const satisfies Record<keyof TOpenSalesBridge['leads'], string>
+export const RENEWALS_CHANNELS = {
+  list: 'renewals:list',
+  listCandidates: 'renewals:list-candidates',
+  createContract: 'renewals:create-contract',
+  startRenewal: 'renewals:start-renewal',
+  endContract: 'renewals:end-contract',
+  reopenContract: 'renewals:reopen-contract'
+} as const satisfies Record<keyof TOpenSalesBridge['renewals'], string>
 
 declare global {
   interface Window {

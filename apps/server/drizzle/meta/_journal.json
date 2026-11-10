@@ -50,6 +50,13 @@
       "when": 1794303704481,
       "tag": "0006_add-leads",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794303745735,
+      "tag": "0007_add-renewals",
+      "breakpoints": true
     }
   ]
 }

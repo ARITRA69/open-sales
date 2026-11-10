@@ -9,6 +9,7 @@ import { readEnv } from './env'
 import { createLeadsService } from './leads/leads'
 import { createProposalsService } from './proposals/service'
 import { createRecordsService } from './records/routes'
+import { createContractService } from './renewals/contracts'
 import { resolveAuthSecret } from './secret'
 import { createSetupService } from './setup'
 import { createTeamService } from './team'
@@ -47,7 +48,8 @@ const app = createApp({
   proposals: createProposalsService(db),
   leads: createLeadsService(db),
   publicUrl: env.PUBLIC_URL,
-  appScheme: env.APP_URL_SCHEME
+  appScheme: env.APP_URL_SCHEME,
+  contracts: createContractService(db)
 })
 const server = Bun.serve({ port: env.PORT, fetch: app.fetch })
 console.log(`Server listening on ${server.url}`)

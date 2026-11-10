@@ -109,3 +109,9 @@ export const canAddDealOnConvert = (
   companyOwnerId: string | null
 ): boolean =>
   companyOwnerId === null || canEditCompany(role, userId, companyOwnerId)
+
+/**
+ * A contract belongs to its company: whoever may change the company may add
+ * its contracts, start their renewals and end them.
+ */
+export const canEditContract = canEditCompany

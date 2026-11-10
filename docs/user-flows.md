@@ -488,6 +488,17 @@ upcoming meeting
 
 **AI:** pre-fills the renewal; flags risk ("No reply in 6 weeks; usage dropped").
 
+**Built:** the Renewals page lists contracts due in the next 30, 60 or 90
+days (overdue ones too), everyone's or mine, with a Closed view. Start
+renewal opens the dialog filled in from the contract (value, close date on
+the renewal date, the pipeline's first stage, the account's owner) and makes
+a renewal deal linked to it; winning that deal marks the contract renewed
+and losing it ends it. Won't renew takes a reason from a short list or in
+your own words, and can be undone with Reopen. Contracts come from "Won
+deals without a contract" under the list, until closing a deal as won asks
+for a renewal date (flow 11). Not built: seats (nothing stores them yet),
+risk flags, and the Today item.
+
 ### 15. Review the team's pipeline
 
 **Who:** Manager · **Starts from:** Pipeline with **Owner: Everyone**, or

@@ -20,6 +20,8 @@ import { addProposalRoutes } from './proposals/routes'
 import type { TProposalsService } from './proposals/service'
 import type { TRecordsService } from './records/routes'
 import { addRecordRoutes } from './records/routes'
+import type { TContractService } from './renewals/contracts'
+import { addContractRoutes } from './renewals/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -52,6 +54,8 @@ type TAppDeps = {
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
   appScheme?: string
+  // Contracts and their renewals. Optional, like `records`.
+  contracts?: TContractService
 }
 
 /** The Sales API under /api/v1, and the join page at /join/:token. */
@@ -66,7 +70,8 @@ export const createApp = ({
   proposals,
   leads,
   publicUrl,
-  appScheme = 'open-sales'
+  appScheme = 'open-sales',
+  contracts
 }: TAppDeps) => {
   const baseUrl = (c: Context) =>
     (publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
@@ -209,6 +214,7 @@ export const createApp = ({
   if (records) addTimelineRoutes(api, records.timeline, getSessionUser)
   if (proposals) addProposalRoutes(api, proposals, getSessionUser)
   if (leads) addLeadRoutes(api, leads, getSessionUser)
+  if (contracts) addContractRoutes(api, contracts, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
   bigint,
   boolean,
@@ -392,6 +393,8 @@ export const deal = pgTable(
     lostReasonId: uuid().references(() => lostReason.id),
     lostNote: text(),
     kind: dealKind().notNull().default('new'),
+    // The contract a renewal deal renews. See `contract`, under renewals.
+    contractId: uuid().references((): AnyPgColumn => contract.id),
     customFields: customFields(),
     source: text().notNull().default('manual'),
     lastActivityAt: timestamp({ withTimezone: true }),
@@ -440,7 +443,11 @@ export const deal = pgTable(
     index('deal_custom_fields_idx').using(
       'gin',
       sql`${table.customFields} jsonb_path_ops`
-    )
+    ),
+    // A contract's renewal deals, newest last.
+    index('deal_contract_idx')
+      .on(table.contractId, table.id)
+      .where(sql`${table.contractId} is not null`)
   ]
 )
 
@@ -505,7 +512,8 @@ export const changeRecordType = pgEnum('change_record_type', [
   'workspace',
   'task',
   'activity',
-  'lead'
+  'lead',
+  'contract'
 ])
 export const changeAction = pgEnum('change_action', [
   'create',
@@ -806,5 +814,53 @@ export const lead = pgTable(
     index('lead_owner_status_idx').on(table.ownerId, table.status),
     // Matching to existing people on convert.
     index('lead_email_idx').on(table.email)
+  ]
+)
+
+// renewals
+
+export const contractStatus = pgEnum('contract_status', [
+  'active',
+  'renewing',
+  'renewed',
+  'ended'
+])
+
+/**
+ * What a renewal renews: started by a won deal, with the day it comes up
+ * again. Its renewal deals point back with `deal.contract_id`. It follows
+ * its company: no owner of its own, and no archive (it ends instead).
+ */
+export const contract = pgTable(
+  'contract',
+  {
+    id: id(),
+    companyId: uuid()
+      .notNull()
+      .references(() => company.id),
+    // The won deal that started it. Null leaves room for imported contracts.
+    dealId: uuid().references(() => deal.id),
+    // Minor units (cents).
+    valueMinor: bigint({ mode: 'number' }).notNull(),
+    currency: char({ length: 3 }).notNull(),
+    startsOn: date({ mode: 'string' }).notNull(),
+    renewsOn: date({ mode: 'string' }).notNull(),
+    status: contractStatus().notNull().default('active'),
+    // Why it ended: the "won't renew" reason, or the lost renewal's.
+    endReason: text(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    check('contract_value_check', sql`${table.valueMinor} >= 0`),
+    check('contract_dates_check', sql`${table.renewsOn} > ${table.startsOn}`),
+    // Renewals in the next 30, 60 or 90 days, soonest first.
+    index('contract_upcoming_idx')
+      .on(table.renewsOn, table.id)
+      .where(sql`${table.status} in ('active', 'renewing')`),
+    index('contract_company_idx').on(table.companyId),
+    // A won deal starts one contract.
+    uniqueIndex('contract_deal_idx').on(table.dealId)
   ]
 )

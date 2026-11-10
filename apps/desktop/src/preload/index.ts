@@ -8,6 +8,7 @@ import {
   PIPELINE_CHANNELS,
   PROPOSALS_CHANNELS,
   RECORDS_CHANNELS,
+  RENEWALS_CHANNELS,
   TEAM_CHANNELS,
   TIMELINE_CHANNELS
 } from './bridge-types'
@@ -118,6 +119,19 @@ const openSalesBridge: TOpenSalesBridge = {
       ipcRenderer.invoke(LEADS_CHANNELS.match, id, companyName),
     convert: (id, input) =>
       ipcRenderer.invoke(LEADS_CHANNELS.convert, id, input)
+  },
+  renewals: {
+    list: (query) => ipcRenderer.invoke(RENEWALS_CHANNELS.list, query),
+    listCandidates: (query) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.listCandidates, query),
+    createContract: (input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.createContract, input),
+    startRenewal: (contractId, input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.startRenewal, contractId, input),
+    endContract: (contractId, input) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.endContract, contractId, input),
+    reopenContract: (contractId, version) =>
+      ipcRenderer.invoke(RENEWALS_CHANNELS.reopenContract, contractId, version)
   }
 }
 
