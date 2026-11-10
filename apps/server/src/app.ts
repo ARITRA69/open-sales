@@ -14,6 +14,8 @@ import { Hono } from 'hono'
 import type { TEnv } from './http'
 import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
+import { addPlaybookRoutes } from './playbooks/routes'
+import type { TPlaybookService } from './playbooks/service'
 import type { TRecordsService } from './records/routes'
 import { addRecordRoutes } from './records/routes'
 import type { TSetupService } from './setup'
@@ -43,6 +45,8 @@ type TAppDeps = {
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
   appScheme?: string
+  // Playbooks. Optional, like `records`.
+  playbooks?: TPlaybookService
 }
 
 /** The Sales API under /api/v1, and the join page at /join/:token. */
@@ -55,7 +59,8 @@ export const createApp = ({
   team,
   records,
   publicUrl,
-  appScheme = 'open-sales'
+  appScheme = 'open-sales',
+  playbooks
 }: TAppDeps) => {
   const baseUrl = (c: Context) =>
     (publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
@@ -195,6 +200,7 @@ export const createApp = ({
   })
 
   if (records) addRecordRoutes(api, records, getSessionUser)
+  if (playbooks) addPlaybookRoutes(api, playbooks, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

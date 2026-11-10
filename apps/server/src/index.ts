@@ -6,6 +6,7 @@ import { createAuth } from './auth'
 import { createDatabase } from './db/client'
 import { runMigrations } from './db/migrate'
 import { readEnv } from './env'
+import { createPlaybookService } from './playbooks/service'
 import { createRecordsService } from './records/routes'
 import { resolveAuthSecret } from './secret'
 import { createSetupService } from './setup'
@@ -43,7 +44,8 @@ const app = createApp({
   team: createTeamService(db, auth),
   records: createRecordsService(db),
   publicUrl: env.PUBLIC_URL,
-  appScheme: env.APP_URL_SCHEME
+  appScheme: env.APP_URL_SCHEME,
+  playbooks: createPlaybookService(db)
 })
 const server = Bun.serve({ port: env.PORT, fetch: app.fetch })
 console.log(`Server listening on ${server.url}`)

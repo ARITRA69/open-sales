@@ -32,3 +32,19 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/** Managers and admins write, publish and archive playbooks. */
+export const canWritePlaybooks = canChangeAnything
+
+/**
+ * Everyone sees published playbooks. A draft is for whoever wrote it, and
+ * for managers and admins.
+ */
+export const canSeePlaybook = (
+  role: Role,
+  userId: string,
+  playbook: { authorId: string | null; isPublished: boolean }
+): boolean =>
+  playbook.isPublished ||
+  canWritePlaybooks(role) ||
+  userId === playbook.authorId
