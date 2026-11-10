@@ -18,6 +18,11 @@ import type {
   TPersonCreate,
   TPersonUpdate,
   TPipeline,
+  TProposal,
+  TProposalApprove,
+  TProposalCreate,
+  TProposalListQueryInput,
+  TProposalPage,
   TSessionUser,
   TSetupRequest,
   TSignInRequest
@@ -167,7 +172,31 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // AI's proposed changes, and the signed-in person's decisions on them.
+  proposals: {
+    // Without a target: what waits for me. With one: what waits on a record.
+    list: (
+      query?: TProposalListQueryInput
+    ) => Promise<TApiResult<TProposalPage>>
+    // As the person's own AI tool would: the server checks they could make
+    // the change by hand.
+    create: (input: TProposalCreate) => Promise<TProposalResult>
+    // As it is, or with edited values. If the record changed since, the
+    // answer has code `changed_since` and the proposal with current values.
+    approve: (id: string, input?: TProposalApprove) => Promise<TProposalResult>
+    decline: (id: string, reason?: string) => Promise<TProposalResult>
+    undo: (id: string) => Promise<TProposalResult>
+    sendToOwner: (id: string) => Promise<TProposalResult>
+  }
 }
+
+/**
+ * A proposal call's answer. A refusal may carry the proposal as it now
+ * stands, such as `changed_since` with the record's current values.
+ */
+export type TProposalResult =
+  | { ok: true; data: TProposal }
+  | { ok: false; message: string; code?: string; proposal?: TProposal }
 
 /**
  * A server call's answer, or why it failed, in people's words. `code` is the
@@ -217,6 +246,15 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+export const PROPOSALS_CHANNELS = {
+  list: 'proposals:list',
+  create: 'proposals:create',
+  approve: 'proposals:approve',
+  decline: 'proposals:decline',
+  undo: 'proposals:undo',
+  sendToOwner: 'proposals:send-to-owner'
+} as const satisfies Record<keyof TOpenSalesBridge['proposals'], string>
 
 declare global {
   interface Window {

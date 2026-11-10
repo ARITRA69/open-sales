@@ -19,6 +19,7 @@ import { PeoplePage } from './records/people-page'
 import { PipelinePage } from './records/pipeline-page'
 import { SettingsPage } from './settings-page'
 import { TodayPage } from './today-page'
+import { useToday } from './today/use-today'
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: 'Admin',
@@ -52,6 +53,8 @@ type TSignedInAppProps = {
   teamBridge?: TOpenSalesBridge['team'] | null
   // Companies, people and deals. Without it those pages stay empty.
   recordsBridge?: TOpenSalesBridge['records'] | null
+  // AI's proposals. Found on `window.openSales` unless a test passes one.
+  proposalsBridge?: TOpenSalesBridge['proposals'] | null
   onSignOut: () => void
 }
 
@@ -68,12 +71,14 @@ export const SignedInApp = ({
   aiToolsBridge = null,
   teamBridge = null,
   recordsBridge = null,
+  proposalsBridge,
   onSignOut
 }: TSignedInAppProps) => {
   const route = useHashRoute(ROUTES, 'today')
   const aiTools = useAiTools(aiToolsBridge)
   const isAdmin = user.role === 'admin'
   const team = useTeam(teamBridge, isAdmin)
+  const today = useToday(recordsBridge, proposalsBridge)
   const account: TSidebarAccount = {
     name: user.name,
     email: user.email,
@@ -93,7 +98,11 @@ export const SignedInApp = ({
           body: (
             <TodayPage
               firstName={user.name.split(' ')[0]}
+              followUps={today.extras?.followUps}
+              nudges={today.extras?.nudges}
               pendingPeople={isAdmin ? team.pending : []}
+              recordsBridge={recordsBridge}
+              today={today}
               workspaceName={workspaceName}
               onDecide={team.decide}
             />
@@ -145,8 +154,9 @@ export const SignedInApp = ({
         <SalesSidebar
           account={account}
           active={route}
-          // For admins, Today's badge counts people waiting to join.
-          waiting={isAdmin ? team.pending.length : 0}
+          // Today's badge: proposals waiting for this person and, for
+          // admins, people waiting to join.
+          waiting={today.waitingCount + (isAdmin ? team.pending.length : 0)}
           onSignOut={onSignOut}
         />
       }
