@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
 
 import {
   ArrowDown01Icon,
@@ -11,10 +11,22 @@ import {
 } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
-import { Icon } from '@/components/ui/icon'
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea
+} from '@/components/ui/input-group'
 import { Menu, type TMenuItem } from '@/components/ui/menu'
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerProvider,
+  MessageScrollerViewport
+} from '@/components/ui/message-scroller'
 
-import { ASK_SUGGESTION_CLASS, AskTurnView } from './ask-turn'
+import { AskTurnView } from './ask-turn'
 import type { TAskSession } from './use-ask-session'
 
 type TAskPanelProps = {
@@ -26,7 +38,8 @@ type TAskPanelProps = {
 
 /**
  * Ask AI: the rep's own tool reads through sales tools only and proposes
- * changes, and a person approves each one.
+ * changes, and a person approves each one. Built from shadcn's AI Elements:
+ * the thread is a Message Scroller, the box at the bottom a Prompt Input.
  */
 export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
   const [questionText, setQuestionText] = useState('')
@@ -52,6 +65,25 @@ export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
     { line: true },
     { label: 'Manage AI tools', icon: Settings01Icon, href: '#/settings' }
   ]
+
+  const sendQuestion = () => {
+    if (!trimmedQuestion || !scenarios[0]) return
+    session.startScenario(scenarios[0], trimmedQuestion)
+    setQuestionText('')
+  }
+
+  const handleSubmit = (submitEvent: FormEvent<HTMLFormElement>) => {
+    submitEvent.preventDefault()
+    sendQuestion()
+  }
+
+  // Enter sends; Shift+Enter starts a new line.
+  const handleKeyDown = (keyEvent: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (keyEvent.key !== 'Enter' || keyEvent.shiftKey) return
+    if (keyEvent.nativeEvent.isComposing) return
+    keyEvent.preventDefault()
+    sendQuestion()
+  }
 
   return (
     <aside
@@ -84,75 +116,84 @@ export const AskPanel = ({ context, session, onClose }: TAskPanelProps) => {
         />
       </div>
 
-      <div className="box-border flex min-h-0 flex-1 scrollbar-thin flex-col gap-3 overflow-y-auto px-4 py-3">
-        {hasTurns ? null : (
-          <div className="flex flex-col gap-1.5">
-            <p className="m-0 mb-1 text-body-sm text-muted-foreground">
-              It reads through sales tools only, and it asks you before changing
-              anything.
-            </p>
-            {scenarios.map((scenario) => (
-              <button
-                key={scenario.id}
-                className={ASK_SUGGESTION_CLASS}
-                type="button"
-                onClick={() => session.startScenario(scenario)}
-              >
-                <Icon
-                  className="flex-none"
-                  icon={scenario.icon ?? SparklesIcon}
-                  size={16}
-                  strokeWidth={1.7}
+      <MessageScrollerProvider autoScroll>
+        <MessageScroller className="flex-1">
+          <MessageScrollerViewport aria-label="Questions and answers">
+            <MessageScrollerContent>
+              {hasTurns ? null : (
+                <div className="flex flex-col gap-2.5">
+                  <p className="m-0 text-body-sm text-muted-foreground">
+                    It reads through sales tools only, and it asks you before
+                    changing anything.
+                  </p>
+                  <div className="flex flex-col items-start gap-1.5">
+                    {scenarios.map((scenario) => (
+                      <Button
+                        key={scenario.id}
+                        className="max-w-full"
+                        leadIcon={scenario.icon ?? SparklesIcon}
+                        variant="secondary"
+                        onClick={() => session.startScenario(scenario)}
+                      >
+                        {scenario.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {turns.map((turn) => (
+                <AskTurnView
+                  key={turn.id}
+                  isLatest={turn.id === lastTurnId}
+                  session={session}
+                  turn={turn}
                 />
-                <span>{scenario.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {turns.map((turn) => (
-          <AskTurnView
-            key={turn.id}
-            isLatest={turn.id === lastTurnId}
-            session={session}
-            turn={turn}
-          />
-        ))}
-      </div>
+              ))}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
-      <div className="mx-2.5 mb-2.5 flex flex-col gap-1 rounded-dialog bg-background py-2 pr-2 pl-3 shadow-(--shadow-float)">
-        <textarea
-          aria-label="Ask a question"
-          className="box-border w-full resize-none border-none bg-transparent pt-1 text-sm leading-5 text-foreground outline-none placeholder:text-faint"
-          placeholder="Ask about this, or anything in your pipeline"
-          rows={2}
-          value={questionText}
-          onChange={(changeEvent) => setQuestionText(changeEvent.target.value)}
-        />
-        <div className="flex items-center gap-2">
-          <Menu
-            align="start"
-            items={engineMenuItems}
-            label="AI tool"
-            side="top"
-            trigger={
-              <Button size="sm" trailIcon={ArrowDown01Icon} variant="secondary">
-                {engine}
-              </Button>
+      <form className="mx-2.5 mb-2.5 flex-none" onSubmit={handleSubmit}>
+        <InputGroup variant="float">
+          <InputGroupTextarea
+            aria-label="Ask a question"
+            placeholder="Ask about this, or anything in your pipeline"
+            rows={2}
+            value={questionText}
+            onChange={(changeEvent) =>
+              setQuestionText(changeEvent.target.value)
             }
+            onKeyDown={handleKeyDown}
           />
-          <Button
-            aria-label="Send"
-            className="ml-auto"
-            disabled={!trimmedQuestion}
-            leadIcon={ArrowUp02Icon}
-            onClick={() => {
-              if (!trimmedQuestion || !scenarios[0]) return
-              session.startScenario(scenarios[0], trimmedQuestion)
-              setQuestionText('')
-            }}
-          />
-        </div>
-      </div>
+          <InputGroupAddon align="block-end">
+            <Menu
+              align="start"
+              items={engineMenuItems}
+              label="AI tool"
+              side="top"
+              trigger={
+                <InputGroupButton
+                  trailIcon={ArrowDown01Icon}
+                  variant="secondary"
+                >
+                  {engine}
+                </InputGroupButton>
+              }
+            />
+            <InputGroupButton
+              aria-label="Send"
+              className="ml-auto"
+              disabled={!trimmedQuestion}
+              leadIcon={ArrowUp02Icon}
+              size="md"
+              type="submit"
+              variant="primary"
+            />
+          </InputGroupAddon>
+        </InputGroup>
+      </form>
     </aside>
   )
 }

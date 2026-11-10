@@ -38,9 +38,40 @@ body {
   transition: stroke-dashoffset 0.24s 0.06s var(--ease-out-soft);
 }
 
+/* A step AI is on right now: a light sweeps across its words until it's done. */
+[data-slot='trace-line'][data-status='running'] > [data-slot='trace-title'] {
+  background: linear-gradient(
+      90deg,
+      var(--foreground) 35%,
+      var(--faint) 50%,
+      var(--foreground) 65%
+    )
+    0 0 / 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: kit-shimmer 1.8s linear infinite;
+}
+
+@keyframes kit-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -66% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kit-skeleton {
     animation: none;
+  }
+
+  [data-slot='trace-line'][data-status='running'] > [data-slot='trace-title'] {
+    animation: none !important;
+    background: none;
+    color: inherit;
   }
 
   .kit-tick path {
