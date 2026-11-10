@@ -20,6 +20,7 @@ import { DealRoute } from './records/deal-page'
 import { PeoplePage } from './records/people-page'
 import { PipelinePage } from './records/pipeline-page'
 import { RenewalsPage } from './renewals/renewals-page'
+import { ReportsPage } from './reports/reports-page'
 import { SettingsPage } from './settings-page'
 import { TodayPage } from './today-page'
 import { useToday } from './today/use-today'
@@ -173,6 +174,11 @@ export const SignedInApp = ({
         return {
           title: 'Renewals',
           body: <RenewalsPage recordsBridge={recordsBridge} />
+        }
+      case 'reports':
+        return {
+          title: 'Reports',
+          body: <ReportsPage me={user} recordsBridge={recordsBridge} />
         }
       default:
         return emptyPage(route)

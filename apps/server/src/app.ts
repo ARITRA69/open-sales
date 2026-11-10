@@ -22,6 +22,7 @@ import type { TRecordsService } from './records/routes'
 import { addRecordRoutes } from './records/routes'
 import type { TContractService } from './renewals/contracts'
 import { addContractRoutes } from './renewals/routes'
+import { addReportRoutes, type TReportsService } from './reports/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -50,6 +51,8 @@ type TAppDeps = {
   proposals?: TProposalsService
   // The Leads inbox. Optional, like records.
   leads?: TLeadsService
+  // Reports over the same records. Optional for the same reason.
+  reports?: TReportsService
   // Where people reach the server, for join links. Defaults to the request's.
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
@@ -69,6 +72,7 @@ export const createApp = ({
   records,
   proposals,
   leads,
+  reports,
   publicUrl,
   appScheme = 'open-sales',
   contracts
@@ -215,6 +219,7 @@ export const createApp = ({
   if (proposals) addProposalRoutes(api, proposals, getSessionUser)
   if (leads) addLeadRoutes(api, leads, getSessionUser)
   if (contracts) addContractRoutes(api, contracts, getSessionUser)
+  if (reports) addReportRoutes(api, reports, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

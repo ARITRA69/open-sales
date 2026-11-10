@@ -9,6 +9,7 @@ import {
   PROPOSALS_CHANNELS,
   RECORDS_CHANNELS,
   RENEWALS_CHANNELS,
+  REPORTS_CHANNELS,
   TEAM_CHANNELS,
   TIMELINE_CHANNELS
 } from './bridge-types'
@@ -132,6 +133,14 @@ const openSalesBridge: TOpenSalesBridge = {
       ipcRenderer.invoke(RENEWALS_CHANNELS.endContract, contractId, input),
     reopenContract: (contractId, version) =>
       ipcRenderer.invoke(RENEWALS_CHANNELS.reopenContract, contractId, version)
+  },
+  reports: {
+    getPipeline: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getPipeline, query),
+    getWonLost: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getWonLost, query),
+    getForecast: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getForecast, query)
   }
 }
 

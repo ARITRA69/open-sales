@@ -115,3 +115,6 @@ export const canAddDealOnConvert = (
  * its contracts, start their renewals and end them.
  */
 export const canEditContract = canEditCompany
+
+/** The forecast report is for managers and admins. */
+export const canSeeForecast = canChangeAnything
