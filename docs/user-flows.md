@@ -6,29 +6,30 @@ steps, what the AI does, and what can go wrong.
 
 ## Flow index
 
-| #   | Flow                                                                    | Who            | Priority |
-| --- | ----------------------------------------------------------------------- | -------------- | -------- |
-| 1   | [Set up the server](#1-set-up-the-server)                               | Admin          | P0       |
-| 2   | [Invite the team](#2-invite-the-team)                                   | Admin          | P0       |
-| 3   | [First launch of the app](#3-first-launch-of-the-app)                   | All            | P0       |
-| 4   | [Import a spreadsheet](#4-import-a-spreadsheet)                         | Admin, Manager | P0       |
-| 5   | [Set up pipeline stages](#5-set-up-pipeline-stages)                     | Admin          | P0       |
-| 6   | [Start the day on Today](#6-start-the-day-on-today)                     | All            | P0       |
-| 7   | [Review an AI proposal](#7-review-an-ai-proposal)                       | All            | P0       |
-| 8   | [Log a call from notes](#8-log-a-call-from-notes)                       | All            | P0       |
-| 9   | [Send a follow-up email](#9-send-a-follow-up-email)                     | All            | P0       |
-| 10  | [Create a deal and move it along](#10-create-a-deal-and-move-it-along)  | All            | P0       |
-| 11  | [Close a deal as won or lost](#11-close-a-deal-as-won-or-lost)          | All            | P0       |
-| 12  | [Work new leads](#12-work-new-leads)                                    | All            | P0       |
-| 13  | [Prepare for a meeting](#13-prepare-for-a-meeting)                      | All            | P1       |
-| 14  | [Handle a renewal](#14-handle-a-renewal)                                | All            | P1       |
-| 15  | [Review the team's pipeline](#15-review-the-teams-pipeline)             | Manager        | P1       |
-| 16  | [Write and run a playbook](#16-write-and-run-a-playbook)                | Manager, All   | P1       |
-| 17  | [Ask about a report](#17-ask-about-a-report)                            | All            | P1       |
-| 18  | [Change an account you don't own](#18-change-an-account-you-dont-own)   | Member         | P1       |
-| 19  | [When the AI tool isn't available](#19-when-the-ai-tool-isnt-available) | All            | P0       |
-| 20  | [Brand it as your own](#20-brand-it-as-your-own)                        | Admin          | P1       |
-| 21  | [Build a branded desktop app](#21-build-a-branded-desktop-app)          | Admin          | P2       |
+| #   | Flow                                                                          | Who            | Priority |
+| --- | ----------------------------------------------------------------------------- | -------------- | -------- |
+| 1   | [Set up the server](#1-set-up-the-server)                                     | Admin          | P0       |
+| 2   | [Invite the team](#2-invite-the-team)                                         | Admin          | P0       |
+| 3   | [First launch of the app](#3-first-launch-of-the-app)                         | All            | P0       |
+| 4   | [Import a spreadsheet](#4-import-a-spreadsheet)                               | Admin, Manager | P0       |
+| 5   | [Set up pipeline stages](#5-set-up-pipeline-stages)                           | Admin          | P0       |
+| 6   | [Start the day on Today](#6-start-the-day-on-today)                           | All            | P0       |
+| 7   | [Review an AI proposal](#7-review-an-ai-proposal)                             | All            | P0       |
+| 8   | [Log a call from notes](#8-log-a-call-from-notes)                             | All            | P0       |
+| 9   | [Send a follow-up email](#9-send-a-follow-up-email)                           | All            | P0       |
+| 10  | [Create a deal and move it along](#10-create-a-deal-and-move-it-along)        | All            | P0       |
+| 11  | [Close a deal as won or lost](#11-close-a-deal-as-won-or-lost)                | All            | P0       |
+| 12  | [Work new leads](#12-work-new-leads)                                          | All            | P0       |
+| 13  | [Prepare for a meeting](#13-prepare-for-a-meeting)                            | All            | P1       |
+| 14  | [Handle a renewal](#14-handle-a-renewal)                                      | All            | P1       |
+| 15  | [Review the team's pipeline](#15-review-the-teams-pipeline)                   | Manager        | P1       |
+| 16  | [Write and run a playbook](#16-write-and-run-a-playbook)                      | Manager, All   | P1       |
+| 17  | [Ask about a report](#17-ask-about-a-report)                                  | All            | P1       |
+| 18  | [Change an account you don't own](#18-change-an-account-you-dont-own)         | Member         | P1       |
+| 19  | [When the AI tool isn't available](#19-when-the-ai-tool-isnt-available)       | All            | P0       |
+| 20  | [Brand it as your own](#20-brand-it-as-your-own)                              | Admin          | P1       |
+| 21  | [Build a branded desktop app](#21-build-a-branded-desktop-app)                | Admin          | P2       |
+| 22  | [Capture from your own mailbox](#22-capture-from-your-own-mailbox) (proposed) | All            | P1       |
 
 ## The proposal lifecycle
 
@@ -148,7 +149,8 @@ and managers will come from per-person invites (P1).
    - Not found: install steps for each, and **Skip for now** (the app still works
      without AI).
 5. **Connect email and calendar** (P1). Choose what teammates may see: subject
-   and metadata, or metadata only. **Skip** is always offered.
+   and metadata, or metadata only. **Skip** is always offered. (Proposed
+   instead: flow 22, which needs nothing set up on the server.)
 6. Lands on **Today** with a short Getting started list.
 
 **AI:** none until step 4 succeeds.
@@ -558,3 +560,53 @@ The sidebar footer always shows the AI tool's state ("Claude Code is ready").
   the app anyway.
 - New Open Sales release: the company rebuilds from the new version with the same
   config.
+
+---
+
+## Proposed
+
+Not decided yet. See
+[Local mail capture](features.md#local-mail-capture-proposed) for what was
+checked and the open questions.
+
+### 22. Capture from your own mailbox
+
+**Who:** All · **Starts from:** Settings › My settings, or the Getting started
+list
+
+1. **Connect once, in the AI tool.** The app checks whether the person's AI
+   tool can reach their mail and calendar. If not, it explains how to connect
+   Gmail or Outlook to that tool and checks again. Nothing is set up on the
+   server.
+2. **Choose what it may look at.** Mail and meetings with people and domains
+   the workspace already knows (the default), or those plus new senders at
+   known companies.
+3. **Capture runs in the background** while the app is open: at launch and
+   every so often after. The AI tool is started with only the connector's
+   read tools allowed.
+4. **Proposals arrive on Today** under **Waiting for you**: a new person, a
+   title from a signature, a task from a promise, evidence for a stage change.
+   Each shows the message it came from (sender, date, subject) with **Open
+   original**.
+5. **Approve, change or decline** as in flow 7. Approved facts go to the
+   server with a pointer to the message. The message itself does not.
+
+**AI:** reads mail and meetings through the person's own connector and
+proposes facts. It never sends, drafts, labels or deletes from here.
+
+**Edge cases**
+
+- No connector: the step shows how to connect, and **Skip**. The rest of the
+  app works.
+- Codex: no mail connector was found in our check. Until that's settled the
+  step says local capture needs Claude Code.
+- Connectors still starting: the AI tool lists them as pending at first. The
+  app waits and asks again before saying mail isn't connected.
+- Usage limit reached mid-run: capture stops, keeps its place, and resumes
+  from the last message it finished.
+- Personal mail: anything not involving a known person or domain is never
+  read past its sender and date.
+- A teammate opens the record: they see the approved facts and the summary,
+  and no **Open original** (it's not their mailbox).
+- The app was closed for a week: the next run catches up from the last run's
+  time, oldest first.

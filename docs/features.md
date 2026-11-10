@@ -149,15 +149,60 @@ panel on the right.
 
 ## 9. Activity capture
 
-| Feature          | What it does                                                                                                 | Who | AI                                    | Priority |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ | --- | ------------------------------------- | -------- |
-| Notes            | Write a note on any record.                                                                                  | All | —                                     | P0       |
-| Paste call notes | Paste notes from a call. AI proposes field updates, tasks and a follow-up email.                             | All | Turns notes into proposals            | P0       |
-| Log a call       | Who, when, outcome, notes.                                                                                   | All | —                                     | P0       |
-| Tasks            | Due date, owner, linked record. Shown on Today.                                                              | All | Creates tasks from promises           | P0       |
-| Email sync       | Connect Gmail or Outlook. Choose what teammates see: subject and metadata, or metadata only (as Attio does). | All | Reads threads to keep records current | P1       |
-| Calendar sync    | Meetings appear on records and Today.                                                                        | All | —                                     | P1       |
-| Meeting notes    | Import a transcript or recording summary from a notetaker.                                                   | All | Summarises and proposes updates       | P2       |
+| Feature                       | What it does                                                                                                                                                                                                                                                                                     | Who | AI                                              | Priority |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | ----------------------------------------------- | -------- |
+| Notes                         | Write a note on any record.                                                                                                                                                                                                                                                                      | All | —                                               | P0       |
+| Paste call notes              | Paste notes from a call. AI proposes field updates, tasks and a follow-up email.                                                                                                                                                                                                                 | All | Turns notes into proposals                      | P0       |
+| Log a call                    | Who, when, outcome, notes.                                                                                                                                                                                                                                                                       | All | —                                               | P0       |
+| Tasks                         | Due date, owner, linked record. Shown on Today.                                                                                                                                                                                                                                                  | All | Creates tasks from promises                     | P0       |
+| Email sync                    | Connect Gmail or Outlook. Choose what teammates see: subject and metadata, or metadata only (as Attio does).                                                                                                                                                                                     | All | Reads threads to keep records current           | P1       |
+| Local mail capture (proposed) | The person's own AI tool reads their mail and calendar through connectors they already have, and proposes what it finds. The server keeps the approved facts and a pointer to the message, never the mailbox. No Google or Microsoft app to register. See [below](#local-mail-capture-proposed). | All | Reads mail on the person's side, proposes facts | P1       |
+| Calendar sync                 | Meetings appear on records and Today.                                                                                                                                                                                                                                                            | All | —                                               | P1       |
+| Meeting notes                 | Import a transcript or recording summary from a notetaker.                                                                                                                                                                                                                                       | All | Summarises and proposes updates                 | P2       |
+
+### Local mail capture (proposed)
+
+Not decided yet. It is the one capture idea no CRM we checked offers
+(November 2026): Lightfield, Attio, Day AI and Comp AI CRM all read mail on a
+server. It only works because AI here runs through each person's own tool.
+
+**How it works**
+
+1. The person connects Gmail or Outlook to their own AI tool once (for Claude
+   Code, a connector on their claude.ai account). Nothing is set up on the
+   server, and the self-hoster registers no Google or Microsoft app.
+2. The app runs the AI tool in the background with only the connector's read
+   tools allowed. It asks for mail and meetings since the last run that
+   involve people and domains the workspace already knows.
+3. What it finds comes back as proposals: a new person, a title from a
+   signature, a promise ("by Friday") as a task, evidence for a stage change.
+   Each carries a pointer to the message (its `Message-ID`, date and sender),
+   so the person whose mail it is can open the original.
+4. Approved facts go to the server. The message body does not.
+
+**What it changes**
+
+- The claim is "your mail never reaches the company's server". It is not
+  "never leaves the laptop": mail still passes from the mail provider to the
+  person's AI provider.
+- Teammates see the approved facts and a short summary on the timeline, not
+  each other's emails.
+- Capture runs only while the app is open on that person's machine.
+
+**Checked on 10 November 2026** (one machine, one account; no mail was read)
+
+| Tool                | Result                                                                    |
+| ------------------- | ------------------------------------------------------------------------- |
+| Claude Code 2.1.311 | A background run (`claude -p`) finds the Gmail and Google Calendar tools. |
+| Codex 0.166.0       | A background run (`codex exec`) has no mail or calendar tools.            |
+
+- At the start of a Claude Code run every connector reports `pending` and its
+  tools are missing from the tool list; they appear through tool search a
+  moment later. The AI tool check must ask, not read the first event.
+- The connectors can also write (create and delete drafts, labels and
+  events). The app must allow only the read tools when it starts a run.
+- Not tested: an actual mail read in a background run and the permission
+  flags it needs, Outlook, and any other machine or account.
 
 ## 10. Email
 
@@ -283,6 +328,17 @@ bundle itself, so it can't change at runtime.
    metadata only?
 5. **White-label scope.** Should a branded server be able to require its
    branded app, or keep accepting the standard Open Sales app too?
+6. **Codex and local mail capture.** Codex had no mail or calendar connector
+   in our check. Use Codex's apps feature (untested), ask the person to add a
+   mail MCP server to Codex, or offer local capture with Claude Code only at
+   first?
+7. **Local capture, server email sync, or both.** [data-model.md](data-model.md)
+   decided that email sync stores the whole message on the server. Local
+   capture stores none. Build local capture first and keep server sync for
+   teams that want shared email, or replace it?
+8. **What teammates see of a captured email.** With the body off the server,
+   does the timeline show a summary the AI wrote and the owner approved, or
+   only who, when and the subject?
 
 ## References (Mobbin)
 

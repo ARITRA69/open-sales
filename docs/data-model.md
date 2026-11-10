@@ -398,6 +398,14 @@ So the database stays small and the original is never lost. Who may read an
 email follows the sharing setting, checked by the API; it decides who sees
 the body, not whether it's stored.
 
+Proposed, not decided:
+[local mail capture](features.md#local-mail-capture-proposed) would store no
+message at all. An `email` activity from it would have a new `source`
+(`local_capture`), an approved summary in `activity.body`, and an
+`email_message` row with the headers but no `raw_file_id`. That conflicts
+with the paragraph above for those rows; see open question 7 in
+[features.md](features.md#open-questions).
+
 **`task`**
 
 | Column                               | Type            | Notes                             |
