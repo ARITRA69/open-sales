@@ -7,6 +7,8 @@ import type {
   TDealCreate,
   TDealListQueryInput,
   TDealUpdate,
+  TForecastQueryInput,
+  TForecastReport,
   TJoinForm,
   TJoinLink,
   TJoinLinkSettings,
@@ -18,9 +20,12 @@ import type {
   TPersonCreate,
   TPersonUpdate,
   TPipeline,
+  TPipelineReport,
+  TReportQueryInput,
   TSessionUser,
   TSetupRequest,
-  TSignInRequest
+  TSignInRequest,
+  TWonLostReport
 } from '@open-sales/shared'
 
 /*
@@ -167,6 +172,18 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // Reports. They only read; the forecast answers `forbidden` to members.
+  reports: {
+    getPipeline: (
+      query?: TReportQueryInput
+    ) => Promise<TApiResult<TPipelineReport>>
+    getWonLost: (
+      query?: TReportQueryInput
+    ) => Promise<TApiResult<TWonLostReport>>
+    getForecast: (
+      query?: TForecastQueryInput
+    ) => Promise<TApiResult<TForecastReport>>
+  }
 }
 
 /**
@@ -217,6 +234,12 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+export const REPORTS_CHANNELS = {
+  getPipeline: 'reports:get-pipeline',
+  getWonLost: 'reports:get-won-lost',
+  getForecast: 'reports:get-forecast'
+} as const satisfies Record<keyof TOpenSalesBridge['reports'], string>
 
 declare global {
   interface Window {

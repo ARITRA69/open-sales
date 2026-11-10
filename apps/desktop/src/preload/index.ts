@@ -5,6 +5,7 @@ import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
   RECORDS_CHANNELS,
+  REPORTS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
 
@@ -62,6 +63,14 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  reports: {
+    getPipeline: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getPipeline, query),
+    getWonLost: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getWonLost, query),
+    getForecast: (query) =>
+      ipcRenderer.invoke(REPORTS_CHANNELS.getForecast, query)
   }
 }
 

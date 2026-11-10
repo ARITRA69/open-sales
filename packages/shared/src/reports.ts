@@ -22,7 +22,7 @@ export const REPORT_PERIODS = [
 
 export type TReportPeriod = (typeof REPORT_PERIODS)[number]
 
-/** Looking ahead: the forecast. Each starts with this month. */
+/** Looking ahead: the forecast. Each runs from today. */
 export const FORECAST_PERIODS = [
   'this_quarter',
   'next_3_months',
@@ -100,6 +100,19 @@ export const resolveReportPeriod = (
       return months(month, 12)
   }
 }
+
+/**
+ * The days a forecast covers: from today to the end of the period. Deals
+ * that should have closed before today aren't expected revenue any more;
+ * the forecast lists them apart, as past their close date.
+ */
+export const resolveForecastRange = (
+  period: TForecastPeriod,
+  today: string
+): TReportRange => ({
+  from: today,
+  to: resolveReportPeriod(period, today).to
+})
 
 /** Every month a range touches, as "2026-11", in order. */
 export const monthsInRange = ({ from, to }: TReportRange): string[] => {
@@ -255,9 +268,9 @@ export type TForecastGroup = z.infer<typeof forecastGroupSchema>
  */
 export const forecastReportSchema = z.object({
   ...reportFields,
-  // Every month of the period, including ones with no deals.
+  // Every month from today to the period's end, including ones with no deals.
   months: z.array(forecastGroupSchema.extend({ month: z.string() })),
-  // Open deals whose close date has already passed the period's start.
+  // Open deals whose close date has already passed.
   overdue: forecastGroupSchema,
   // Open deals with no close date.
   undated: forecastGroupSchema

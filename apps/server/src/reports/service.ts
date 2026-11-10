@@ -7,6 +7,7 @@ import type {
   TPipelineReport,
   TReportDeal,
   TReportQuery,
+  TReportRange,
   TWonLostReport
 } from '@open-sales/shared'
 import {
@@ -14,6 +15,7 @@ import {
   dayAfter,
   monthsInRange,
   REPORT_DEALS_LIMIT,
+  resolveForecastRange,
   resolveReportPeriod
 } from '@open-sales/shared'
 import type { SQL } from 'drizzle-orm'
@@ -105,9 +107,7 @@ const toReportDeal = ({
 
 export const createReportsService = (db: TDatabase) => {
   /** What every report starts from: the pipeline, the currency, the days. */
-  const readSettings = async (
-    period: Parameters<typeof resolveReportPeriod>[0]
-  ) => {
+  const readSettings = async (rangeFrom: (today: string) => TReportRange) => {
     const [[settings], [found]] = await Promise.all([
       db
         .select({ currency: workspace.currency, timeZone: workspace.timeZone })
@@ -127,7 +127,7 @@ export const createReportsService = (db: TDatabase) => {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone }).format(
       new Date()
     )
-    const range = resolveReportPeriod(period, today)
+    const range = rangeFrom(today)
     return {
       pipelineId: found.id,
       currency,
@@ -174,7 +174,9 @@ export const createReportsService = (db: TDatabase) => {
       _me: TActor,
       query: TReportQuery
     ): Promise<TPipelineReport> => {
-      const settings = await readSettings(query.period)
+      const settings = await readSettings((today) =>
+        resolveReportPeriod(query.period, today)
+      )
       // deal_board_idx, or deal_owner_status_idx for one person's deals.
       const isOpenHere = and(
         eq(deal.pipelineId, settings.pipelineId),
@@ -290,7 +292,9 @@ export const createReportsService = (db: TDatabase) => {
       _me: TActor,
       query: TReportQuery
     ): Promise<TWonLostReport> => {
-      const settings = await readSettings(query.period)
+      const settings = await readSettings((today) =>
+        resolveReportPeriod(query.period, today)
+      )
       // deal_closed_at_idx: closed_at, where status is won or lost.
       const closedInPeriod = and(
         IS_CLOSED,
@@ -373,8 +377,9 @@ export const createReportsService = (db: TDatabase) => {
     },
 
     /**
-     * Open deals by the month they should close, weighted by their stage's
-     * win probability. Managers and admins only.
+     * Open deals due to close from today to the period's end, by month,
+     * weighted by their stage's win probability. Deals whose close date
+     * has passed are counted apart. Managers and admins only.
      */
     forecast: async (
       me: TActor,
@@ -383,7 +388,9 @@ export const createReportsService = (db: TDatabase) => {
       if (!canSeeForecast(me.role)) {
         throw new NotAllowedError('Only managers and admins see the forecast.')
       }
-      const settings = await readSettings(query.period)
+      const settings = await readSettings((today) =>
+        resolveForecastRange(query.period, today)
+      )
       const { range } = settings
       const until = dayAfter(range.to)
       // deal_close_date_idx: close_date, where open and not archived; or

@@ -533,6 +533,14 @@ describe.skipIf(!DATABASE_URL)('reports service (database)', () => {
         closeDate: '2027-01-31'
       },
       {
+        // Earlier this month, but before today: not expected any more.
+        name: 'Slipped',
+        owner: 'ravi',
+        stage: 'Qualified',
+        value: 50_000,
+        closeDate: '2026-11-09'
+      },
+      {
         // Negotiation: 75%.
         name: 'Overdue',
         owner: 'lena',
@@ -584,7 +592,8 @@ describe.skipIf(!DATABASE_URL)('reports service (database)', () => {
         period: 'next_3_months'
       })
 
-      expect(report.range).toEqual({ from: '2026-11-01', to: '2027-01-31' })
+      // From today, not from the start of the month.
+      expect(report.range).toEqual({ from: '2026-11-10', to: '2027-01-31' })
       expect(report.months).toEqual([
         {
           month: '2026-11',
@@ -599,8 +608,8 @@ describe.skipIf(!DATABASE_URL)('reports service (database)', () => {
         { month: '2027-01', count: 1, totals: [sum('USD', 0, 0)] }
       ])
       expect(report.overdue).toEqual({
-        count: 1,
-        totals: [sum('USD', 800_000, 600_000)]
+        count: 2,
+        totals: [sum('USD', 850_000, 605_000)]
       })
       expect(report.undated).toEqual({
         count: 1,
@@ -609,6 +618,7 @@ describe.skipIf(!DATABASE_URL)('reports service (database)', () => {
       // Soonest first, deals with no date last; February is past the period.
       expect(report.deals.map((row) => row.name)).toEqual([
         'Overdue',
+        'Slipped',
         'November',
         'December in euros',
         'December',
@@ -692,7 +702,7 @@ describe.skipIf(!DATABASE_URL)('reports service (database)', () => {
       )
       expect(forecast.status).toBe(200)
       expect(await forecast.json()).toMatchObject({
-        range: { from: '2026-11-01', to: '2027-04-30' }
+        range: { from: '2026-11-10', to: '2027-04-30' }
       })
 
       const wrong = await app.request(

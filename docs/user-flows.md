@@ -472,6 +472,15 @@ playbook**, or a record › **Run playbook**
 
 **AI:** explains the numbers from the same data. No changes.
 
+**Built:** Reports has Pipeline by stage, Won and lost and Forecast (hidden
+from members, and refused by the server), each at its own address
+(`#/reports/won-lost`), filtered by period and owner. Every chart has its
+numbers in a table under it and the deals behind them, linking to each deal.
+Money is never converted: totals are per currency. **Ask about this** hands
+the Ask panel the report and its filters; the answer waits for the panel.
+Not built: Activity (it needs the timeline) and the pipeline filter (there
+is one pipeline).
+
 **Mobbin:** [Pipedrive insights](https://mobbin.com/screens/e05957c0-f43c-4baf-b7d1-dbe0d268bced?utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (pipeline health with stage-to-stage conversion), [Twenty dashboard](https://mobbin.com/screens/b201b50e-7e69-4674-bdac-e4775f18710a?utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (deal value by stage).
 
 ---

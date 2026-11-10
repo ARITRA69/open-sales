@@ -5,6 +5,7 @@ import {
   forecastQuerySchema,
   monthsInRange,
   reportQuerySchema,
+  resolveForecastRange,
   resolveReportPeriod
 } from './reports'
 import { canSeeForecast } from './roles'
@@ -63,6 +64,19 @@ describe('resolveReportPeriod', () => {
     expect(resolveReportPeriod('last_12_months', '2028-02-29')).toEqual({
       from: '2027-03-02',
       to: '2028-02-29'
+    })
+  })
+})
+
+describe('resolveForecastRange', () => {
+  it('runs from today to the end of the period', () => {
+    expect(resolveForecastRange('next_3_months', '2026-11-10')).toEqual({
+      from: '2026-11-10',
+      to: '2027-01-31'
+    })
+    expect(resolveForecastRange('this_quarter', '2026-11-10')).toEqual({
+      from: '2026-11-10',
+      to: '2026-12-31'
     })
   })
 })
