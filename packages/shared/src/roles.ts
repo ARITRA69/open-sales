@@ -32,3 +32,9 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/**
+ * A contract belongs to its company: whoever may change the company may add
+ * its contracts, start their renewals and end them.
+ */
+export const canEditContract = canEditCompany

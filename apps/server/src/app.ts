@@ -16,6 +16,8 @@ import { readBody, sendError } from './http'
 import { renderJoinPage } from './join-page'
 import type { TRecordsService } from './records/routes'
 import { addRecordRoutes } from './records/routes'
+import type { TContractService } from './renewals/contracts'
+import { addContractRoutes } from './renewals/routes'
 import type { TSetupService } from './setup'
 import { SetupAlreadyDoneError } from './setup'
 import type { TJoinLinkRecord, TTeamService } from './team'
@@ -43,6 +45,8 @@ type TAppDeps = {
   publicUrl?: string
   // The desktop app's link scheme, for the join page.
   appScheme?: string
+  // Contracts and their renewals. Optional, like `records`.
+  contracts?: TContractService
 }
 
 /** The Sales API under /api/v1, and the join page at /join/:token. */
@@ -55,7 +59,8 @@ export const createApp = ({
   team,
   records,
   publicUrl,
-  appScheme = 'open-sales'
+  appScheme = 'open-sales',
+  contracts
 }: TAppDeps) => {
   const baseUrl = (c: Context) =>
     (publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
@@ -195,6 +200,7 @@ export const createApp = ({
   })
 
   if (records) addRecordRoutes(api, records, getSessionUser)
+  if (contracts) addContractRoutes(api, contracts, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>
