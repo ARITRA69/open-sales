@@ -99,7 +99,13 @@ export const BrowserWebArea = ({
                 body={`Look up a company, read a pricing page or check a profile without leaving ${productName}. Your sign-ins stay on this computer.`}
                 className="w-full"
                 icon={Globe02Icon}
-                title={tab ? 'Search or type an address above' : 'No tabs open'}
+                title={
+                  !tab
+                    ? 'No tabs open'
+                    : tab.control === 'ai'
+                      ? 'Nothing here yet'
+                      : 'Search or type an address above'
+                }
                 onAction={onNewTab}
               />
               <p className="m-0 text-body-sm text-muted-foreground">

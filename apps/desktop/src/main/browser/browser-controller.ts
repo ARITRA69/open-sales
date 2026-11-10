@@ -391,7 +391,7 @@ export const createBrowserController = ({
 
     const aiName = tab.aiName ?? 'AI'
     tab.aiNotes.push(
-      `The page tried to go to ${site}, which the person hasn’t allowed yet. It was held and they have been asked.`
+      `The page tried to go to ${site}, which the person hasn’t allowed yet. It was held and they have been asked. If they say yes the page goes there by itself: wait a little, then read the tab again.`
     )
     approvals.hold(tabId, site, aiName, () => {
       if (!tab.isClosed) load(tab, url)
