@@ -13,7 +13,10 @@ import { getInitials } from '@/lib/initials'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 
 import type { TOpenSalesBridge } from '../../../../preload/bridge-types'
-import { EMPTY_PAGES, EmptyPage } from './empty-page'
+import { EMPTY_PAGES, EmptyPage, type TEmptyPageId } from './empty-page'
+import { AccountsPage } from './records/accounts-page'
+import { PeoplePage } from './records/people-page'
+import { PipelinePage } from './records/pipeline-page'
 import { SettingsPage } from './settings-page'
 import { TodayPage } from './today-page'
 
@@ -47,8 +50,15 @@ type TSignedInAppProps = {
   aiToolsBridge?: TOpenSalesBridge['aiTools'] | null
   // Admins' team tools: the join link and approvals.
   teamBridge?: TOpenSalesBridge['team'] | null
+  // Companies, people and deals. Without it those pages stay empty.
+  recordsBridge?: TOpenSalesBridge['records'] | null
   onSignOut: () => void
 }
+
+const emptyPage = (route: TEmptyPageId) => ({
+  title: EMPTY_PAGES[route].title,
+  body: <EmptyPage page={route} />
+})
 
 /** The app once someone is signed in: the sidebar, and the page they're on. */
 export const SignedInApp = ({
@@ -57,6 +67,7 @@ export const SignedInApp = ({
   serverHost,
   aiToolsBridge = null,
   teamBridge = null,
+  recordsBridge = null,
   onSignOut
 }: TSignedInAppProps) => {
   const route = useHashRoute(ROUTES, 'today')
@@ -105,11 +116,26 @@ export const SignedInApp = ({
             />
           )
         }
+      case 'accounts':
+        return recordsBridge
+          ? {
+              title: 'Accounts',
+              body: <AccountsPage bridge={recordsBridge} me={user} />
+            }
+          : emptyPage(route)
+      case 'people':
+        return recordsBridge
+          ? { title: 'People', body: <PeoplePage bridge={recordsBridge} /> }
+          : emptyPage(route)
+      case 'pipeline':
+        return recordsBridge
+          ? {
+              title: 'Pipeline',
+              body: <PipelinePage bridge={recordsBridge} me={user} />
+            }
+          : emptyPage(route)
       default:
-        return {
-          title: EMPTY_PAGES[route].title,
-          body: <EmptyPage page={route} />
-        }
+        return emptyPage(route)
     }
   })()
 

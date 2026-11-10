@@ -464,6 +464,15 @@ describe.skipIf(!DATABASE_URL)('records service (database)', () => {
         404
       )
       expect((await app.request('/api/v1/pipeline/board')).status).toBe(200)
+      const users = await app.request('/api/v1/users')
+      expect(await users.json()).toEqual({
+        users: [
+          { id: 'u-admin', name: 'Asha Menon' },
+          { id: 'u-lena', name: 'Lena Ortiz' },
+          { id: 'u-manager', name: 'Mo Rahman' },
+          { id: 'u-ravi', name: 'Ravi Shah' }
+        ]
+      })
     })
   })
 })

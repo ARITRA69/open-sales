@@ -6,12 +6,12 @@ import type {
 } from '@open-sales/shared'
 
 import type {
+  TApiResult,
   TConnectionResult,
-  TConnectionState,
-  TTeamResult
+  TConnectionState
 } from '../preload/bridge-types'
 import type { TConnectionStore } from './connection-store'
-import type { TServerApi } from './server-api'
+import type { TRecordKind, TServerApi } from './server-api'
 import {
   normalizeServerAddress,
   parseJoinLink,
@@ -218,9 +218,13 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
     })
 
   /** Runs an admin action with the saved session; problems become messages. */
-  const asAdmin = async <TData>(
+  /**
+   * A call made as the signed-in person. The server checks what they may do;
+   * a refusal comes back as a result with its message and code.
+   */
+  const withSession = async <TData>(
     run: (serverUrl: string, token: string) => Promise<TData>
-  ): Promise<TTeamResult<TData>> => {
+  ): Promise<TApiResult<TData>> => {
     try {
       const serverUrl = await requireServerUrl()
       const token = await store.readToken()
@@ -228,31 +232,63 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
       return { ok: true, data: await run(serverUrl, token) }
     } catch (error) {
       if (error instanceof ServerProblem) {
-        return { ok: false, message: error.message }
+        return { ok: false, message: error.message, code: error.code }
       }
       console.error(error)
       return { ok: false, message: 'Something went wrong. Try again.' }
     }
   }
 
+  // Companies, people and deals. Inputs were checked in ipc.ts.
+  const records = {
+    list: (kind: TRecordKind, query?: Record<string, unknown>) =>
+      withSession((serverUrl, token) =>
+        api.records.list(serverUrl, token, kind, query)
+      ),
+    get: (kind: TRecordKind, id: string) =>
+      withSession((serverUrl, token) =>
+        api.records.get(serverUrl, token, kind, id)
+      ),
+    create: (kind: TRecordKind, input: unknown) =>
+      withSession((serverUrl, token) =>
+        api.records.create(serverUrl, token, kind, input)
+      ),
+    update: (kind: TRecordKind, id: string, input: unknown) =>
+      withSession((serverUrl, token) =>
+        api.records.update(serverUrl, token, kind, id, input)
+      ),
+    setArchived: (
+      kind: TRecordKind,
+      id: string,
+      action: 'archive' | 'restore',
+      version: number
+    ) =>
+      withSession((serverUrl, token) =>
+        api.records.setArchived(serverUrl, token, kind, id, action, version)
+      ),
+    getPipeline: () => withSession(api.records.getPipeline),
+    getBoard: () => withSession(api.records.getBoard),
+    listUsers: () => withSession(api.records.listUsers)
+  }
+
   const team = {
-    getJoinLink: () => asAdmin(api.team.getJoinLink),
+    getJoinLink: () => withSession(api.team.getJoinLink),
     createJoinLink: (settings: TJoinLinkSettings) =>
-      asAdmin((serverUrl, token) =>
+      withSession((serverUrl, token) =>
         api.team.createJoinLink(serverUrl, token, settings)
       ),
     updateJoinLink: (settings: TJoinLinkSettings) =>
-      asAdmin((serverUrl, token) =>
+      withSession((serverUrl, token) =>
         api.team.updateJoinLink(serverUrl, token, settings)
       ),
     disableJoinLink: () =>
-      asAdmin(async (serverUrl, token) => {
+      withSession(async (serverUrl, token) => {
         await api.team.disableJoinLink(serverUrl, token)
         return null
       }),
-    listMembers: () => asAdmin(api.team.listMembers),
+    listMembers: () => withSession(api.team.listMembers),
     decideMember: (memberId: string, decision: 'approve' | 'decline') =>
-      asAdmin(async (serverUrl, token) => {
+      withSession(async (serverUrl, token) => {
         await api.team.decideMember(serverUrl, token, memberId, decision)
         return null
       })
@@ -269,7 +305,8 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
     join,
     // Leaving the Join or Waiting screen means choosing a server again.
     cancelJoin: forgetServer,
-    team
+    team,
+    records
   }
 }
 

@@ -9,6 +9,7 @@ import {
   createPreviewBridge,
   createPreviewTeam
 } from '@/lib/preview-bridge'
+import { createPreviewRecords } from '@/lib/preview-records'
 import { ComponentsSheet } from '@/screens/components-sheet/components-sheet'
 import { ConnectionGate } from '@/screens/connect/connection-gate'
 
@@ -20,6 +21,9 @@ const CONNECTION =
 const TEAM =
   window.openSales?.team ??
   (import.meta.env.DEV ? createPreviewTeam(window.location.search) : null)
+const RECORDS =
+  window.openSales?.records ??
+  (import.meta.env.DEV ? createPreviewRecords(window.location.search) : null)
 const AI_TOOLS =
   window.openSales?.aiTools ??
   (import.meta.env.DEV ? createPreviewAiTools(window.location.search) : null)
@@ -41,6 +45,7 @@ export const App = () => {
         <ConnectionGate
           aiToolsBridge={AI_TOOLS}
           bridge={CONNECTION}
+          recordsBridge={RECORDS}
           teamBridge={TEAM}
         />
       ) : (

@@ -1,6 +1,14 @@
 import {
+  companyCreateSchema,
+  companyUpdateSchema,
+  dealCreateSchema,
+  dealListQuerySchema,
+  dealUpdateSchema,
   joinFormSchema,
   joinLinkSettingsSchema,
+  listQuerySchema,
+  personCreateSchema,
+  personUpdateSchema,
   setupRequestSchema,
   signInRequestSchema
 } from '@open-sales/shared'
@@ -10,10 +18,12 @@ import { z } from 'zod'
 import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
+  RECORDS_CHANNELS,
   TEAM_CHANNELS
 } from '../preload/bridge-types'
 import { detectAiTools, localMachine } from './ai-tools'
 import type { TConnection } from './connection'
+import { RECORD_KINDS } from './server-api'
 
 const INVALID = { ok: false, message: 'Check the form and try again.' } as const
 
@@ -77,6 +87,94 @@ export const registerConnectionIpc = (connection: TConnection) => {
       return parsed.success ? team.decideMember(...parsed.data) : INVALID
     }
   )
+}
+
+// What each kind of record takes. Checked here, and again by the server.
+const RECORD_SCHEMAS = {
+  companies: {
+    query: listQuerySchema,
+    create: companyCreateSchema,
+    update: companyUpdateSchema
+  },
+  people: {
+    query: listQuerySchema,
+    create: personCreateSchema,
+    update: personUpdateSchema
+  },
+  deals: {
+    query: dealListQuerySchema,
+    create: dealCreateSchema,
+    update: dealUpdateSchema
+  }
+} as const
+
+const kindSchema = z.enum(RECORD_KINDS)
+const idSchema = z.string().min(1).max(64)
+
+/** Companies, people, deals and the pipeline, as the signed-in person. */
+export const registerRecordsIpc = ({ records }: TConnection) => {
+  ipcMain.handle(
+    RECORDS_CHANNELS.list,
+    (_event, kind: unknown, query: unknown) => {
+      const parsedKind = kindSchema.safeParse(kind)
+      if (!parsedKind.success) return INVALID
+      const parsed = RECORD_SCHEMAS[parsedKind.data].query.safeParse(
+        query ?? {}
+      )
+      return parsed.success
+        ? records.list(parsedKind.data, parsed.data)
+        : INVALID
+    }
+  )
+
+  ipcMain.handle(RECORDS_CHANNELS.get, (_event, kind: unknown, id: unknown) => {
+    const parsed = z.tuple([kindSchema, idSchema]).safeParse([kind, id])
+    return parsed.success ? records.get(...parsed.data) : INVALID
+  })
+
+  ipcMain.handle(
+    RECORDS_CHANNELS.create,
+    (_event, kind: unknown, input: unknown) => {
+      const parsedKind = kindSchema.safeParse(kind)
+      if (!parsedKind.success) return INVALID
+      const parsed = RECORD_SCHEMAS[parsedKind.data].create.safeParse(input)
+      return parsed.success
+        ? records.create(parsedKind.data, parsed.data)
+        : { ok: false, message: parsed.error.issues[0].message }
+    }
+  )
+
+  ipcMain.handle(
+    RECORDS_CHANNELS.update,
+    (_event, kind: unknown, id: unknown, input: unknown) => {
+      const parsedKind = kindSchema.safeParse(kind)
+      const parsedId = idSchema.safeParse(id)
+      if (!parsedKind.success || !parsedId.success) return INVALID
+      const parsed = RECORD_SCHEMAS[parsedKind.data].update.safeParse(input)
+      return parsed.success
+        ? records.update(parsedKind.data, parsedId.data, parsed.data)
+        : { ok: false, message: parsed.error.issues[0].message }
+    }
+  )
+
+  ipcMain.handle(
+    RECORDS_CHANNELS.setArchived,
+    (_event, kind: unknown, id: unknown, action: unknown, version: unknown) => {
+      const parsed = z
+        .tuple([
+          kindSchema,
+          idSchema,
+          z.enum(['archive', 'restore']),
+          z.number().int().positive()
+        ])
+        .safeParse([kind, id, action, version])
+      return parsed.success ? records.setArchived(...parsed.data) : INVALID
+    }
+  )
+
+  ipcMain.handle(RECORDS_CHANNELS.getPipeline, () => records.getPipeline())
+  ipcMain.handle(RECORDS_CHANNELS.getBoard, () => records.getBoard())
+  ipcMain.handle(RECORDS_CHANNELS.listUsers, () => records.listUsers())
 }
 
 /** Answers "which AI tools does this machine have?". It takes no input. */

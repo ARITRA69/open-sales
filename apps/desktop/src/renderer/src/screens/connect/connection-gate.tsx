@@ -16,6 +16,8 @@ type TConnectionGateProps = {
   aiToolsBridge?: TOpenSalesBridge['aiTools'] | null
   // Admins' team tools. Null where there's no way to reach them.
   teamBridge?: TOpenSalesBridge['team'] | null
+  // Companies, people and deals.
+  recordsBridge?: TOpenSalesBridge['records'] | null
 }
 
 /**
@@ -26,7 +28,8 @@ type TConnectionGateProps = {
 export const ConnectionGate = ({
   bridge,
   aiToolsBridge = null,
-  teamBridge = null
+  teamBridge = null,
+  recordsBridge = null
 }: TConnectionGateProps) => {
   const connection = useConnection(bridge)
   const { state } = connection
@@ -86,6 +89,7 @@ export const ConnectionGate = ({
       return (
         <SignedInApp
           aiToolsBridge={aiToolsBridge}
+          recordsBridge={recordsBridge}
           serverHost={hostOf(state.serverUrl)}
           teamBridge={teamBridge}
           user={state.user}

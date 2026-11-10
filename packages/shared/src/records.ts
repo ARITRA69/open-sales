@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { phoneSchema } from './phone'
+
 /*
  * Companies ("Accounts"), people and deals: what the API takes and returns.
  * The tables behind them are in docs/data-model.md. Every record carries a
@@ -153,7 +155,8 @@ const personFields = {
   name: requiredName('Enter their name'),
   title: optionalText().optional(),
   email: emailField.optional(),
-  phone: optionalText(40).optional(),
+  // Stored as E.164: "+442079460000".
+  phone: phoneSchema.optional(),
   linkedinUrl: urlField.optional()
 }
 
@@ -253,12 +256,16 @@ export const listQuerySchema = z.object({
 
 export type TListQuery = z.output<typeof listQuerySchema>
 
+export type TListQueryInput = z.input<typeof listQuerySchema>
+
 export const dealListQuerySchema = listQuerySchema.extend({
   companyId: z.string().optional(),
   status: z.enum(DEAL_STATUSES).optional()
 })
 
 export type TDealListQuery = z.output<typeof dealListQuerySchema>
+
+export type TDealListQueryInput = z.input<typeof dealListQuerySchema>
 
 export const pageSchema = <TItem extends z.ZodType>(item: TItem) =>
   z.object({
@@ -314,6 +321,11 @@ export const boardSchema = z.object({
 })
 
 export type TBoard = z.infer<typeof boardSchema>
+
+/** GET /api/v1/users. Everyone active on the team, A–Z: who can own records. */
+export const usersResponseSchema = z.object({ users: z.array(ownerSchema) })
+
+export type TUsersResponse = z.infer<typeof usersResponseSchema>
 
 /** POST /api/v1/<records>/:id/archive and /restore. */
 export const archiveRequestSchema = z.object({ version: versionField })

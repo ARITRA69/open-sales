@@ -1,8 +1,23 @@
 import type {
+  TBoard,
+  TCompany,
+  TCompanyCreate,
+  TCompanyUpdate,
+  TDeal,
+  TDealCreate,
+  TDealListQueryInput,
+  TDealUpdate,
   TJoinForm,
   TJoinLink,
   TJoinLinkSettings,
+  TListQueryInput,
   TMember,
+  TOwner,
+  TPage,
+  TPerson,
+  TPersonCreate,
+  TPersonUpdate,
+  TPipeline,
   TSessionUser,
   TSetupRequest,
   TSignInRequest
@@ -58,6 +73,30 @@ export type TAiToolStatus =
 
 export type TAiToolsStatus = { tools: TAiToolStatus[] }
 
+/** The records the app lists and edits, and what each one takes. */
+export type TRecordTypes = {
+  companies: {
+    item: TCompany
+    create: TCompanyCreate
+    update: TCompanyUpdate
+    query: TListQueryInput
+  }
+  people: {
+    item: TPerson
+    create: TPersonCreate
+    update: TPersonUpdate
+    query: TListQueryInput
+  }
+  deals: {
+    item: TDeal
+    create: TDealCreate
+    update: TDealUpdate
+    query: TDealListQueryInput
+  }
+}
+
+export type TRecordKind = keyof TRecordTypes
+
 export type TOpenSalesBridge = {
   platform: string
   aiTools: {
@@ -96,12 +135,50 @@ export type TOpenSalesBridge = {
       decision: 'approve' | 'decline'
     ) => Promise<TTeamResult<null>>
   }
+  // Companies, people, deals and the pipeline, as the signed-in person.
+  records: {
+    list: <TKind extends TRecordKind>(
+      kind: TKind,
+      query?: TRecordTypes[TKind]['query']
+    ) => Promise<TApiResult<TPage<TRecordTypes[TKind]['item']>>>
+    get: <TKind extends TRecordKind>(
+      kind: TKind,
+      id: string
+    ) => Promise<TApiResult<TRecordTypes[TKind]['item']>>
+    create: <TKind extends TRecordKind>(
+      kind: TKind,
+      input: TRecordTypes[TKind]['create']
+    ) => Promise<TApiResult<TRecordTypes[TKind]['item']>>
+    // Send the version you saw: if someone changed it since, the answer has
+    // code `changed_since`.
+    update: <TKind extends TRecordKind>(
+      kind: TKind,
+      id: string,
+      input: TRecordTypes[TKind]['update']
+    ) => Promise<TApiResult<TRecordTypes[TKind]['item']>>
+    setArchived: <TKind extends TRecordKind>(
+      kind: TKind,
+      id: string,
+      action: 'archive' | 'restore',
+      version: number
+    ) => Promise<TApiResult<TRecordTypes[TKind]['item']>>
+    getPipeline: () => Promise<TApiResult<TPipeline>>
+    getBoard: () => Promise<TApiResult<TBoard>>
+    // Everyone active on the team: who can own records.
+    listUsers: () => Promise<TApiResult<TOwner[]>>
+  }
 }
 
-/** A team action's answer, or why it failed, in people's words. */
-export type TTeamResult<TData> =
+/**
+ * A server call's answer, or why it failed, in people's words. `code` is the
+ * server's, like `changed_since` or `forbidden`.
+ */
+export type TApiResult<TData> =
   | { ok: true; data: TData }
-  | { ok: false; message: string }
+  | { ok: false; message: string; code?: string }
+
+/** A team action's answer. */
+export type TTeamResult<TData> = TApiResult<TData>
 
 /** IPC channel names, shared by the preload script and the main process. */
 export const CONNECTION_CHANNELS = {
@@ -125,6 +202,17 @@ export const TEAM_CHANNELS = {
   listMembers: 'team:list-members',
   decideMember: 'team:decide-member'
 } as const satisfies Record<keyof TOpenSalesBridge['team'], string>
+
+export const RECORDS_CHANNELS = {
+  list: 'records:list',
+  get: 'records:get',
+  create: 'records:create',
+  update: 'records:update',
+  setArchived: 'records:set-archived',
+  getPipeline: 'records:get-pipeline',
+  getBoard: 'records:get-board',
+  listUsers: 'records:list-users'
+} as const satisfies Record<keyof TOpenSalesBridge['records'], string>
 
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'

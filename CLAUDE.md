@@ -37,7 +37,8 @@ a person's approval.
 - **Self-host only.** No hosted version. Anyone can clone it and run their own.
 - **Two parts.** A desktop app (built) and a server (started: health check,
   first-run setup, sign-in, the join link, and the API for companies, people,
-  deals and the pipeline; the app doesn't show sales data yet).
+  deals and the pipeline, which the app's Accounts, People and Pipeline
+  pages use).
   - Server: Sales API + Postgres, started with one Docker Compose command. The
     first person to connect from the desktop app creates the admin account
     there. Its only web page is `/join/<token>`: what the team's join link
@@ -235,10 +236,10 @@ package that uses it (`cd apps/desktop && bun add x`).
 
 1. Design the main screens (Today, Pipeline, Leads, Accounts, People, Reports,
    Playbooks, Settings) before building them.
-2. Accounts, people and deals: the real app shell with Accounts, People and
-   Pipeline, then CSV import. (Done: sign-in, the join link, and the schema
-   and API for companies, people, deals and the pipeline, with server-side
-   role checks.)
+2. Accounts, people and deals: record pages (an account with its people,
+   deals and timeline), then CSV import. (Done: sign-in, the join link, the
+   schema and API for companies, people, deals and the pipeline with
+   server-side role checks, and the Accounts, People and Pipeline pages.)
 3. Proposals and the MCP bridge, so Claude Code or Codex read records and
    propose changes as the signed-in person; then Today. Invites and user
    management come with Settings.

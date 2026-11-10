@@ -70,6 +70,26 @@ const makeApi = (overrides: Partial<TServerApi> = {}): TServerApi => ({
     listMembers: async () => [],
     decideMember: async () => undefined
   },
+  records: {
+    list: async () => ({ items: [], nextCursor: null }),
+    get: async () => {
+      throw new ServerProblem('Not here.', 'not_found')
+    },
+    create: async () => {
+      throw new ServerProblem('Not here.', 'not_found')
+    },
+    update: async () => {
+      throw new ServerProblem('Someone changed this.', 'changed_since')
+    },
+    setArchived: async () => {
+      throw new ServerProblem('Not here.', 'not_found')
+    },
+    getPipeline: async () => {
+      throw new ServerProblem('Not here.', 'not_found')
+    },
+    getBoard: async () => ({ columns: [] }),
+    listUsers: async () => []
+  },
   ...overrides
 })
 
@@ -291,6 +311,44 @@ describe('connection', () => {
 
       const state = await createConnection(api, store).getState()
       expect(state.step === 'waiting-approval' && state.declined).toBe(true)
+    })
+  })
+
+  describe('records', () => {
+    const signedIn = () =>
+      createConnection(
+        makeApi(),
+        makeStore({ serverUrl: SERVER, token: 'sign-in-token' })
+      )
+
+    it('passes the server’s answer through', async () => {
+      await expect(signedIn().records.list('companies')).resolves.toEqual({
+        ok: true,
+        data: { items: [], nextCursor: null }
+      })
+    })
+
+    it('keeps the server’s code, so screens can react to it', async () => {
+      const result = await signedIn().records.update('companies', 'c1', {
+        name: 'Halden',
+        version: 1
+      })
+      expect(result).toEqual({
+        ok: false,
+        message: 'Someone changed this.',
+        code: 'changed_since'
+      })
+    })
+
+    it('asks to sign in again without a token', async () => {
+      const connection = createConnection(
+        makeApi(),
+        makeStore({ serverUrl: SERVER })
+      )
+      await expect(connection.records.getBoard()).resolves.toMatchObject({
+        ok: false,
+        message: 'Sign in again.'
+      })
     })
   })
 })

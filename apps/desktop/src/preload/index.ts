@@ -4,6 +4,7 @@ import type { TConnectionState, TOpenSalesBridge } from './bridge-types'
 import {
   AI_TOOLS_CHANNELS,
   CONNECTION_CHANNELS,
+  RECORDS_CHANNELS,
   TEAM_CHANNELS
 } from './bridge-types'
 
@@ -41,6 +42,26 @@ const openSalesBridge: TOpenSalesBridge = {
     listMembers: () => ipcRenderer.invoke(TEAM_CHANNELS.listMembers),
     decideMember: (memberId, decision) =>
       ipcRenderer.invoke(TEAM_CHANNELS.decideMember, memberId, decision)
+  },
+  records: {
+    list: (kind, query) =>
+      ipcRenderer.invoke(RECORDS_CHANNELS.list, kind, query),
+    get: (kind, id) => ipcRenderer.invoke(RECORDS_CHANNELS.get, kind, id),
+    create: (kind, input) =>
+      ipcRenderer.invoke(RECORDS_CHANNELS.create, kind, input),
+    update: (kind, id, input) =>
+      ipcRenderer.invoke(RECORDS_CHANNELS.update, kind, id, input),
+    setArchived: (kind, id, action, version) =>
+      ipcRenderer.invoke(
+        RECORDS_CHANNELS.setArchived,
+        kind,
+        id,
+        action,
+        version
+      ),
+    getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
+    getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
+    listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
   }
 }
 

@@ -22,7 +22,7 @@ import { Icon } from './icon'
 import { fieldControlClass, Input, Textarea } from './input'
 import { POPUP_CLASS, POPUP_ITEM_CLASS } from './popup'
 
-type TFieldFrameProps = {
+export type TFieldFrameProps = {
   label?: string
   // A quiet line under the box. An error replaces it.
   hint?: string
@@ -37,7 +37,7 @@ type TFieldWrapProps = TFieldFrameProps & {
 }
 
 /** The label above and the message below, around any kind of box. */
-const FieldWrap = ({
+export const FieldWrap = ({
   label,
   hint,
   error,
@@ -112,7 +112,7 @@ export type TFieldProps =
   | TSearchFieldProps
   | TSelectFieldProps
 
-const useFieldIds = (id?: string) => {
+export const useFieldIds = (id?: string) => {
   const generatedId = useId()
   const controlId = id ?? generatedId
 

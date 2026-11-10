@@ -10,10 +10,12 @@ import {
   personCreateSchema,
   personUpdateSchema
 } from '@open-sales/shared'
+import { asc, eq } from 'drizzle-orm'
 import type { Context, Hono } from 'hono'
 import type { z } from 'zod'
 
 import type { TDatabase } from '../db/client'
+import { user } from '../db/schema'
 import type { TEnv } from '../http'
 import { readBody, readQuery, sendError } from '../http'
 import type { TActor } from './common'
@@ -33,7 +35,14 @@ export const createRecordsService = (db: TDatabase) => ({
   companies: createCompanyService(db),
   people: createPersonService(db),
   deals: createDealService(db),
-  pipeline: createPipelineService(db)
+  pipeline: createPipelineService(db),
+  // Who can own records: everyone active, A–Z.
+  listUsers: () =>
+    db
+      .select({ id: user.id, name: user.name })
+      .from(user)
+      .where(eq(user.status, 'active'))
+      .orderBy(asc(user.name))
 })
 
 export type TRecordsService = ReturnType<typeof createRecordsService>
@@ -80,7 +89,7 @@ const answer = async (
   }
 }
 
-const RECORD_PATHS = ['/companies', '/people', '/deals', '/pipeline']
+const RECORD_PATHS = ['/companies', '/people', '/deals', '/pipeline', '/users']
 
 /**
  * Companies, people, deals and the pipeline, under /api/v1. Everyone signed
@@ -180,6 +189,9 @@ export const addRecordRoutes = (
     update: dealUpdateSchema
   })
 
+  api.get('/users', (c) =>
+    answer(c, async () => ({ users: await records.listUsers() }))
+  )
   api.get('/pipeline', (c) => answer(c, () => records.pipeline.get()))
   api.get('/pipeline/board', (c) =>
     answer(c, () => records.pipeline.board(c.get('me')))

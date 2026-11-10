@@ -1,22 +1,32 @@
 import type {
+  TCompany,
+  TDeal,
   TJoinForm,
   TJoinLinkSettings,
   TJoinPreview,
+  TPerson,
   TSessionUser,
   TSetupRequest,
   TSetupStatus,
   TSignInRequest
 } from '@open-sales/shared'
 import {
+  boardSchema,
+  companySchema,
+  dealSchema,
   healthResponseSchema,
   joinLinkResponseSchema,
   joinPreviewSchema,
   joinRequestStatusSchema,
   joinResponseSchema,
   membersResponseSchema,
+  pageSchema,
+  personSchema,
+  pipelineSchema,
   sessionUserSchema,
   setupStatusSchema,
-  signedInResponseSchema
+  signedInResponseSchema,
+  usersResponseSchema
 } from '@open-sales/shared'
 import { z } from 'zod'
 
@@ -25,8 +35,43 @@ import brand from '../../brand.config.json'
 // Long enough for a slow network, short enough that a wrong address fails fast.
 const REQUEST_TIMEOUT_MS = 8000
 
-/** A problem worth showing to the person, in their words. */
-export class ServerProblem extends Error {}
+/**
+ * A problem worth showing to the person, in their words. `code` is the
+ * server's, like `changed_since`, for screens that react to it.
+ */
+export class ServerProblem extends Error {
+  constructor(
+    message: string,
+    readonly code?: string
+  ) {
+    super(message)
+  }
+}
+
+/** Companies, people and deals: the records the app lists and edits. */
+export const RECORD_KINDS = ['companies', 'people', 'deals'] as const
+
+export type TRecordKind = (typeof RECORD_KINDS)[number]
+
+const ITEM_SCHEMAS = {
+  companies: companySchema,
+  people: personSchema,
+  deals: dealSchema
+} as const
+
+export type TRecordItem = TCompany | TPerson | TDeal
+
+/** List filters as a query string. Unset values are left out. */
+const toQueryString = (query: Record<string, unknown> = {}) => {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value))
+    }
+  }
+  const text = params.toString()
+  return text ? `?${text}` : ''
+}
 
 const LOCAL_HOST =
   /^(localhost|127\.\d+\.\d+\.\d+|\[::1\]|[^/]+\.local)(:\d+)?$/i
@@ -92,7 +137,9 @@ type TFetch = typeof fetch
 
 /** The message an error response carries: ours, or Better Auth's. */
 const errorBodySchema = z.object({
-  error: z.object({ message: z.string() }).optional(),
+  error: z
+    .object({ message: z.string(), code: z.string().optional() })
+    .optional(),
   message: z.string().optional()
 })
 
@@ -101,6 +148,17 @@ const readErrorMessage = async (response: Response, fallback: string) => {
     await response.json().catch(() => null)
   )
   return body.data?.error?.message ?? body.data?.message ?? fallback
+}
+
+/** An error response as a problem, keeping the server's code. */
+const readProblem = async (response: Response, fallback: string) => {
+  const body = errorBodySchema.safeParse(
+    await response.json().catch(() => null)
+  )
+  return new ServerProblem(
+    body.data?.error?.message ?? body.data?.message ?? fallback,
+    body.data?.error?.code
+  )
 }
 
 // Better Auth's sign-in and get-session bodies, as far as we read them.
@@ -275,24 +333,27 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     return joinRequestStatusSchema.parse(await response.json()).status
   }
 
-  /** An admin's call under /team: a problem on failure, else the body (or null). */
-  const teamRequest = async (
+  /** A signed-in call: a problem on failure, else the body (or null). */
+  const signedInRequest = async (
     serverUrl: string,
     token: string,
     path: string,
     init: RequestInit = {}
   ): Promise<unknown> => {
-    const response = await apiRequest(serverUrl, `/team${path}`, {
-      ...init,
-      token
-    })
+    const response = await apiRequest(serverUrl, path, { ...init, token })
     if (!response.ok) {
-      throw new ServerProblem(
-        await readErrorMessage(response, 'That didn’t work. Try again.')
-      )
+      throw await readProblem(response, 'That didn’t work. Try again.')
     }
     return response.status === 204 ? null : response.json()
   }
+
+  /** An admin's call under /team. */
+  const teamRequest = (
+    serverUrl: string,
+    token: string,
+    path: string,
+    init: RequestInit = {}
+  ) => signedInRequest(serverUrl, token, `/team${path}`, init)
 
   const team = {
     getJoinLink: async (serverUrl: string, token: string) =>
@@ -343,6 +404,99 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     }
   }
 
+  const sendJson = (method: string, body: unknown): RequestInit => ({
+    method,
+    body: JSON.stringify(body)
+  })
+
+  /** Companies, people and deals, checked against the shared schemas. */
+  const records = {
+    list: async (
+      serverUrl: string,
+      token: string,
+      kind: TRecordKind,
+      query?: Record<string, unknown>
+    ) =>
+      pageSchema(ITEM_SCHEMAS[kind]).parse(
+        await signedInRequest(
+          serverUrl,
+          token,
+          `/${kind}${toQueryString(query)}`
+        )
+      ),
+    get: async (
+      serverUrl: string,
+      token: string,
+      kind: TRecordKind,
+      id: string
+    ): Promise<TRecordItem> =>
+      ITEM_SCHEMAS[kind].parse(
+        await signedInRequest(
+          serverUrl,
+          token,
+          `/${kind}/${encodeURIComponent(id)}`
+        )
+      ),
+    create: async (
+      serverUrl: string,
+      token: string,
+      kind: TRecordKind,
+      input: unknown
+    ): Promise<TRecordItem> =>
+      ITEM_SCHEMAS[kind].parse(
+        await signedInRequest(
+          serverUrl,
+          token,
+          `/${kind}`,
+          sendJson('POST', input)
+        )
+      ),
+    update: async (
+      serverUrl: string,
+      token: string,
+      kind: TRecordKind,
+      id: string,
+      input: unknown
+    ): Promise<TRecordItem> =>
+      ITEM_SCHEMAS[kind].parse(
+        await signedInRequest(
+          serverUrl,
+          token,
+          `/${kind}/${encodeURIComponent(id)}`,
+          sendJson('PATCH', input)
+        )
+      ),
+    // Archive or restore.
+    setArchived: async (
+      serverUrl: string,
+      token: string,
+      kind: TRecordKind,
+      id: string,
+      action: 'archive' | 'restore',
+      version: number
+    ): Promise<TRecordItem> =>
+      ITEM_SCHEMAS[kind].parse(
+        await signedInRequest(
+          serverUrl,
+          token,
+          `/${kind}/${encodeURIComponent(id)}/${action}`,
+          sendJson('POST', { version })
+        )
+      ),
+    getPipeline: async (serverUrl: string, token: string) =>
+      pipelineSchema.parse(
+        await signedInRequest(serverUrl, token, '/pipeline')
+      ),
+    getBoard: async (serverUrl: string, token: string) =>
+      boardSchema.parse(
+        await signedInRequest(serverUrl, token, '/pipeline/board')
+      ),
+    listUsers: async (serverUrl: string, token: string) =>
+      usersResponseSchema.parse(
+        await signedInRequest(serverUrl, token, '/users')
+      ).users
+  }
+
   const signOut = async (serverUrl: string, token: string) => {
     await apiRequest(serverUrl, '/auth/sign-out', {
       method: 'POST',
@@ -361,7 +515,8 @@ export const createServerApi = (fetchFn: TFetch = fetch) => {
     previewJoin,
     join,
     getJoinRequestStatus,
-    team
+    team,
+    records
   }
 }
 

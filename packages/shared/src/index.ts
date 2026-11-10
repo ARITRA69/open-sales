@@ -1,6 +1,7 @@
 export * from './auth'
 export * from './brand'
 export * from './health'
+export * from './phone'
 export * from './roles'
 export * from './team'
 export * from './records'

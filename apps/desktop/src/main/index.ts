@@ -15,7 +15,11 @@ import macIconPath from '../../build/icon.png?asset'
 import { CONNECTION_CHANNELS } from '../preload/bridge-types'
 import { createConnection } from './connection'
 import { createConnectionStore } from './connection-store'
-import { registerAiToolsIpc, registerConnectionIpc } from './ipc'
+import {
+  registerAiToolsIpc,
+  registerConnectionIpc,
+  registerRecordsIpc
+} from './ipc'
 import { createServerApi } from './server-api'
 
 const isWebLink = (url: string) => /^https?:\/\//.test(url)
@@ -124,6 +128,7 @@ void app.whenReady().then(() => {
     createConnectionStore(app.getPath('userData'), safeStorage)
   )
   registerConnectionIpc(connection)
+  registerRecordsIpc(connection)
 
   openJoinLink = async (link) => {
     const result = await connection.openJoinLink(link)
