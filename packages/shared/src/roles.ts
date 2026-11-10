@@ -32,3 +32,56 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/*
+ * Leads. Everyone reads every lead. A lead has no owner until someone is
+ * given it, takes it, or converts it.
+ */
+
+/**
+ * Working a lead is qualifying, disqualifying, reopening or converting it.
+ * Managers and admins work any lead. A member works their own leads and
+ * leads nobody has yet, never a teammate's.
+ */
+export const canWorkLead = (
+  role: Role,
+  userId: string,
+  leadOwnerId: string | null
+): boolean =>
+  canChangeAnything(role) || leadOwnerId === null || leadOwnerId === userId
+
+/**
+ * Managers and admins give a lead to anyone, or back to nobody. A member may
+ * only take a lead nobody has yet, for themselves.
+ */
+export const canAssignLead = (
+  role: Role,
+  userId: string,
+  leadOwnerId: string | null,
+  toUserId: string | null
+): boolean =>
+  canChangeAnything(role) || (leadOwnerId === null && toUserId === userId)
+
+/**
+ * Converting a lead whose company is already an account adds the lead's
+ * person to that account whoever owns it, and the owner keeps it: the one
+ * exception to "members change only the companies they own". Pass the
+ * account's owner, or null when converting makes a new account.
+ */
+export const canConvertLeadInto = (
+  role: Role,
+  userId: string,
+  leadOwnerId: string | null,
+  _companyOwnerId: string | null
+): boolean => canWorkLead(role, userId, leadOwnerId)
+
+/**
+ * The exception stops at the person. A deal added while converting follows
+ * the usual rule: on a new account, or one the person may change.
+ */
+export const canAddDealOnConvert = (
+  role: Role,
+  userId: string,
+  companyOwnerId: string | null
+): boolean =>
+  companyOwnerId === null || canEditCompany(role, userId, companyOwnerId)
