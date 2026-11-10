@@ -1,4 +1,7 @@
 import type {
+  TActivity,
+  TActivityCreate,
+  TActivityUpdate,
   TBoard,
   TCompany,
   TCompanyCreate,
@@ -20,7 +23,13 @@ import type {
   TPipeline,
   TSessionUser,
   TSetupRequest,
-  TSignInRequest
+  TSignInRequest,
+  TTask,
+  TTaskCreate,
+  TTaskListQueryInput,
+  TTaskUpdate,
+  TTimeline,
+  TTimelineQueryInput
 } from '@open-sales/shared'
 
 /*
@@ -167,6 +176,8 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // Each record's timeline, and the notes, calls and tasks on it.
+  timeline: TTimelineBridge
 }
 
 /**
@@ -217,6 +228,60 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+/** A record with a timeline, by the name its page uses. */
+export type TTimelineRecord = {
+  type: 'company' | 'person' | 'deal'
+  id: string
+}
+
+/**
+ * Timelines, notes, calls and tasks, as the signed-in person. Anyone may add
+ * to any record; the server says who may change what (`canEdit` on each).
+ */
+export type TTimelineBridge = {
+  // What's upcoming, then history, newest first. `cursor` gets more history.
+  read: (
+    record: TTimelineRecord,
+    query?: TTimelineQueryInput
+  ) => Promise<TApiResult<TTimeline>>
+  createActivity: (input: TActivityCreate) => Promise<TApiResult<TActivity>>
+  updateActivity: (
+    id: string,
+    input: TActivityUpdate
+  ) => Promise<TApiResult<TActivity>>
+  // Takes a note or call off the timeline.
+  archiveActivity: (id: string) => Promise<TApiResult<TActivity>>
+  // My open tasks by default; `{ due: 'today' }` is Today's "Follow-ups due".
+  listTasks: (query?: TTaskListQueryInput) => Promise<TApiResult<TPage<TTask>>>
+  createTask: (input: TTaskCreate) => Promise<TApiResult<TTask>>
+  updateTask: (id: string, input: TTaskUpdate) => Promise<TApiResult<TTask>>
+  // Ticks a task off (`done: true`) or reopens it.
+  setTaskDone: (
+    id: string,
+    done: boolean,
+    version: number
+  ) => Promise<TApiResult<TTask>>
+  archiveTask: (id: string, version: number) => Promise<TApiResult<TTask>>
+  // Everyone at a company, or the people linked to a deal.
+  listPeople: (record: {
+    type: 'company' | 'deal'
+    id: string
+  }) => Promise<TApiResult<TPerson[]>>
+}
+
+export const TIMELINE_CHANNELS = {
+  read: 'timeline:read',
+  createActivity: 'timeline:create-activity',
+  updateActivity: 'timeline:update-activity',
+  archiveActivity: 'timeline:archive-activity',
+  listTasks: 'timeline:list-tasks',
+  createTask: 'timeline:create-task',
+  updateTask: 'timeline:update-task',
+  setTaskDone: 'timeline:set-task-done',
+  archiveTask: 'timeline:archive-task',
+  listPeople: 'timeline:list-people'
+} as const satisfies Record<keyof TTimelineBridge, string>
 
 declare global {
   interface Window {

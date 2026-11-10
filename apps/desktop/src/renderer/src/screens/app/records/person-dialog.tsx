@@ -19,8 +19,11 @@ type TPersonForm = {
   linkedinUrl: string
 }
 
-const formOf = (person: TPerson | null): TPersonForm => ({
-  companyId: person?.company.id ?? '',
+const formOf = (
+  person: TPerson | null,
+  company?: { id: string }
+): TPersonForm => ({
+  companyId: person?.company.id ?? company?.id ?? '',
   name: person?.name ?? '',
   title: person?.title ?? '',
   email: person?.email ?? '',
@@ -32,6 +35,8 @@ type TPersonDialogProps = {
   bridge: TRecordsBridge
   // Null to add one.
   person: TPerson | null
+  // For a new person: the account to start on, when added from its page.
+  company?: { id: string; name: string }
   onSaved: (person: TPerson) => void
   onClose: () => void
 }
@@ -40,11 +45,12 @@ type TPersonDialogProps = {
 export const PersonDialog = ({
   bridge,
   person,
+  company,
   onSaved,
   onClose
 }: TPersonDialogProps) => {
   const [current, setCurrent] = useState(person)
-  const [form, setForm] = useState(() => formOf(person))
+  const [form, setForm] = useState(() => formOf(person, company))
   const set = (field: keyof TPersonForm) => (value: string) =>
     setForm((previous) => ({ ...previous, [field]: value }))
 
@@ -79,7 +85,7 @@ export const PersonDialog = ({
     >
       <CompanyField
         bridge={bridge}
-        current={current?.company ?? null}
+        current={current?.company ?? company ?? null}
         value={form.companyId}
         onChange={set('companyId')}
       />

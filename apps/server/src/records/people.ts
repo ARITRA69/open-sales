@@ -24,7 +24,7 @@ import {
 } from 'drizzle-orm'
 
 import type { TDatabase } from '../db/client'
-import { company, person } from '../db/schema'
+import { company, dealPerson, person } from '../db/schema'
 import type { TActor, TQueries } from './common'
 import {
   ChangedSinceError,
@@ -77,6 +77,9 @@ const companyRef = {
 
 const NOT_ALLOWED =
   'Only the company’s owner, a manager or an admin can change its people.'
+
+// A record's own people, unpaged: a company has tens, not thousands.
+const RELATED_LIMIT = 500
 
 /** The company a person is (or is going) at, if it's live and they may edit it. */
 const companyToEdit = async (tx: TQueries, me: TActor, companyId: string) => {
@@ -184,6 +187,33 @@ export const createPersonService = (db: TDatabase) => {
         ({ row, ofCompany }) => toPerson(row, ofCompany, me),
         ({ row }) => [row.name, row.id]
       )
+    },
+
+    /** Everyone at one company, A–Z: its People tab. */
+    listAt: async (me: TActor, companyId: string): Promise<TPerson[]> => {
+      if (!isRecordId(companyId)) return []
+      const rows = await db
+        .select({ row: person, ofCompany: companyRef })
+        .from(person)
+        .innerJoin(company, eq(company.id, person.companyId))
+        .where(and(eq(person.companyId, companyId), isNull(person.archivedAt)))
+        .orderBy(asc(person.name), asc(person.id))
+        .limit(RELATED_LIMIT)
+      return rows.map(({ row, ofCompany }) => toPerson(row, ofCompany, me))
+    },
+
+    /** The people linked to a deal, A–Z. */
+    listOnDeal: async (me: TActor, dealId: string): Promise<TPerson[]> => {
+      if (!isRecordId(dealId)) return []
+      const rows = await db
+        .select({ row: person, ofCompany: companyRef })
+        .from(dealPerson)
+        .innerJoin(person, eq(person.id, dealPerson.personId))
+        .innerJoin(company, eq(company.id, person.companyId))
+        .where(and(eq(dealPerson.dealId, dealId), isNull(person.archivedAt)))
+        .orderBy(asc(person.name), asc(person.id))
+        .limit(RELATED_LIMIT)
+      return rows.map(({ row, ofCompany }) => toPerson(row, ofCompany, me))
     },
 
     create: async (me: TActor, input: TPersonCreate): Promise<TPerson> => {

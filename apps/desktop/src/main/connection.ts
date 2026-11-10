@@ -306,7 +306,12 @@ export const createConnection = (api: TServerApi, store: TConnectionStore) => {
     // Leaving the Join or Waiting screen means choosing a server again.
     cancelJoin: forgetServer,
     team,
-    records
+    records,
+    // A signed-in call for the per-area IPC files (src/main/<area>-ipc.ts).
+    request: (path: string, init?: RequestInit) =>
+      withSession((serverUrl, token) =>
+        api.signedInRequest(serverUrl, token, path, init)
+      )
   }
 }
 

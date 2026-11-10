@@ -18,6 +18,7 @@ import type { TDatabase } from '../db/client'
 import { user } from '../db/schema'
 import type { TEnv } from '../http'
 import { readBody, readQuery, sendError } from '../http'
+import { createTimelineService } from '../timeline/routes'
 import type { TActor } from './common'
 import {
   ChangedSinceError,
@@ -36,6 +37,8 @@ export const createRecordsService = (db: TDatabase) => ({
   people: createPersonService(db),
   deals: createDealService(db),
   pipeline: createPipelineService(db),
+  // Timelines, notes, calls and tasks: see ../timeline.
+  timeline: createTimelineService(db),
   // Who can own records: everyone active, A–Z.
   listUsers: () =>
     db

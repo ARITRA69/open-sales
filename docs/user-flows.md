@@ -307,6 +307,12 @@ panel's "I just finished a call" prompt
 - Notes mention a person not in the CRM: propose adding them to the account.
 - Notes are about a different deal: AI asks which deal before proposing.
 
+**Built (record pages):** steps 1 and 2. **Log a call** is on every account,
+person and deal timeline: who was on it (the account's people are suggested),
+when, how it went and the notes. **Save** keeps the call; **Save and ask AI**
+keeps it and hands the notes to the Ask panel (the `open-sales:ask` event).
+Steps 3 to 5 wait for the Ask panel and proposals.
+
 **Mobbin:** [Fireflies live notes](https://mobbin.com/flows/31866c11-6fcc-4585-977b-7ec6b0d0531e?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (summarise, action items, suggested follow-ups).
 
 ### 9. Send a follow-up email
@@ -353,6 +359,12 @@ emails or notes meet a stage's exit criteria.
 - Member creates a deal on an account they don't own: allowed only if they're
   the account owner; otherwise **Send to owner**.
 - Required custom fields missing when moving stage: ask for them inline.
+
+**Built (record pages):** the deal's own page, `#/deals/<id>`: value, stage,
+close date, next step, owner and linked people on the left, and its timeline
+(stage moves, notes, calls and tasks) in the middle. **Edit** opens the
+Pipeline's deal dialog, where the stage changes. An account's **Deals** tab
+lists its deals; **New deal** from an account isn't there yet.
 
 **Mobbin:** [Attio deals](https://mobbin.com/flows/82eb7e3e-47a1-47c7-abb4-e133f5de31b4?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (board with "+ New deal" per column), [Apollo creating a deal](https://mobbin.com/flows/9e3e41d6-7e8a-496b-8166-5af26491336a?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp) (side panel with "Save and create another"), [Outseta adding a deal](https://mobbin.com/flows/3b14957f-0fcd-42a7-b7c4-14097c48a6e1?tab=screens&utm_source=claude&utm_medium=ai-assistant&utm_source_platform=mcp).
 
@@ -438,6 +450,10 @@ Today's manager view
 
 - Reassigning moves ownership only; history and activity stay.
 
+**Built (record pages):** the **Reassign** part of step 3, on an account's
+page, for managers and admins: pick the new owner and whether its open deals
+move too.
+
 ### 16. Write and run a playbook
 
 **Who:** Manager writes, All run · **Starts from:** Playbooks › **New
@@ -494,6 +510,10 @@ proposal to the owner.
 
 _Open question: whether to allow Send to owner at all, or keep other owners'
 records read-only._
+
+**Built (record pages):** step 1, on account, person and deal pages. Anyone
+can still add notes, calls and tasks to a record they don't own: writing down
+what happened isn't changing the account. Steps 2 and 3 wait for proposals.
 
 ### 19. When the AI tool isn't available
 

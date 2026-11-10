@@ -24,6 +24,7 @@ import {
   JoinLinkInvalidError,
   MemberNotFoundError
 } from './team'
+import { addTimelineRoutes } from './timeline/routes'
 
 type TAppDeps = {
   version: string
@@ -195,6 +196,7 @@ export const createApp = ({
   })
 
   if (records) addRecordRoutes(api, records, getSessionUser)
+  if (records) addTimelineRoutes(api, records.timeline, getSessionUser)
 
   // Accounts come from setup and the join link, never open sign-up.
   api.all('/auth/sign-up/*', (c) =>

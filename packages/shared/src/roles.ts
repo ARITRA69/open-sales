@@ -32,3 +32,27 @@ export const canEditDeal = (
 
 /** Only managers and admins give a company, or a deal, to someone else. */
 export const canReassign = canChangeAnything
+
+/**
+ * Notes, calls and tasks can be added to any record the person can read,
+ * which is every record: writing down what happened isn't changing the
+ * account.
+ */
+export const canAddToTimeline = (_role: Role): boolean => true
+
+/** A note or call is changed by whoever wrote it, a manager or an admin. */
+export const canEditActivity = (
+  role: Role,
+  userId: string,
+  authorId: string | null
+): boolean => canChangeAnything(role) || userId === authorId
+
+/** A task is changed by whoever it's for, whoever made it, a manager or an admin. */
+export const canEditTask = (
+  role: Role,
+  userId: string,
+  task: { assigneeId: string; createdById: string }
+): boolean =>
+  canChangeAnything(role) ||
+  userId === task.assigneeId ||
+  userId === task.createdById

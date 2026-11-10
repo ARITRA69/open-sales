@@ -1,13 +1,15 @@
 import { useState } from 'react'
 
-import type { TCompany, TSessionUser } from '@open-sales/shared'
+import type { TSessionUser } from '@open-sales/shared'
 
 import type { TTableColumn } from '@/components/ui/table'
+import { useHashPath } from '@/hooks/use-hash-route'
 import type { TRecordsBridge } from '@/hooks/use-records'
 import { useCall, useRecordList, useSettled } from '@/hooks/use-records'
 import { formatShortDate } from '@/lib/dates'
 import { getInitials } from '@/lib/initials'
 
+import { AccountPage } from './account-page'
 import { CompanyDialog } from './company-dialog'
 import { RecordsListPage, viewQuery, type TListView } from './records-list-page'
 
@@ -24,8 +26,21 @@ type TAccountsPageProps = {
   me: TSessionUser
 }
 
-/** Every company the team sells to, A–Z. */
+/**
+ * Accounts: the list at `#/accounts`, and one account's own page at
+ * `#/accounts/<id>` (with a section after it, like `/deals`).
+ */
 export const AccountsPage = ({ bridge, me }: TAccountsPageProps) => {
+  const [id, section] = useHashPath()
+  return id ? (
+    <AccountPage key={id} bridge={bridge} id={id} me={me} section={section} />
+  ) : (
+    <AccountsList bridge={bridge} me={me} />
+  )
+}
+
+/** Every company the team sells to, A–Z. */
+const AccountsList = ({ bridge, me }: TAccountsPageProps) => {
   const [view, setView] = useState<TListView>(0)
   const [search, setSearch] = useState('')
   const settledSearch = useSettled(search)
@@ -35,8 +50,7 @@ export const AccountsPage = ({ bridge, me }: TAccountsPageProps) => {
     viewQuery(view, settledSearch)
   )
   const users = useCall(bridge.listUsers)
-  // A company to edit, or 'new'.
-  const [open, setOpen] = useState<TCompany | 'new' | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
 
   return (
     <RecordsListPage
@@ -46,6 +60,7 @@ export const AccountsPage = ({ bridge, me }: TAccountsPageProps) => {
       hasMore={list.hasMore}
       noun="account"
       problem={list.problem}
+      rowHref={(id) => `#/accounts/${id}`}
       rows={list.items.map((company) => ({
         id: company.id,
         name: company.name,
@@ -63,25 +78,21 @@ export const AccountsPage = ({ bridge, me }: TAccountsPageProps) => {
       title="Accounts"
       view={view}
       views={['All accounts', 'My accounts', 'Archived']}
-      onAdd={() => setOpen('new')}
+      onAdd={() => setIsAdding(true)}
       onLoadMore={list.loadMore}
-      onOpen={(id) =>
-        setOpen(list.items.find((company) => company.id === id) ?? null)
-      }
       onRetry={list.reload}
       onSearchChange={setSearch}
       onViewChange={setView}
     >
-      {open ? (
+      {isAdding ? (
         <CompanyDialog
-          key={open === 'new' ? 'new' : open.id}
           bridge={bridge}
-          company={open === 'new' ? null : open}
+          company={null}
           me={me}
           users={users.data ?? []}
-          onClose={() => setOpen(null)}
+          onClose={() => setIsAdding(false)}
           onSaved={() => {
-            setOpen(null)
+            setIsAdding(false)
             list.reload()
           }}
         />
