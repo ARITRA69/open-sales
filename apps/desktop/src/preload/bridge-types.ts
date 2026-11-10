@@ -167,6 +167,8 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // The in-app browser: the person's tabs, and what their AI tool may do.
+  browser: TBrowserBridge
 }
 
 /**
@@ -224,3 +226,144 @@ declare global {
     openSales?: TOpenSalesBridge
   }
 }
+
+/*
+ * The in-app browser. Tabs live in the main process, each in its own view
+ * over the page; the renderer draws the tab strip and toolbar and says where
+ * the view goes. A tab is the person's or AI's: the person's own AI tool
+ * (Claude Code or Codex) can only use tabs it opened or was handed.
+ */
+
+/** One browser tab, as the page shows it. */
+export type TBrowserTab = {
+  id: string
+  // Empty for a new tab that hasn't gone anywhere yet.
+  url: string
+  title: string
+  favicon: string | null
+  isLoading: boolean
+  canGoBack: boolean
+  canGoForward: boolean
+  // `ai` when the person's AI tool opened it or was handed it.
+  control: 'person' | 'ai'
+  // The tool using it, such as "Claude Code". Null until one does.
+  aiName: string | null
+  // An AI call is running in this tab right now.
+  isAiWorking: boolean
+  // Why the page isn't showing (it failed to load, or crashed), for people.
+  problem: string | null
+  // The last thing that happened that the person should know about, such as
+  // a box the page showed that was dismissed for AI.
+  note: string | null
+}
+
+/** Something AI may not do until the person answers. */
+export type TBrowserQuestion = {
+  id: string
+  // The tool asking, such as "Claude Code".
+  aiName: string
+  // The site it wants to use, such as `linkedin.com`.
+  site: string
+  // The tab it's about.
+  tabId: string
+}
+
+export type TBrowserAnswer = 'once' | 'always' | 'no'
+
+/** A download AI set off, kept until the person says to fetch it. */
+export type TBrowserHeldDownload = {
+  id: string
+  tabId: string
+  fileName: string
+  site: string
+}
+
+export type TBrowserState = {
+  tabs: TBrowserTab[]
+  activeTabId: string | null
+  questions: TBrowserQuestion[]
+  heldDownloads: TBrowserHeldDownload[]
+  // The person pressed Stop: AI does nothing until they let it carry on.
+  isAiPaused: boolean
+  // The tool that tried to carry on while paused, if one did.
+  pausedAiName: string | null
+}
+
+export type TBrowserTabAction =
+  | 'select'
+  | 'close'
+  | 'back'
+  | 'forward'
+  | 'reload'
+  | 'stop-loading'
+  | 'open-in-default-browser'
+  // Hands the tab to the person's AI tool.
+  | 'let-ai-use'
+  // Stop: takes the tab back at once and pauses AI.
+  | 'stop-ai'
+
+/** Where the live page goes, in the app window's CSS pixels. */
+export type TBrowserBounds = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** A site the person has answered for. */
+export type TBrowserSite = {
+  site: string
+  // `always` is remembered on this machine; the others last until the app quits.
+  rule: 'always' | 'once' | 'blocked'
+}
+
+/** What Browser › Connect AI shows. */
+export type TBrowserConnectInfo = {
+  // The name the AI tool lists this app's tools under.
+  serverName: string
+  // The command to run once in a terminal, per tool.
+  commands: Record<TAiToolId, string>
+  // Tools that have connected since the app opened, such as "Claude Code".
+  connected: string[]
+  sites: TBrowserSite[]
+  // False where there's no keychain: "always" then lasts until the app quits.
+  canRememberSites: boolean
+}
+
+export type TBrowserBridge = {
+  getState: () => Promise<TBrowserState>
+  // Returns a function that stops listening.
+  onStateChange: (listener: (state: TBrowserState) => void) => () => void
+  // A new tab of the person's own. `address` is what they typed, if anything.
+  openTab: (address?: string) => Promise<void>
+  // An address, or words to search for.
+  navigate: (tabId: string, address: string) => Promise<void>
+  actOnTab: (tabId: string, action: TBrowserTabAction) => Promise<void>
+  answerQuestion: (id: string, answer: TBrowserAnswer) => Promise<void>
+  // After Stop: lets AI work again.
+  resumeAi: () => Promise<void>
+  resolveDownload: (id: string, action: 'download' | 'dismiss') => Promise<void>
+  // Null hides the live page, when the Browser page isn't showing it.
+  setBounds: (bounds: TBrowserBounds | null) => void
+  // A picture of the tab on screen, shown while an app menu covers it.
+  captureStill: () => Promise<string | null>
+  getConnectInfo: () => Promise<TBrowserConnectInfo>
+  forgetSite: (site: string) => Promise<void>
+}
+
+export const BROWSER_CHANNELS = {
+  getState: 'browser:get-state',
+  // Main → renderer, not a request.
+  onStateChange: 'browser:state-changed',
+  openTab: 'browser:open-tab',
+  navigate: 'browser:navigate',
+  actOnTab: 'browser:act-on-tab',
+  answerQuestion: 'browser:answer-question',
+  resumeAi: 'browser:resume-ai',
+  resolveDownload: 'browser:resolve-download',
+  // Renderer → main, no answer.
+  setBounds: 'browser:set-bounds',
+  captureStill: 'browser:capture-still',
+  getConnectInfo: 'browser:get-connect-info',
+  forgetSite: 'browser:forget-site'
+} as const satisfies Record<keyof TBrowserBridge, string>

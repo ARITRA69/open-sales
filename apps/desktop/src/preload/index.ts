@@ -1,8 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type { TConnectionState, TOpenSalesBridge } from './bridge-types'
+import type {
+  TBrowserState,
+  TConnectionState,
+  TOpenSalesBridge
+} from './bridge-types'
 import {
   AI_TOOLS_CHANNELS,
+  BROWSER_CHANNELS,
   CONNECTION_CHANNELS,
   RECORDS_CHANNELS,
   TEAM_CHANNELS
@@ -62,6 +67,29 @@ const openSalesBridge: TOpenSalesBridge = {
     getPipeline: () => ipcRenderer.invoke(RECORDS_CHANNELS.getPipeline),
     getBoard: () => ipcRenderer.invoke(RECORDS_CHANNELS.getBoard),
     listUsers: () => ipcRenderer.invoke(RECORDS_CHANNELS.listUsers)
+  },
+  browser: {
+    getState: () => ipcRenderer.invoke(BROWSER_CHANNELS.getState),
+    onStateChange: (listener) => {
+      const handle = (_event: unknown, state: TBrowserState) => listener(state)
+      ipcRenderer.on(BROWSER_CHANNELS.onStateChange, handle)
+      return () =>
+        ipcRenderer.removeListener(BROWSER_CHANNELS.onStateChange, handle)
+    },
+    openTab: (address) => ipcRenderer.invoke(BROWSER_CHANNELS.openTab, address),
+    navigate: (tabId, address) =>
+      ipcRenderer.invoke(BROWSER_CHANNELS.navigate, tabId, address),
+    actOnTab: (tabId, action) =>
+      ipcRenderer.invoke(BROWSER_CHANNELS.actOnTab, tabId, action),
+    answerQuestion: (id, answer) =>
+      ipcRenderer.invoke(BROWSER_CHANNELS.answerQuestion, id, answer),
+    resumeAi: () => ipcRenderer.invoke(BROWSER_CHANNELS.resumeAi),
+    resolveDownload: (id, action) =>
+      ipcRenderer.invoke(BROWSER_CHANNELS.resolveDownload, id, action),
+    setBounds: (bounds) => ipcRenderer.send(BROWSER_CHANNELS.setBounds, bounds),
+    captureStill: () => ipcRenderer.invoke(BROWSER_CHANNELS.captureStill),
+    getConnectInfo: () => ipcRenderer.invoke(BROWSER_CHANNELS.getConnectInfo),
+    forgetSite: (site) => ipcRenderer.invoke(BROWSER_CHANNELS.forgetSite, site)
   }
 }
 
