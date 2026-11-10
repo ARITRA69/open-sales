@@ -18,6 +18,11 @@ import type {
   TPersonCreate,
   TPersonUpdate,
   TPipeline,
+  TPlaybook,
+  TPlaybookAction,
+  TPlaybookCreate,
+  TPlaybookListQueryInput,
+  TPlaybookUpdate,
   TSessionUser,
   TSetupRequest,
   TSignInRequest
@@ -167,6 +172,27 @@ export type TOpenSalesBridge = {
     // Everyone active on the team: who can own records.
     listUsers: () => Promise<TApiResult<TOwner[]>>
   }
+  // Playbooks. Everyone reads published ones; managers and admins also see
+  // drafts and may write. The server decides.
+  playbooks: {
+    list: (
+      query?: TPlaybookListQueryInput
+    ) => Promise<TApiResult<TPage<TPlaybook>>>
+    get: (id: string) => Promise<TApiResult<TPlaybook>>
+    // Makes a draft.
+    create: (input: TPlaybookCreate) => Promise<TApiResult<TPlaybook>>
+    // Send the `version` you saw, as with records.
+    update: (
+      id: string,
+      input: TPlaybookUpdate
+    ) => Promise<TApiResult<TPlaybook>>
+    // Publish, unpublish, archive or restore.
+    setState: (
+      id: string,
+      action: TPlaybookAction,
+      version: number
+    ) => Promise<TApiResult<TPlaybook>>
+  }
 }
 
 /**
@@ -217,6 +243,14 @@ export const RECORDS_CHANNELS = {
 export const AI_TOOLS_CHANNELS = {
   getStatus: 'ai-tools:get-status'
 } as const satisfies Record<keyof TOpenSalesBridge['aiTools'], string>
+
+export const PLAYBOOKS_CHANNELS = {
+  list: 'playbooks:list',
+  get: 'playbooks:get',
+  create: 'playbooks:create',
+  update: 'playbooks:update',
+  setState: 'playbooks:set-state'
+} as const satisfies Record<keyof TOpenSalesBridge['playbooks'], string>
 
 declare global {
   interface Window {
